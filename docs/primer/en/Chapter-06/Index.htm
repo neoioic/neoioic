@@ -1,0 +1,48 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>OIOIC&nbsp;入门教程</title>
+<link rel=stylesheet href="../Style/Style.css" type="text/css">
+</head>
+
+<body bgcolor=white text=black link="#5555ff" alink="#5555ff" vlink="#5555ff"><p><strong>Historical primer (1.0.6): old API and VC6 steps are references only. Use the current tutorial and build guide.</strong> <a href="../../../tutorial.md">Current guide</a></p>
+<table border=0 width=100%>
+<tr>
+<td><p class=tiny>&nbsp;《&nbsp;OIOIC&nbsp;Primer&nbsp;》the Second Edition&nbsp;&nbsp;&nbsp;By&nbsp;赵平智&nbsp;(a Chinese)&nbsp;&nbsp;&nbsp;&nbsp;<a href="mailto:pervise.zhao@gmail.com">pervise.zhao@gmail.com</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://code.google.com/p/oioic/">http://code.google.com/p/oioic</a></p></td>
+<td align=right><p class=tiny>OIOIC&nbsp;1.0.6&nbsp;</p></td>
+</tr>
+</table>
+<hr size=1>
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../Index.htm" style="font-size:15px;">Home&nbsp;<<</a>
+	</td>
+</tr>
+</table>
+<p>
+<h1 align=center>Chapter 6 :&nbsp;&nbsp;&nbsp;Objectivize Multithreading Access Control of Object</h1>
+<p>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;With the "pCaller" parameter of object interface, OIOIC perfectly objectivizes multithreading access control of object. Besides these SEs of OS(Operating System), such as mutex, critical section, semaphore etc, used to control the synchronization of threads, you can also use the "pCaller->cr" to identify visiting AOs (threads), and then treat them differently according to requirement.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;The maximum number of AOs that an objects can simultaneously receive, is the "NumCR" parameter of the "CreateObject" macro. In the foregoing samples, the car, the ship and the amphicar objects were limited to support one AO.<br>
+<img src="Image/exfig1.gif" align=center alt="exfig1.gif" border="1" vspace=20 hspace=35><br><br>
+<p>
+<table style="width:100%;">
+<tr>	
+	<td align="left">
+		<a href="../Chapter-05/Index.htm" style="font-size:15px;">Prev chapter :&nbsp;&nbsp;&nbsp;Arbitrary Complex Inheritance Chain</a>
+	</td>
+	<td align="right">
+		<a href="../Chapter-07/Summary.htm" style="font-size:15px;">Next chapter :&nbsp;&nbsp;&nbsp;Summary</a>
+	</td>
+</tr>
+</table>
+<p>
+<hr noshade>
+<center><p class=tiny>Copyright<font face="Helvetica">&copy;</font>2005-2009&nbsp;赵平智.&nbsp;All Rights Reserved.</p></center>
+
+</body>
+</html>

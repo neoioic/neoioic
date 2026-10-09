@@ -1,0 +1,141 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>OIOIC&nbsp;入门教程</title>
+<link rel=stylesheet href="../Style/Style.css" type="text/css">
+</head>
+
+<body bgcolor=white text=black link="#5555ff" alink="#5555ff" vlink="#5555ff"><p><strong>历史教材（1.0.6）：旧 API 和 VC6 步骤仅供参考，当前开发请阅读新版教程与构建指南。</strong> <a href="../../../tutorial.md">Current guide</a></p>
+<table border=0 width=100%>
+<tr>
+<td><p class=tiny>&nbsp;《&nbsp;OIOIC&nbsp;入门教程&nbsp;》第2版&nbsp;&nbsp;&nbsp;&nbsp;赵平智&nbsp;&nbsp;著&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="mailto:pervise.zhao@gmail.com">pervise.zhao@gmail.com</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://code.google.com/p/oioic/">http://code.google.com/p/oioic</a></p></td>
+<td align=right><p class=tiny>OIOIC&nbsp;1.0.6&nbsp;</p></td>
+</tr>
+</table>
+<hr size=1>
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../Index.htm" style="font-size:15px;">首页&nbsp;<<</a>
+	</td>
+</tr>
+</table>
+<p>
+<h1 align=center>第四章&nbsp;&nbsp;多重继承</h1><br>
+<p>
+&nbsp;&nbsp;&nbsp;&nbsp;制造一艘小船（ship）和一辆水陆两用车（amphicar）。&nbsp;&nbsp;<a href="../../../../examples/multiple_inheritance/README.md" style="font-size:15px;">（下载源代码）</a><br>
+<img src="Image/ship.jpg" align=center alt="ship.jpg" border="0" vspace=5 hspace=35>
+<img src="Image/amphicar.jpg" align=center alt="amphicar.jpg" border="0" vspace=5 hspace=35><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1. vehicle 有重量（weight）属性；（上一章已经实现）<br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. car 继承 vehicle 的重量（weight）属性；（上一章已经实现）<br>
+&nbsp;&nbsp;&nbsp;&nbsp;3. car 有自己的最大负载量（max_load）和最大速度（max_velocity ）属性；（上一章已经实现）<br>
+&nbsp;&nbsp;&nbsp;&nbsp;4. ship 继承 vehicle 的重量（weight）属性；<br>
+&nbsp;&nbsp;&nbsp;&nbsp;5. ship 有自己的最大负载量（max_load）和最大速度（max_velocity ）属性；<br>
+&nbsp;&nbsp;&nbsp;&nbsp;6. amphicar 继承了 vehicle，car 和 ship 的所有属性；<br>
+&nbsp;&nbsp;&nbsp;&nbsp;7. car 的 max_load 是 amphicar 的陆上最大负载量，car 的 max_velocity 是 amphicar 的陆上最大速度；<br>
+&nbsp;&nbsp;&nbsp;&nbsp;8. ship 的 max_load 是 amphicar 的水上最大负载量，ship 的 max_velocity 是 amphicar 的水上最大速度。<br><br><br>
+
+<font style="font-size:22px;">Step 1: 在 Factory 里分别创建名为 ship 和 amphicar 的 GO 类型节点。</font><br>
+<img src="Image/Step1.GIF" align=center alt="Step1.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 2: 把 ship 和 amphicar 加入 Factory 工程。</font><br>
+<img src="Image/Step2.GIF" align=center alt="Step2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 3: 在 ship.h 和 amphicar.h 文件内包含 go.h 头文件：#include "../go.h"。</font><br><br>
+
+<font style="font-size:22px;">Step 4: 分别在 ship 和 amphicar 的 &lt;ibn&gt; 标签体里改写它们的 IBN。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;改写 ship 的 IBN 为 vehicle。<br>
+<img src="Image/Step4-1.GIF" align=center alt="Step4-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;改写 amphicar 的 IBN 为 car 和 ship。<br>
+<img src="Image/Step4-2.GIF" align=center alt="Step4-2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 5: 在 ship.h 文件里为 ship 加上两个属性：max_load（最大负载量）和 max_velocity（最大速度）。</font><br>
+<img src="Image/Step5.GIF" alt="Step5.GIF" width="524" height="203" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+
+<font style="font-size:22px;">Step 6: 在 ho.h 文件里的 GET_MAXLOAD 和 GET_MAXVELOCITY 后面的注释中注明 “ship”，表示 ship 也使用这两个行为。</font><br>
+<img src="Image/Step6.GIF" align=center alt="Step6.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 7: 为 ship 实现 GET_MAXLOAD 和 GET_MAXVELOCITY 两个行为。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;在 ship.c 文件里找到 ship_Interact1 接口，在其中写上 GET_MAXLOAD 和 GET_MAXVELOCITY 两个行为的实现代码。<br>
+<img src="Image/Step7.GIF" align=center alt="Step7.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 8: 在 ho.h 文件里为 ship 和 amphicar 定义 MSN。</font><br>
+<img src="Image/Step8.GIF" align=center alt="Step8.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 9: 在 __CreateObject__ 函数（在 ho.c 文件中）里指明构造 ship 和 amphicar 节点。</font><br>
+<img src="Image/Step9-1.GIF" align=center alt="Step9-1.GIF" border="1" vspace=20 hspace=35><br>
+<img src="Image/Step9-2.GIF" align=center alt="Step9-2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 10: 用 oicc 构造 Factory 节点。</font><br>
+<img src="Image/Step10-1.GIF" align=center alt="Step10-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;ship 和 amphicar 的 CRT 函数已加入各自的 &lt;crt&gt; 标签体中。<br>
+<img src="Image/Step10-2.GIF" align=center alt="Step10-2.GIF" border="1" vspace=20 hspace=35><br>
+<img src="Image/Step10-3.GIF" align=center alt="Step10-3.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 11: 分别在 ship.c 和 amphicar.c 文件里包含必要的头文件和向前声明各自的 TOG 函数。</font><br>
+<img src="Image/Step11-1.GIF" alt="Step11-1.GIF" width="463" height="133" hspace=35 vspace=20 border="1" align=center><br>
+<img src="Image/Step11-2.GIF" alt="Step11-2.GIF" width="464" height="172" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+
+<font style="font-size:22px;">Step 12: 分别在 ship 和 amphicar 的 Open 接口里初始化它们的属性值。</font><br>
+<img src="Image/Step12-1.GIF" alt="Step12-1.GIF" width="566" height="357" hspace=35 vspace=20 border="1" align=center><br>
+<img src="Image/Step12-2.GIF" alt="Step12-2.GIF" width="565" height="403" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+
+<font style="font-size:22px;">Step 13: 为 amphicar 定义四个 AC1 类型的交互行为。</font><br>
+<img src="Image/Step13.GIF" align=center alt="Step13.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 14: 实现 amphicar 的四个 AC1 类型的交互行为。</font><br>
+<img src="Image/Step14.GIF" align=center alt="Step14.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 15: 定义 ship 和 amphicar 的对象指针。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;在 ho.c 文件里定义 g_pShip 和 g_pAmphicar 指针变量。<br>
+<img src="Image/Step15-1.GIF" alt="Step15-1.GIF" width="523" height="130" hspace=35 vspace=20 border="1" align=center><br>
+&nbsp;&nbsp;&nbsp;&nbsp;在 main.c 文件里声明这两个变量。<br>
+<img src="Image/Step15-2.GIF" align=center alt="Step15-2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 16: 在 Main.c 文件的 Main 函数里添加创建 ship 和 amphicar 对象及输出它们属性值的代码。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1. 添加动态创建 ship 和 amphicar 对象的代码。<br> 
+<img src="Image/Step16-1.GIF" align=center alt="Step16-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. 添加打开 ship 和 amphicar 对象的代码。<br> 
+<img src="Image/Step16-2.GIF" align=center alt="Step16-2.GIF" border="1" vspace=20 
+hspace=35 ><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;3. 添加输出 ship 属性值的代码。<br> 
+<img src="Image/Step16-3.GIF" align=center alt="Step16-3.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;4. 添加输出 amphicar 属性值的代码。<br> <br>
+&nbsp;&nbsp;&nbsp;&nbsp;添加输出 amphicar 的重量、陆上最大载重量和水上最大载重量的代码。<br> 
+<img src="Image/Step16-4.GIF" align=center alt="Step16-4.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;添加输出 amphicar 的陆上最大速度和水上最大速度的代码。<br> 
+<img src="Image/Step16-5.GIF" align=center alt="Step16-5.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 17: 添加关闭并销毁 ship 和 amphicar 对象的代码。</font><br>
+<img src="Image/Step17.GIF" align=center alt="Step17.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 18: 分别在 ship 和 amphicar 的 Close 接口里判断引用计数是否为 0。</font><br>
+<img src="Image/Step18-1.GIF" alt="Step18-1.GIF" width="576" height="259" hspace=35 vspace=20 border="1" align=center><br>
+<img src="Image/Step18-2.GIF" align=center alt="Step18-2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 19: 执行程序。</font><br>
+<img src="Image/Step19.GIF" align=center alt="Step19.GIF" border="1" vspace=20 hspace=35><br>
+
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../Chapter-03/Index.htm" style="font-size:15px;">上一章&nbsp;&nbsp;单重继承</a>
+	</td>
+	<td align="right">
+		<a href="../Chapter-05/Index.htm" style="font-size:15px;">下一章&nbsp;&nbsp;任意复杂的继承链</a>
+	</td>
+</tr>
+</table>
+<p>
+<hr noshade>
+<center><p class=tiny>版权<font face="Helvetica">&copy;</font>2005-2009&nbsp;赵平智。保留所有权利。</p></center>
+
+</body>
+</html>

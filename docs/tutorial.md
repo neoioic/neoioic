@@ -1,0 +1,41 @@
+# 当前开发教程
+
+## 从最小程序开始
+
+进入 `examples/hello_world`，按 [构建指南](build.md) 配置 GCC 并运行 `hello_world`，输出 `Hello world!`。项目中的 `so/ao/Main/Main.c` 放置程序入口，`ho.c` 放置宿主创建/销毁逻辑，`ho.h` 放置应用标识和行为定义。
+
+核心库位于仓库 `src/`，公共头文件位于 `include/`，示例不复制核心源码。构建定义只声明当前应用及核心依赖。
+
+## 单继承
+
+`examples/single_inheritance/so/go/vehicle` 定义重量，`car` 继承 vehicle 并增加最大载重、最大速度。`EM_VEHICLE` 与 `EM_CAR` 分别保存各节点的状态。
+
+阅读 `car_Open` 可看到 `GetEMofBN` 获取基节点状态，并在打开对象时初始化属性。`vehicle_Interact1` 和 `car_Interact1` 将属性写入调用者提供的输出缓冲区。`Main` 创建、打开、查询、关闭并销毁汽车。
+
+修改属性时要同步输出数据类型与缓冲区容量。修改扩展成员布局时还要同步 `CRT_car` 的尺寸与偏移。`<crt>` 区域属于构造代码，不应放入业务逻辑。
+
+## 多继承
+
+`examples/multiple_inheritance` 增加 ship 与 amphicar。两栖车同时继承 car 和 ship，其节点图共享 vehicle 的重量状态。`GetEMofBN` 按 MSN 区分汽车和船的载重及速度；陆上与水上查询使用各自命名的行为码。
+
+先阅读 `amphicar.c` 的构造函数，核对 AND、AIB、ABN 和扩展成员，再阅读它的打开与查询接口。运行程序核对共享重量以及两套性能参数。
+
+## 新对象的约定
+
+1. 在应用的 `so/go` 中建立有明确职责的节点，定义必要的 `EM_XXX` 状态与数据契约。
+2. 在宿主头文件声明不冲突的 MSN 与对应类别的 ACTION。
+3. 实现接口和 `TOG_XXX`，明确基节点访问顺序及中性结果的继续分派规则。
+4. 编写或生成 `CRT_XXX`，保证尺寸、对齐、访问席位和失败清理正确，在宿主创建函数中登记。
+5. 通过 `VO_*` 访问对象，并检查每个生命周期阶段的结果。
+
+预编译 `oicc` 可以辅助理解原始生成流程，但它不能自动满足当前迁移后的全部约定，使用前阅读 [工具说明](../tools/oicc/README.md)。
+
+## Windows 界面
+
+`examples/wgi` 展示可视对象 VObject、窗口对象 WObject、控件 CObject，以及按钮、编辑框、菜单和滚动条。业务示例 MyDialog/MyButton 组合这些控件，WinMain 负责初始化 OLE、加载皮肤和消息循环。
+
+资源通过 `skins/` 随构建复制。界面目前沿用原示例的交互实现，迁移 GCC 不表示所有控件行为已重新设计。[原 WGI 说明书](wgi-reference.pdf) 保留为历史设计参考，其版本与当前示例不同。
+
+## 历史教材
+
+[中文第二版](primer/zh/Index.htm) 与 [英文第二版](primer/en/Index.htm) 保留术语、模型解释和原始图示。它们中的 1.0.6 API、VC6 截图与生成步骤是历史资料；旧下载与附录代码已移除，源码以当前 `include/`、`src/` 和 `examples/` 为准。

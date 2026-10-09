@@ -1,0 +1,173 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>OIOIC&nbsp;入门教程</title>
+<link rel=stylesheet href="../Style/Style.css" type="text/css">
+</head>
+
+<body bgcolor=white text=black link="#5555ff" alink="#5555ff" vlink="#5555ff"><p><strong>Historical primer (1.0.6): old API and VC6 steps are references only. Use the current tutorial and build guide.</strong> <a href="../../../tutorial.md">Current guide</a></p>
+<table border=0 width=100%>
+<tr>
+<td><p class=tiny>&nbsp;《&nbsp;OIOIC&nbsp;Primer&nbsp;》the Second Edition&nbsp;&nbsp;&nbsp;By&nbsp;赵平智&nbsp;(a Chinese)&nbsp;&nbsp;&nbsp;&nbsp;<a href="mailto:pervise.zhao@gmail.com">pervise.zhao@gmail.com</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://code.google.com/p/oioic/">http://code.google.com/p/oioic</a></p></td>
+<td align=right><p class=tiny>OIOIC&nbsp;1.0.6&nbsp;</p></td>
+</tr>
+</table>
+<hr size=1>
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../Index.htm" style="font-size:15px;">Home&nbsp;<<</a>
+	</td>
+</tr>
+</table>
+<p>
+<h1 align=center>Chapter 3 :&nbsp;&nbsp;&nbsp;Single Inheritance</h1><br>
+<p>
+&nbsp;&nbsp;&nbsp;&nbsp;Make a car.&nbsp;&nbsp;<a href="../../../../examples/single_inheritance/README.md" style="font-size:15px;">(Download its source code)</a><br>
+<img src="Image/car.jpg" align=center alt="car.jpg" border="0" vspace=5 hspace=35><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1. A vehicle has weight property;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. A car inherits the vehicle's weight property;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;3. The car has maximal load and maximal velocity properties.<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Why don't put the car's two properties into the vehicle? We reserve the question, after studying the next chapter, you will understand why.<br><br><br>
+
+<font style="font-size:22px;">Step 1:&nbsp;&nbsp;Create a "Factory" node of MO in "E:\OIC_Workroom\mo" directory.</font><br>
+<img src="Image/Step1.GIF" align=center alt="Step1.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 2:&nbsp;&nbsp;Create a "vehicle" node of GO in "Factory" folder.</font><br>
+<img src="Image/Step2.GIF" align=center alt="Step2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 3:&nbsp;&nbsp;Create a "car" node of GO in "Factory" folder.</font><br>
+<img src="Image/Step3.GIF" align=center alt="Step3.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 4:&nbsp;&nbsp;Also, create an "oioic" folder in "E:\OIC_Workroom\mo\Factory", and copy "oioic.h" & "oioic.c" files into the "oioic" folder.</font><br><br>
+<font style="font-size:22px;">Step 5:&nbsp;&nbsp;Create a VC project for the "Factory", and insert the oioic,se and so folders into the project. (refer to the "HelloWorld" sample)</font><br><br>
+<font style="font-size:22px;">Step 6:&nbsp;&nbsp;In the "ho.h" file, define required OID(s) according to the template of OIC definition.</font><br>
+<img src="Image/Step6.GIF" align=center alt="Step6.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 7:&nbsp;&nbsp;According to hierarchy, include the required .h file(s) for the .h file(s) in each directory.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1. In the "ho.h" file: #include "oioic/oioic.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. In the "Factory.h" file: #include "ho.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;3. In the "so.h" file: #include "../ho.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;4. In the "ao.h" and "go.h" files: #include "../so.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;5. In the "Main.h" file: #include "../ao.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;6. In the "vehicle.h" and "car.h" files: #include "../go.h"<br><br><br>
+
+<font style="font-size:22px;">Step 8:&nbsp;&nbsp;Add a "weight" property for the vehicle.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;In the "vehicle.h" file, uncomment the structure "TAG_EM_VEHICLE" of the vehicle's EM, and add a "weight" variable of SR32 in it.<br>
+<img src="Image/Step8-1.GIF" align=center alt="Step8-1.GIF" border="1" vspace=20 hspace=35>
+<img src="Image/Step8-2.GIF" alt="Step8-2.GIF" width="521" height="315" hspace=35 vspace=20 border="1" align=center><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:red;"><b>NOTE!</b>&nbsp;&nbsp;Don't change the names of the "TAG_EM_VEHICLE" and "EM_VEHICLE", and don't move them into other files. Otherwise, constructed by oicc later, the oicc will think that the vehicle has no EM(Extended Member), because it don't find them in the "vehicle.h" file.</span><br>
+<br>
+
+<font style="font-size:22px;">Step 9:&nbsp;&nbsp;Add a maximal load and a maximal velocity properties for the car.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;In the "car.h" file, uncomment the structure "TAG_EM_CAR" of the car's EM, and add a "max_load" and a "max_velocity" variables of SR32 in it.<br>
+<img src="Image/Step9-1.GIF" align=center alt="Step9-1.GIF" border="1" vspace=20 hspace=35>
+<img src="Image/Step9-2.GIF" alt="Step9-2.GIF" width="523" height="332" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+
+<font style="font-size:22px;">Step 10:&nbsp;&nbsp;Determine the IBN(s) of the car.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Locate the "OICC label" in the "car.c" file.<br>
+<img src="Image/Step10-1.GIF" alt="Step10-1.GIF" width="523" height="217" hspace=35 vspace=20 border="1" align=center><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Node's IBN is specified between the "/*&lt;ibn&gt;" and the "&lt;/ibn&gt;*/", as the above figure, the car's IBN is OIOIC. If the node is constructed by oicc, oicc will implement the node's CRT function between the "/*&lt;crt&gt;*/" and "/*&lt;/crt&gt;*/", if not constructed, it is empty between them.<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;To replace "OIOIC" by "vehicle", set the car's IBN as "vehicle".<br>
+<img src="Image/Step10-2.GIF" alt="Step10-2.GIF" width="522" height="239" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+
+<font style="font-size:22px;">Step 11:&nbsp;&nbsp;Specify constructing the car node.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;In the "ho.c" file, find the "__CreateObject__" function.<br>
+<img src="Image/Step11-1.GIF" align=center alt="Step11-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Add the following content in the "__CreateObject__" function.<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1. Declare externally the car's CRT function at the beginning of the "__CreateObject__" function.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Copy the content in the comment "/* extern FRESULT CRT_xxx(OBJID* pOID, BYTKTY IQCty, BYTKTY OQCty, SI32 NumCR, OBJECT** ppObj, BYTE* pExotic); */" at the beginning of the "__CreateObject__" function, and paste the content under the comment, then change "xxx" into "car".<br>
+<img src="Image/Step11-2.GIF" align=center alt="Step11-2.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. As follows, in the "__CreateObject__" function, call the car's CRT function in the switch statement.<br>
+<img src="Image/Step11-3.GIF" align=center alt="Step11-3.GIF" border="1" vspace=20 hspace=35><br><br>
+   
+<font style="font-size:22px;">Step 12:&nbsp;&nbsp;Construct the "Factory" with oicc.</font><br>
+<img src="Image/Step12-1.GIF" align=center alt="Step12-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;If the "car.c" file is being opened in the project, the following dialog box appears, writing "This file has been modified outside of the source editor. Do you want to reload it?", click "Yes" to reload it.<br>
+<img src="Image/Step12-2.GIF" align=center alt="Step12-2.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Again see the "OICC label" in the "car.c" file, the original is empty in the body of the &lt;crt&gt; label and now has the car's CRT function.<br>
+<img src="Image/Step12-3.GIF" align=center alt="Step12-3.GIF" border="1" vspace=20 hspace=35><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:red;font-weight:bold;font-size:21px;">NOTE! Don't write your things in node's CRT function, otherwise, oicc will clean it out at next constructing.</span><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Compile, there are warnings and errors.<br>
+<img src="Image/Step12-4.GIF" align=center alt="Step12-4.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Include required .h file(s) in "car.c" file, and declare the car's TOG function forwardly.<br>
+<img src="Image/Step12-5.GIF" align=center alt="Step12-5.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Compile again, four errors, no definition of the MSNs of vehicle and car.<br>
+<img src="Image/Step12-6.GIF" align=center alt="Step12-6.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Find the template of MSN in "ho.h" file.<br>
+<img src="Image/Step12-7.GIF" align=center alt="Step12-7.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Define the MSNs of vehicle and car according to the template of MSN.<br>
+<img src="Image/Step12-8.GIF" alt="Step12-8.GIF" width="543" height="166" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Compile, Ok.<br><br><br>
+
+<font style="font-size:22px;">Step 13:&nbsp;&nbsp;Initialize the car's three properties.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Find the "car_Open" interface in the "car.c" file.<br>
+<img src="Image/Step13-1.GIF" align=center alt="Step13-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Write the following code to initialize the car's three properties value, any value.<br>
+<img src="Image/Step13-2.GIF" align=center alt="Step13-2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 14:&nbsp;&nbsp;Define the AC1 interaction of vehicle and car, and annotate the function of interaction and TSO(the Type of Stream Outputted).</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Find the "Action" in the "ho.h" file.<br>
+<img src="Image/Step14-1.GIF" align=center alt="Step14-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Define non-exclusive interactions GET_MAXLOAD and GET_MAXVELOCITY, and in commentary, annotate that the car uses them. Define GET_WEIGHT interaction for the vehicle. Define the required starting-points of interaction.<br>
+<img src="Image/Step14-2.GIF" align=center alt="Step14-2.GIF" border="1" vspace=20 hspace=35><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Now that the car uses the GET_MAXLOAD and GET_MAXVELOCITY by itself, why don't exclusively define them for the car? We also reserve the question, after studying the next chapter, you will understand why.<br><br><br>
+<font style="font-size:22px;">Step 15:&nbsp;&nbsp;Implement the interactions of vehicle and car。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Find the "vehicle_Interact1" interface in the "vehicle.c" file.<br>
+<img src="Image/Step15-1.GIF" align=center alt="Step15-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Implement the GET_WEIGHT in the vehicle_Interact1 for the vehicle.<br>
+<img src="Image/Step15-2.GIF" align=center alt="Step15-2.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Find the "car_Interact1" interface in the "car.c" file.<br>
+<img src="Image/Step15-3.GIF" align=center alt="Step15-3.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Implement the GET_MAXLOAD and GET_MAXVELOCITY in the car_Interact1 for the car.<br>
+<img src="Image/Step15-4.GIF" align=center alt="Step15-4.GIF" border="1" vspace=20 hspace=35><br><br>
+  
+<font style="font-size:22px;">Step 16:&nbsp;&nbsp;Write the code of printing the car's properties.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1. Locate the "Global object pointer(s)" in the "ho.c" file.<br>
+<img src="Image/Step16-1.GIF" alt="Step16-1.GIF" width="517" height="161" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. Define an object pointer variable "g_pCar" for the car.<br>
+<img src="Image/Step16-2.GIF" align=center alt="Step16-2.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;3. Declare the "g_pCar" externally in the "Main.c" file.<br>
+<img src="Image/Step16-3.GIF" alt="Step16-3.GIF" width="516" height="165" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;In the following 4 ~ 7 steps, write these code in the "Main" function in the "Main.c" file.<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;4. Define variables and initialize the "caller".<br>
+<img src="Image/Step16-4.GIF" alt="Step16-4.GIF" width="518" height="244" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;5. Write the code of dynamically creating a car with the "CreateObject" macro and opening the car.<br>
+<img src="Image/Step16-5.GIF" align=center alt="Step16-5.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;6. Write the code of printing the car's properties value.<br>
+<img src="Image/Step16-6.GIF" align=center alt="Step16-6.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;7. Write the code of closing and destroying the car object.<br>
+<img src="Image/Step16-7.GIF" align=center alt="Step16-7.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 17:&nbsp;&nbsp;In the "Close" interface of the car, examine whether the object's reference count is zero.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;In the "car.c" file, find the "car_Close" interface and write the code in it.<br>
+<img src="Image/Step17.GIF" align=center alt="Step17.GIF" border="1" vspace=20 hspace=35><br><br>
+  
+<font style="font-size:22px;">Step 18:&nbsp;&nbsp;Execute the program.</font><br>
+<img src="Image/Step18.GIF" align=center alt="Step18.GIF" border="1" vspace=20 hspace=35><br>
+
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../Chapter-02/Index.htm" style="font-size:15px;">Prev chapter :&nbsp;&nbsp;&nbsp;Hello, World</a>
+	</td>
+	<td align="right">
+		<a href="../Chapter-04/Index.htm" style="font-size:15px;">Next chapter :&nbsp;&nbsp;&nbsp;Multiple Inheritance</a>
+	</td>
+</tr>
+</table>
+<p>
+<hr noshade>
+<center><p class=tiny>Copyright<font face="Helvetica">&copy;</font>2005-2009&nbsp;赵平智.&nbsp;All Rights Reserved.</p></center>
+
+</body>
+</html>

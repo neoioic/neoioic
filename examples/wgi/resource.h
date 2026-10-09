@@ -1,0 +1,4 @@
+#ifndef OIOIC_WGI_RESOURCE_H
+#define OIOIC_WGI_RESOURCE_H
+#define IDI_WGIDEMO 101
+#endif

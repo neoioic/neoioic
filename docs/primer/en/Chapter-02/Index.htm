@@ -1,0 +1,105 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>OIOIC&nbsp;入门教程</title>
+<link rel=stylesheet href="../Style/Style.css" type="text/css">
+</head>
+
+<body bgcolor=white text=black link="#5555ff" alink="#5555ff" vlink="#5555ff"><p><strong>Historical primer (1.0.6): old API and VC6 steps are references only. Use the current tutorial and build guide.</strong> <a href="../../../tutorial.md">Current guide</a></p>
+<table border=0 width=100%>
+<tr>
+<td><p class=tiny>&nbsp;《&nbsp;OIOIC&nbsp;Primer&nbsp;》the Second Edition&nbsp;&nbsp;&nbsp;By&nbsp;赵平智&nbsp;(a Chinese)&nbsp;&nbsp;&nbsp;&nbsp;<a href="mailto:pervise.zhao@gmail.com">pervise.zhao@gmail.com</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://code.google.com/p/oioic/">http://code.google.com/p/oioic</a></p></td>
+<td align=right><p class=tiny>OIOIC&nbsp;1.0.6&nbsp;</p></td>
+</tr>
+</table>
+<hr size=1>
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../Index.htm" style="font-size:15px;">Home&nbsp;<<</a>
+	</td>
+</tr>
+</table>
+<p>
+<h1 align=center>Chapter 2 :&nbsp;&nbsp;&nbsp;Hello, World</h1><br>
+<p>
+&nbsp;&nbsp;&nbsp;&nbsp;Write a "Hello world" program to know the code tree structure of an OIOIC program.&nbsp;&nbsp;&nbsp;<a href="../../../../examples/hello_world/README.md" style="font-size:15px;">(Download its source code)</a><br><br>
+<font style="font-size:22px;">Step 1:&nbsp;&nbsp;In command line, use <a href="../../../tutorial.md">oicc</a> to create a "HelloWorld" node of MO.</font><br>
+<img src="Image/Step1.GIF" align=center alt="Step1.GIF" border="1" vspace=20 hspace=35><br>
+&nbsp;&nbsp;&nbsp;&nbsp;When create an HO node, the name of parent directory of the HO node must be the corresponding lowercase (NOTE: Windows' folder name is case-insensitive.), that is, MO is "mo", CO is "co", RO is "ro". If no, oicc will automatically create one for you. Therefore in this case, if there was not an "mo" folder in the specified directory (E:\OIC_Workroom), oicc has made one.<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Now, a "HelloWorld" node has appeared in the "E:\OIC_Workroom\mo" directory.<br><br><br>
+
+<font style="font-size:22px;">Step 2:&nbsp;&nbsp;Create an "oioic" folder in the "E:\OIC_Workroom\mo\HelloWorld" directory, and copy <a href="../../../tutorial.md">oioic.c & oioic.h</a> files to the "oioic" folder.</font><br><br><br>
+
+<font style="font-size:22px;">Step 3:&nbsp;&nbsp;Create a VC project for the "HelloWorld".</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Use VC (VC6.0 in this book) to open the "E:\OIC_Workroom\mo\HelloWorld\HelloWorld.c", then build it. In the pop-up dialog box, click "Yes" to create the VC project of the "HelloWorld" in the "E:\OIC_Workroom\mo\HelloWorld" directory.<br>
+<img src="Image/Step3.GIF" align=center alt="Step3.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 4:&nbsp;&nbsp;Add all .c and .h files and the "oioic" folder (including its all .c and .h files) in the "HelloWorld" folder into the project.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;In the "FileView" of the "Workspace" window, add all .c and .h files and the "oioic" folder (including its all .c and .h files) in the "E:\OIC_Workroom\mo\HelloWorld" directory into the project. <br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1.&nbsp;&nbsp;Add in all .c and .h files in the "E:\OIC_Workroom\mo\HelloWorld" directory.<br>
+<img src="Image/Step4-1.GIF" align=center alt="Step4-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Locate the "E:\OIC_Workroom\mo\HelloWorld" directory, then select the "HelloWorld.h", "ho.h" and "ho.c" files (the "HelloWorld.c" file has been in.), click "OK" to insert the three files into the project.<br>
+<img src="Image/Step4-2.GIF" align=center alt="Step4-2.GIF" border="1" vspace=20 hspace=35><br>
+<img src="Image/Step4-3.GIF" align=center alt="Step4-3.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;2.&nbsp;&nbsp;Add in the "oioic.h" and "oioic.c" files in the "E:\OIC_Workroom\mo\HelloWorld\oioic" directory.<br>
+<img src="Image/Step4-4.GIF" alt="Step4-4.GIF" width="425" height="576" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;As follows, type "oioic", click "OK" to create an "oioic" folder.<br>
+<img src="Image/Step4-5.GIF" align=center alt="Step4-5.GIF" border="1" vspace=20 hspace=35><br>
+<img src="Image/Step4-6.GIF" alt="Step4-6.GIF" width="443" height="578" hspace=35 vspace=20 border="1" align=center><br>
+<img src="Image/Step4-7.GIF" align=center alt="Step4-7.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Locate the "E:\OIC_Workroom\mo\HelloWorld\oioic" directory, then select the "oioic.c" and "oioic.c" files, click "OK" to insert them into the project.<br>
+<img src="Image/Step4-8.GIF" align=center alt="Step4-8.GIF" border="1" vspace=20 hspace=35><br>
+<img src="Image/Step4-9.GIF" align=center alt="Step4-9.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 5:&nbsp;&nbsp;In the same way, add "se" and "so" directory and their subdirectories (including all .c and .h files in them) into the project.</font><br>
+<img src="Image/Step5.GIF" align=center alt="Step5.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 6:&nbsp;&nbsp;Referring to the template of OID definition in "ho.h" file, define the required OID(s).</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Find the template of OID definition in "ho.h" file.<br>
+<img src="Image/Step6-1.GIF" alt="Step6-1.GIF" width="774" height="357" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Uncomment "OID_HO" and "OID_", and define them.<br>
+<img src="Image/Step6-2.GIF" align=center alt="Step6-2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 7:&nbsp;&nbsp;According to hierarchy, include the required .h file(s) for the .h file(s) in each directory.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1.&nbsp;&nbsp;In the "ho.h" file: #include "oioic/oioic.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;2.&nbsp;&nbsp;In the "HelloWorld.h" file: #include "ho.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;&nbsp;In the "so.h" file: #include "../ho.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;4.&nbsp;&nbsp;In the "ao.h" and "go.h" files: #include "../so.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;5.&nbsp;&nbsp;In the "Main.h" file: #include "../ao.h"<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Compile, oh, 3 warnings in "ho.c" file:<br>
+<img src="Image/Step7-1.GIF" align=center alt="Step7-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Include &lt;stdlib.h&gt; and &lt;memory.h&gt; in the "ho.c" file.<br>
+<img src="Image/Step7-2.GIF" alt="Step7-2.GIF" width="506" height="196" hspace=35 vspace=20 border="1" align=center><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Compile again, Ok.<br><br><br>
+
+<font style="font-size:22px;">Step 8:&nbsp;&nbsp;Write the code printing "Hello world!" in the "Main.c" file.</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;Include &lt;stdio.h&gt;, and add the code printing "Hello world!" in the "Main" function.<br>
+<img src="Image/Step8-1.GIF" alt="Step8-1.GIF" width="508" height="187" hspace=35 vspace=20 border="1" align=center><br>
+<img src="Image/Step8-2.GIF" alt="Step8-2.GIF" width="505" height="272" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+
+<font style="font-size:22px;">Step 9:&nbsp;&nbsp;Execute the program.</font><br>
+<img src="Image/Step9.GIF" align=center alt="Step9.GIF" border="1" vspace=20 hspace=35><br>
+
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../Chapter-01/Index.htm" style="font-size:15px;">Prev chapter :&nbsp;&nbsp;&nbsp;What OIOIC?</a>
+	</td>
+	<td align="right">
+		<a href="../Chapter-03/Index.htm" style="font-size:15px;">Next chapter :&nbsp;&nbsp;&nbsp;Single Inheritance</a>
+	</td>
+</tr>
+</table>
+<p>
+<hr noshade>
+<center><p class=tiny>Copyright<font face="Helvetica">&copy;</font>2005-2009&nbsp;赵平智.&nbsp;All Rights Reserved.</p></center>
+
+</body>
+</html>

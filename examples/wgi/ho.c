@@ -88,9 +88,10 @@ int host_create_object(unsigned short model_id, unsigned int input_capacity,
 	struct em_oioic *members;
 	int idd; /* struct doid的指标。idd - the index of struct doid */
 
-	assert(caller_capacity > 0);
-	assert(!(NULL == object_out && NULL == exotic_memory));
-	assert(!(object_out != NULL && exotic_memory != NULL));
+	if (caller_capacity < 1 ||
+	    (object_out == NULL && exotic_memory == NULL) ||
+	    (object_out != NULL && exotic_memory != NULL))
+		return RN_INVALIDARG;
 
 	oidbak = gs_tad.oid;
 
@@ -146,11 +147,16 @@ int host_create_object(unsigned short model_id, unsigned int input_capacity,
 			gs_tad.oid = oidbak;
 
 			members = (struct em_oioic *)get_base_members(
-				*object_out, MSN_OIOIC);
+				exotic_memory != NULL ?
+					(struct object *)exotic_memory : *object_out,
+				MSN_OIOIC);
 			if (members->iq.data != NULL)
 				free(members->iq.data);
 			if (members->oq.data != NULL)
 				free(members->oq.data);
+
+			members->iq = (struct queue){ 0 };
+			members->oq = (struct queue){ 0 };
 
 			if (NULL == exotic_memory) {
 				free(*object_out);

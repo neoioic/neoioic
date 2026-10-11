@@ -1,6 +1,8 @@
 
 
 #include <stdlib.h>
+#include <limits.h>
+#include <string.h>
 #include "../vehicle/vehicle.h"
 #include "ship.h"
 
@@ -27,7 +29,9 @@ int crt_ship(uint64_t *object_id, unsigned int input_capacity,
 	size_t ux_nd = 3;		    /* ND数量。 */
 	size_t ux_bn = 3;		    /* 各ND的BN数量之和。 */
 	size_t ux_ib = 2;		    /* 各ND的IBN数量之和。 */
-	size_t ux_cs = caller_capacity * 6; /* 各ND的最少CS数量之和。 */
+	if (caller_capacity < 1 || (size_t)caller_capacity > USHRT_MAX / 3)
+		return RN_INVALIDARG;
+	size_t ux_cs = (size_t)caller_capacity * 6; /* 各ND的最少CS数量之和。 */
 	size_t ux_em =
 		OIOIC_ALIGNED_SIZE(struct em_ship) +
 		OIOIC_ALIGNED_SIZE(struct em_vehicle) +
@@ -46,6 +50,7 @@ int crt_ship(uint64_t *object_id, unsigned int input_capacity,
 		p_ic = (unsigned char *)calloc(sum, 1);
 	} else {
 		p_ic = exotic_memory;
+		memset(p_ic, 0, sum);
 	}
 
 	if (p_ic != NULL) {
@@ -151,9 +156,7 @@ int crt_ship(uint64_t *object_id, unsigned int input_capacity,
 			}
 			((struct em_oioic *)(node->members))->iq.front =
 				((struct em_oioic *)(node->members))->iq.rear =
-					((struct em_oioic *)(node->members))
-						->iq.data -
-					1;
+					NULL;
 			((struct em_oioic *)(node->members))->iq.capacity =
 				input_capacity;
 			((struct em_oioic *)(node->members))->iq.quantity =
@@ -179,9 +182,7 @@ int crt_ship(uint64_t *object_id, unsigned int input_capacity,
 			}
 			((struct em_oioic *)(node->members))->oq.front =
 				((struct em_oioic *)(node->members))->oq.rear =
-					((struct em_oioic *)(node->members))
-						->oq.data -
-					1;
+					NULL;
 			((struct em_oioic *)(node->members))->oq.capacity =
 				output_capacity;
 			((struct em_oioic *)(node->members))->oq.quantity =

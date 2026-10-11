@@ -6,7 +6,7 @@ OIOIC（道智编程）是赵平智设计的 C 语言对象模型及构造工具
 
 [构建指南](docs/build.md) · [架构说明](docs/architecture.md) · [开发教程](docs/tutorial.md) · [代码风格](docs/coding-style.md)
 
-活跃源码采用 Linux 风格的小写下划线命名、8 列 Tab 缩进和直接可见的结构体类型，例如 `struct object`、`vo_open`、`get_base_members`。本轮重写只调整代码风格与类型写法，对象模型、算法和各项目的独立构建方式保持一致。当前名称以公共头文件为准，旧 API 名称不提供兼容别名。
+活跃源码采用 Linux 风格的小写下划线命名、8 列 Tab 缩进和直接可见的结构体类型，例如 `struct object`、`vo_open`、`get_base_members`。当前名称以公共头文件为准，旧 API 名称不提供兼容别名。核心边界及失败处理已修正，关闭失败的清理约定见[架构说明](docs/architecture.md)。
 
 ## 目录
 

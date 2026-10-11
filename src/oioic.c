@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "oioic.h"
 
 /* Interface */
@@ -16,6 +17,8 @@
  */
 static int oioic_open(struct object *self, const struct vr *caller_context)
 {
+	if (self->ref_count == UINT_MAX)
+		return RN_FULL;
 	self->ref_count++;
 	return R_P;
 }
@@ -97,9 +100,9 @@ static int oioic_interact0(struct object *self, unsigned int action,
 		members->mds |= MOD_BLOCKO;
 		return R_P;
 	case CMD_RESET: /* 重置。 */
-		members->iq.front = members->iq.rear = members->iq.data - 1;
+		members->iq.front = members->iq.rear = NULL;
 		members->iq.quantity = members->iq.lost = 0;
-		members->oq.front = members->oq.rear = members->oq.data - 1;
+		members->oq.front = members->oq.rear = NULL;
 		members->oq.quantity = members->oq.lost = 0;
 		return R_P;
 	default:
@@ -126,13 +129,21 @@ static int oioic_interact1(struct object *self, unsigned int action,
 
 	switch (action) {
 	case GET_IQCTY: /* 获取iq容量。 */
-		assert(capacity >= sizeof(unsigned int));
-		*((unsigned int *)output_stream) = members->iq.capacity;
+		if (output_quantity != NULL)
+			*output_quantity = 0;
+		if (output_quantity == NULL || output_stream == NULL ||
+		    capacity < sizeof(unsigned int))
+			return RN_INVALIDARG;
+		memcpy(output_stream, &members->iq.capacity, sizeof(unsigned int));
 		*output_quantity = sizeof(unsigned int);
 		return R_P;
 	case GET_OQCTY: /* 获取oq容量。 */
-		assert(capacity >= sizeof(unsigned int));
-		*((unsigned int *)output_stream) = members->oq.capacity;
+		if (output_quantity != NULL)
+			*output_quantity = 0;
+		if (output_quantity == NULL || output_stream == NULL ||
+		    capacity < sizeof(unsigned int))
+			return RN_INVALIDARG;
+		memcpy(output_stream, &members->oq.capacity, sizeof(unsigned int));
 		*output_quantity = sizeof(unsigned int);
 		return R_P;
 	default:
@@ -157,34 +168,38 @@ static int oioic_interact2(struct object *self, unsigned int action,
 
 	switch (action) {
 	case SET_IQCTY: /* 设置iq容量。 */
-		assert(sizeof(unsigned int) == quantity);
-		if (members->iq.data != NULL)
+		if (input_stream == NULL || quantity != sizeof(unsigned int))
+			return RN_INVALIDARG;
+		{
+			unsigned int new_capacity;
+			unsigned char *new_data;
+			memcpy(&new_capacity, input_stream, sizeof(new_capacity));
+			new_data = new_capacity ? calloc(new_capacity, 1) : NULL;
+			if (new_capacity && new_data == NULL)
+				return R_N;
 			free(members->iq.data);
-		members->iq.data = (unsigned char *)calloc(
-			*((unsigned int *)input_stream), 1);
-		if (members->iq.data != NULL) {
-			members->iq.front = members->iq.rear =
-				members->iq.data - 1;
-			members->iq.capacity = *((unsigned int *)input_stream);
+			members->iq.data = new_data;
+			members->iq.front = members->iq.rear = NULL;
+			members->iq.capacity = new_capacity;
 			members->iq.quantity = members->iq.lost = 0;
 			return R_P;
-		} else {
-			return R_N;
 		}
 	case SET_OQCTY: /* 设置oq容量。 */
-		assert(sizeof(unsigned int) == quantity);
-		if (members->oq.data != NULL)
+		if (input_stream == NULL || quantity != sizeof(unsigned int))
+			return RN_INVALIDARG;
+		{
+			unsigned int new_capacity;
+			unsigned char *new_data;
+			memcpy(&new_capacity, input_stream, sizeof(new_capacity));
+			new_data = new_capacity ? calloc(new_capacity, 1) : NULL;
+			if (new_capacity && new_data == NULL)
+				return R_N;
 			free(members->oq.data);
-		members->oq.data = (unsigned char *)calloc(
-			*((unsigned int *)input_stream), 1);
-		if (members->oq.data != NULL) {
-			members->oq.front = members->oq.rear =
-				members->oq.data - 1;
-			members->oq.capacity = *((unsigned int *)input_stream);
+			members->oq.data = new_data;
+			members->oq.front = members->oq.rear = NULL;
+			members->oq.capacity = new_capacity;
 			members->oq.quantity = members->oq.lost = 0;
 			return R_P;
-		} else {
-			return R_N;
 		}
 	default:
 		break;
@@ -218,6 +233,8 @@ static int oioic_interact3(struct object *self, unsigned int action,
  */
 static int oioic_close(struct object *self, const struct vr *caller_context)
 {
+	if (self->ref_count == 0)
+		return RO_NOPEN;
 	self->ref_count--;
 	return R_P;
 }

@@ -145,8 +145,7 @@ int unregister_caller(struct object *node, const struct vr *caller_context)
  */
 int enqueue(struct queue *pq, unsigned char *input_data, unsigned int quantity)
 {
-	unsigned char *new_rear; /* 入列成功后pq->rear应该所处的位置。 */
-	unsigned int cty_free, qty_enq;
+	unsigned int cty_free, qty_enq, rear_offset, first;
 
 	assert(pq != NULL);
 	assert(input_data != NULL);
@@ -163,25 +162,21 @@ int enqueue(struct queue *pq, unsigned char *input_data, unsigned int quantity)
 		return RO_VAINLY;
 	}
 
-	new_rear = pq->data + (pq->rear + qty_enq - pq->data) % pq->capacity;
-	if (new_rear > pq->rear) /* 如果入列成功，pq->rear不须循环？ */
-	{
-		memcpy(pq->rear + 1, input_data, qty_enq);
-	} else /* 如果入列成功，pq->rear须循环。 */
-	{
-		unsigned int qty1, qty2;
-		qty1 = pq->data + pq->capacity - pq->rear - 1;
-		if (qty1 > 0)
-			memcpy(pq->rear + 1, input_data, qty1);
-		qty2 = qty_enq - qty1;
-		memcpy(pq->data, input_data + qty1, qty2);
-	}
-
-	pq->rear = new_rear;
+	rear_offset = pq->quantity == 0 ? 0 :
+		(unsigned int)(pq->rear - pq->data + 1);
+	if (rear_offset == pq->capacity)
+		rear_offset = 0;
+	first = pq->capacity - rear_offset;
+	if (first > qty_enq)
+		first = qty_enq;
+	memcpy(pq->data + rear_offset, input_data, first);
+	memcpy(pq->data, input_data + first, qty_enq - first);
+	pq->rear = pq->data + (qty_enq > pq->capacity - rear_offset ?
+		qty_enq - (pq->capacity - rear_offset) - 1 :
+		rear_offset + (qty_enq - 1));
+	if (pq->quantity == 0)
+		pq->front = pq->data + rear_offset;
 	pq->quantity += qty_enq;
-
-	if (pq->data - 1 == pq->front)
-		pq->front = pq->data;
 
 	if (cty_free < quantity) {
 		pq->lost = quantity -
@@ -201,8 +196,7 @@ int enqueue(struct queue *pq, unsigned char *input_data, unsigned int quantity)
 int dequeue(struct queue *pq, unsigned char *output_data, unsigned int capacity,
 	    unsigned int *output_quantity)
 {
-	unsigned char *new_front; /* 出列成功后pq->front应该所处的位置。 */
-	unsigned int qty_deq; /* 实际出列数据量。 */
+	unsigned int qty_deq, front_offset, first;
 
 	assert(pq != NULL);
 	assert(output_data != NULL);
@@ -212,28 +206,26 @@ int dequeue(struct queue *pq, unsigned char *output_data, unsigned int capacity,
 	*output_quantity = 0; /* 先将出列数置0。 */
 
 	if (pq->quantity != 0) {
+		if (pq->capacity == 0)
+			return RN_INVALIDARG;
 		qty_deq = (capacity > pq->quantity) ? pq->quantity : capacity;
-
-		new_front = pq->data +
-			    (pq->front + qty_deq - pq->data) % pq->capacity;
-		if (new_front > pq->front) /* 出列后，pq->front不须循环? */
-		{
-			memcpy(output_data, pq->front, qty_deq);
-		} else /* 出列后，pq->front须循环。 */
-		{
-			unsigned int qty1, qty2;
-			qty1 = pq->data + pq->capacity - pq->front;
-			qty2 = qty_deq - qty1;
-			memcpy(output_data, pq->front, qty1);
-			memcpy(output_data + qty1, pq->data, qty2);
-		}
+		front_offset = (unsigned int)(pq->front - pq->data);
+		first = pq->capacity - front_offset;
+		if (first > qty_deq)
+			first = qty_deq;
+		memcpy(output_data, pq->data + front_offset, first);
+		memcpy(output_data + first, pq->data, qty_deq - first);
 
 		pq->quantity -= qty_deq;
 
 		if (0 == pq->quantity)
-			pq->front = pq->rear = pq->data - 1;
-		else
-			pq->front = new_front;
+			pq->front = pq->rear = NULL;
+		else {
+			unsigned int tail = pq->capacity - front_offset;
+			unsigned int next = qty_deq >= tail ?
+				qty_deq - tail : front_offset + qty_deq;
+			pq->front = pq->data + next;
+		}
 
 	} else {
 		return RO_VAINLY;

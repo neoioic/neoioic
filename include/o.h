@@ -164,8 +164,9 @@
  *       #define       RP_XXXXX            (RP_ + 1)
  */
 
-#define RN_ (R_N - 7)	     /* <其它N结果的起点> */
+#define RN_ (R_N - 8)	     /* <其它N结果的起点> */
 #define RN_LACKOID (R_N - 6) /* host_create_object，没有足够的oid供分配。 */
+#define RN_CLOSEPARTIAL (R_N - 7) /* 部分基节点已关闭；仅可重试关闭。 */
 #define RN_HASVR (R_N - 5) /* register_caller，已经有这个struct vr了。 */
 #define RN_LOST (R_N - 4)  /* enqueue/dequeue，已丢失了Byte。 */
 #define RN_UNSHARED (R_N - 3) /* open，对象是非共享的。 */
@@ -219,8 +220,8 @@
 struct queue {
 	unsigned char *data;   /* Data Room，数据空间。 */
 	unsigned int capacity; /* data的容量。 */
-	unsigned char *front;  /* 当前第一个Byte数据的地址。 */
-	unsigned char *rear;   /* 当前最后一个Byte数据的地址。 */
+	unsigned char *front;  /* 当前第一个Byte数据的地址；空队列为NULL。 */
+	unsigned char *rear;   /* 当前最后一个Byte数据的地址；空队列为NULL。 */
 	unsigned int quantity; /* 当前data内存有的Byte数量。 */
 	unsigned int lost;     /* 因data已满而丢弃的Byte数量。 */
 };
@@ -399,14 +400,14 @@ struct object {
  */
 #define ENQ_PLACE_BYTE(pQ, byte)                                   \
 	do {                                                       \
-		if ((pQ)->rear == (pQ)->data + (pQ)->capacity - 1) \
+		if ((pQ)->quantity == 0)                           \
+			(pQ)->front = (pQ)->rear = (pQ)->data;     \
+		else if ((pQ)->rear == (pQ)->data + (pQ)->capacity - 1) \
 			(pQ)->rear = (pQ)->data;                   \
 		else                                               \
 			(pQ)->rear++;                              \
 		*((pQ)->rear) = (byte);                            \
 		(pQ)->quantity++;                                  \
-		if ((pQ)->data - 1 == (pQ)->front)                 \
-			(pQ)->front = (pQ)->data;                  \
 	} while (0)
 
 /*
@@ -449,7 +450,7 @@ struct object {
 		*(pByte) = *((pQ)->front);                                 \
 		(pQ)->quantity--;                                          \
 		if (0 == (pQ)->quantity)                                   \
-			(pQ)->front = (pQ)->rear = (pQ)->data - 1;         \
+			(pQ)->front = (pQ)->rear = NULL;                   \
 		else if ((pQ)->front == ((pQ)->data + (pQ)->capacity - 1)) \
 			(pQ)->front = (pQ)->data;                          \
 		else                                                       \
@@ -864,16 +865,21 @@ static OIOIC_INLINE int vo_close(struct object *object,
 					ir = R_N;                                      \
 				if (RN(ir)) {                                          \
 					unsigned short j;                              \
+					int close_failed = 0;                          \
 					for (j = 0; j < i; j++) {                      \
 						if ((*(self->direct_bases +            \
 						       j))                             \
 							    ->ref_count ==             \
-						    self->ref_count)                   \
-							vo_close(                      \
+						    self->ref_count) {                 \
+							if (RN(vo_close(               \
 								*(self->direct_bases + \
 								  j),                  \
-								&Caller);              \
+								&Caller)))             \
+								close_failed = 1;      \
+						}                                      \
 					}                                              \
+					if (close_failed || ir == RN_CLOSEPARTIAL)     \
+						return RN_CLOSEPARTIAL;                \
 					self->ref_count--;                             \
 					return ir;                                     \
 				}                                                      \
@@ -973,7 +979,7 @@ static OIOIC_INLINE int vo_close(struct object *object,
 						     input_stream, quantity,  \
 						     caller_context);         \
 		}                                                             \
-		return ir;                                                    \
+		return self->direct_base_count > 1 ? RO__SBOOIX : ir;         \
 	} while (0)
 
 /* 宏，output接口的OBS_O_IX。 */
@@ -1069,7 +1075,7 @@ static OIOIC_INLINE int vo_close(struct object *object,
 						      output_quantity,         \
 						      caller_context);         \
 		}                                                              \
-		return ir;                                                     \
+		return self->direct_base_count > 1 ? RO__SBOOIX : ir;          \
 	} while (0)
 
 /* 宏，io_put接口的OBS_O_IX。 */
@@ -1169,7 +1175,7 @@ static OIOIC_INLINE int vo_close(struct object *object,
 						      output_quantity,         \
 						      caller_context);         \
 		}                                                              \
-		return ir;                                                     \
+		return self->direct_base_count > 1 ? RO__SBOOIX : ir;          \
 	} while (0)
 
 /* 宏，interact0接口的OBS_O_IX。 */
@@ -1254,11 +1260,11 @@ static OIOIC_INLINE int vo_close(struct object *object,
 				const struct vr *caller_context);              \
 			if (R_P == register_caller(*(self->direct_bases + i),  \
 						   caller_context))            \
-				(*(self->direct_bases + i))                    \
+				ir = (*(self->direct_bases + i))               \
 					->interact0(*(self->direct_bases + i), \
 						    action, caller_context);   \
 		}                                                              \
-		return ir;                                                     \
+		return self->direct_base_count > 1 ? RO__SBOOIX : ir;          \
 	} while (0)
 
 /* 宏，interact1接口的OBS_O_IX。 */
@@ -1360,7 +1366,7 @@ static OIOIC_INLINE int vo_close(struct object *object,
 						     output_quantity,         \
 						     caller_context);         \
 		}                                                             \
-		return ir;                                                    \
+		return self->direct_base_count > 1 ? RO__SBOOIX : ir;         \
 	} while (0)
 
 /* 宏，interact2接口的OBS_O_IX。 */
@@ -1458,7 +1464,7 @@ static OIOIC_INLINE int vo_close(struct object *object,
 						     quantity,                \
 						     caller_context);         \
 		}                                                             \
-		return ir;                                                    \
+		return self->direct_base_count > 1 ? RO__SBOOIX : ir;         \
 	} while (0)
 
 /* 宏，interact3接口的OBS_O_IX。 */
@@ -1564,14 +1570,19 @@ static OIOIC_INLINE int vo_close(struct object *object,
 						     output_quantity,         \
 						     caller_context);         \
 		}                                                             \
-		return ir;                                                    \
+		return self->direct_base_count > 1 ? RO__SBOOIX : ir;         \
 	} while (0)
 
-/* 宏，close接口的OBS_O_IX_。 */
+/*
+ * 宏，close接口的OBS_O_IX_。
+ * RN_CLOSEPARTIAL表示基节点已部分关闭，保留自身引用供重试清理，非状态回滚。
+ * 返回此结果后不得继续业务访问或打开，只能排除失败原因后重试vo_close。
+ */
 #define OBS_OBJECT_CLOSE_                                                           \
 	do {                                                                        \
 		int ir;                                                             \
 		int fr;                                                             \
+		int closed = 0;                                                     \
 		unsigned short i;                                                   \
 		if (0 == self->ref_count)                                           \
 			return RO_NOPEN;                                            \
@@ -1580,8 +1591,11 @@ static OIOIC_INLINE int vo_close(struct object *object,
 			extern int register_caller(                                 \
 				struct object *node,                                \
 				const struct vr *caller_context);                   \
-			if ((*(self->direct_bases + i))->ref_count - 1 ==           \
-			    self->ref_count) {                                      \
+			if ((*(self->direct_bases + i))->ref_count <                \
+			    self->ref_count + 1)                                    \
+				closed = 1;                                         \
+			if ((*(self->direct_bases + i))->ref_count ==               \
+			    self->ref_count + 1) {                                  \
 				fr = register_caller(                               \
 					*(self->direct_bases + i),                  \
 					caller_context);                            \
@@ -1596,8 +1610,10 @@ static OIOIC_INLINE int vo_close(struct object *object,
 					ir = R_N;                                   \
 				if (RN(ir)) {                                       \
 					self->ref_count++;                          \
-					return ir;                                  \
+					return closed || ir == RN_CLOSEPARTIAL ?    \
+						RN_CLOSEPARTIAL : ir;               \
 				}                                                   \
+				closed = 1;                                         \
 			}                                                           \
 		}                                                                   \
 	} while (0)

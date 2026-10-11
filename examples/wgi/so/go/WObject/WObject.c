@@ -1,312 +1,245 @@
-/**
- *
- * 文 件 名：WObject.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "WObject.h"
 
+int w_object_i_open(struct object *self, const struct vr *caller_context);
+int w_object__crt_wgi_window(struct object *self,
+			     const struct vr *caller_context);
+int w_object__dtr_wgi_window(struct object *self,
+			     const struct vr *caller_context);
+int w_object__cmd_initialize(struct object *self,
+			     const struct init_wobject *piwob,
+			     const struct vr *caller_context);
 
-RESULT  WObject_I_Open(OBJECT* This, const VR* pCaller);
-RESULT  WObject__CRT_WGI_WINDOW(OBJECT* This, const VR* pCaller);
-RESULT  WObject__DTR_WGI_WINDOW(OBJECT* This, const VR* pCaller);
-RESULT  WObject__CMD_INITIALIZE(OBJECT* This, const INIT_WOBJECT* piwob, const VR* pCaller);
+/* OICC label */
 
+/* <oicc> */
+/* <ibn> VObject </ibn> */
+/* <crt> */
+/* </crt> */
+/* </oicc> */
 
-/*=====================+ OICC label +====================*/
+/* Interface */
 
-/*<oicc>*/
-/*<ibn> VObject </ibn>*/
-/*<crt>*/
-/*</crt>*/
-/*</oicc>*/
-
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：WObject_Open
-*/
-static  RESULT  WObject_Open(OBJECT* This, const VR* pCaller)
+static int w_object_open(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
-	
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
+
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return WObject_I_Open(This, &caller);
+	return w_object_i_open(self, &caller);
 }
 
-/**
-*
-* 名称：WObject_Input
-*/
-static  RESULT  WObject_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int w_object_input(struct object *self, unsigned char *input_stream,
+			  unsigned int quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：WObject_Output
-*/
-static  RESULT  WObject_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_object_output(struct object *self, unsigned char *output_stream,
+			   unsigned int capacity, unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：WObject_IOput
-*/
-static  RESULT  WObject_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_object_io_put(struct object *self, unsigned char *input_stream,
+			   unsigned int quantity, unsigned char *output_stream,
+			   unsigned int capacity, unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：WObject_Interact0
-*/
-static  RESULT  WObject_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int w_object_interact0(struct object *self, unsigned int action,
+			      const struct vr *caller_context)
 {
-	VR                  caller;
-	
-    caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	struct vr caller;
 
-	switch(Act)
-	{
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
+
+	switch (action) {
 	case CRT_WGI_WINDOW:
-		return WObject__CRT_WGI_WINDOW(This, &caller);
+		return w_object__crt_wgi_window(self, &caller);
 	case DTR_WGI_WINDOW:
-		return WObject__DTR_WGI_WINDOW(This, &caller);
+		return w_object__dtr_wgi_window(self, &caller);
 	default:
 		break;
 	}
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：WObject_Interact1
-*/
-static  RESULT  WObject_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_object_interact1(struct object *self, unsigned int action,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：WObject_Interact2
-*/
-static  RESULT  WObject_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int w_object_interact2(struct object *self, unsigned int action,
+			      unsigned char *input_stream,
+			      unsigned int quantity,
+			      const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
-	switch(Act)
-	{
+	switch (action) {
 	case CMD_INITIALIZE:
-		assert(sizeof(INIT_WOBJECT) == Qty);
-		return WObject__CMD_INITIALIZE(This, (INIT_WOBJECT*)IStrm, &caller);
+		assert(sizeof(struct init_wobject) == quantity);
+		return w_object__cmd_initialize(
+			self, (struct init_wobject *)input_stream, &caller);
 	default:
 		break;
 	}
 
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：WObject_Interact3
-*/
-static  RESULT  WObject_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_object_interact3(struct object *self, unsigned int action,
+			      unsigned char *input_stream,
+			      unsigned int quantity,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：WObject_Close
-*/
-static  RESULT  WObject_Close(OBJECT* This, const VR* pCaller)
+static int w_object_close(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-
-	if(0 == This->RefCnt)
+	if (0 == self->ref_count)
 		return RP_RCZERO;
-
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_WObject
-*/
-void  TOG_WObject(OBJECT* pObj)
+void tog_w_object(struct object *object)
 {
-	pObj->Open = WObject_Open;
-	pObj->Input = WObject_Input;
-	pObj->Output = WObject_Output;
-	pObj->IOput = WObject_IOput;
-	pObj->Interact0 = WObject_Interact0;
-	pObj->Interact1 = WObject_Interact1;
-	pObj->Interact2 = WObject_Interact2;
-	pObj->Interact3 = WObject_Interact3;
-	pObj->Close = WObject_Close;
+	object->open = w_object_open;
+	object->input = w_object_input;
+	object->output = w_object_output;
+	object->io_put = w_object_io_put;
+	object->interact0 = w_object_interact0;
+	object->interact1 = w_object_interact1;
+	object->interact2 = w_object_interact2;
+	object->interact3 = w_object_interact3;
+	object->close = w_object_close;
 }
 
-/*====================+ Function(s) +====================*/
-/* ... */
+/* Function(s) */
 
-/*=======================================================*/
-
-/**
-*
-* NAME: WObject_I_Open
-*/
-RESULT  WObject_I_Open(OBJECT* This, const VR* pCaller)
+int w_object_i_open(struct object *self, const struct vr *caller_context)
 {
-	EM_WOBJECT*      pem = (EM_WOBJECT*)This->pEM;
-	
-	if(1 == This->RefCnt)
-	{
-		pem->pOIOIC = GetBN(This, MSN_OIOIC);
-		pem->pVObject = GetBN(This, MSN_VOBJECT);
+	struct em_wobject *members = (struct em_wobject *)self->members;
+
+	if (1 == self->ref_count) {
+		members->oioic_node = get_base_node(self, MSN_OIOIC);
+		members->visual_node = get_base_node(self, MSN_VOBJECT);
 
 		return RP_RCONE;
 	}
-	
+
 	return R_P;
 }
 
-/**
-*
-* NAME: WObject__CRT_WGI_WINDOW
-*/
-RESULT  WObject__CRT_WGI_WINDOW(OBJECT* This, const VR* pCaller)
+int w_object__crt_wgi_window(struct object *self,
+			     const struct vr *caller_context)
 {
-	EM_WOBJECT*         pem = (EM_WOBJECT*)This->pEM;
-	EM_VOBJECT*         pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	EM_WOBJECT*         pem_wob_sup = NULL;
-	HWND                hWndParent;
-	
-	
-	if(pem->hWnd != NULL)
+	struct em_wobject *members = (struct em_wobject *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	struct em_wobject *pem_wob_sup = NULL;
+	HWND hWndParent;
+
+	if (members->window_handle != NULL)
 		return RO_VAINLY;
 
-	if(pem_vob->pSuperior != NULL)
-		pem_wob_sup = (EM_WOBJECT*)GetEMofBN(pem_vob->pSuperior, MSN_WOBJECT);
+	if (pem_vob->p_superior != NULL)
+		pem_wob_sup = (struct em_wobject *)get_base_members(
+			pem_vob->p_superior, MSN_WOBJECT);
 
-	hWndParent = (pem_wob_sup != NULL) ? pem_wob_sup->hWnd : NULL;
-	
-	pem->hWnd = CreateWindowEx(WS_EX_APPWINDOW, pem->pClassName, pem->pWindowName, WS_POPUP | WS_VISIBLE, 
-		pem_vob->rsc.rcouter.left, pem_vob->rsc.rcouter.top, 
-		pem_vob->rsc.rcouter.right - pem_vob->rsc.rcouter.left, 
-		pem_vob->rsc.rcouter.bottom - pem_vob->rsc.rcouter.top, 
-		hWndParent, NULL, pem->hInstance, NULL);
-	
-	if(NULL == pem->hWnd)
+	hWndParent = (pem_wob_sup != NULL) ? pem_wob_sup->window_handle : NULL;
+
+	members->window_handle = CreateWindowEx(
+		WS_EX_APPWINDOW, members->p_class_name, members->p_window_name,
+		WS_POPUP | WS_VISIBLE, pem_vob->rsc.rcouter.left,
+		pem_vob->rsc.rcouter.top,
+		pem_vob->rsc.rcouter.right - pem_vob->rsc.rcouter.left,
+		pem_vob->rsc.rcouter.bottom - pem_vob->rsc.rcouter.top,
+		hWndParent, NULL, members->instance, NULL);
+
+	if (NULL == members->window_handle)
 		return R_N;
 
-	pem_vob->pWndHandle = &pem->hWnd;
-	SetWindowLongPtr(pem->hWnd, GWLP_USERDATA, (LONG_PTR)This->po_AND);
+	pem_vob->p_wnd_handle = &members->window_handle;
+	SetWindowLongPtr(members->window_handle, GWLP_USERDATA,
+			 (LONG_PTR)self->nodes);
 
 	return R_P;
-
 }
 
-/**
-*
-* NAME: WObject__DTR_WGI_WINDOW
-*/
-RESULT  WObject__DTR_WGI_WINDOW(OBJECT* This, const VR* pCaller)
+int w_object__dtr_wgi_window(struct object *self,
+			     const struct vr *caller_context)
 {
-	EM_WOBJECT*         pem = (EM_WOBJECT*)This->pEM;
-	
-	if(NULL == pem->hWnd)
+	struct em_wobject *members = (struct em_wobject *)self->members;
+
+	if (NULL == members->window_handle)
 		return RO_VAINLY;
 
-	if(!DestroyWindow(pem->hWnd))
+	if (!DestroyWindow(members->window_handle))
 		return R_N;
 
-	pem->hWnd = NULL;
+	members->window_handle = NULL;
 	return R_P;
 }
 
-/**
-*
-* NAME: WObject__CMD_INITIALIZE
-*/
-RESULT  WObject__CMD_INITIALIZE(OBJECT* This, const INIT_WOBJECT* piwob, const VR* pCaller)
+int w_object__cmd_initialize(struct object *self,
+			     const struct init_wobject *piwob,
+			     const struct vr *caller_context)
 {
-	EM_WOBJECT*      pem = (EM_WOBJECT*)This->pEM;
-	
-	pem->hInstance = piwob->hInstance;
-	pem->pClassName = piwob->pClassName;
-	pem->pWindowName = piwob->pWindowName;
-	
+	struct em_wobject *members = (struct em_wobject *)self->members;
+
+	members->instance = piwob->instance;
+	members->p_class_name = piwob->p_class_name;
+	members->p_window_name = piwob->p_window_name;
+
 	return R_P;
 }

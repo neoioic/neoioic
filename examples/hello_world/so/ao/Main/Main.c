@@ -1,213 +1,132 @@
-/**
- *
- * 文 件 名：Main.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include <stdio.h>
 #include "Main.h"
 
+/* OICC label */
 
-/*=====================+ OICC label +====================*/
+/* <oicc> */
+/* <ibn> OIOIC </ibn> */
+/* <crt> */
+/* </crt> */
+/* </oicc> */
 
-/*<oicc>*/
-/*<ibn> OIOIC </ibn>*/
-/*<crt>*/
-/*</crt>*/
-/*</oicc>*/
+/* Interface */
 
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：Main_Open
-*/
-static RESULT  Main_Open(OBJECT* This, const VR* pCaller)
+static int main_open(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
-
-
-	/* ... */
-
+	/* 在下面完成接口自己的任务。 */
 
 	return R_P;
 }
 
-/**
-*
-* 名称：Main_Input
-*/
-static RESULT  Main_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int main_input(struct object *self, unsigned char *input_stream,
+		      unsigned int quantity, const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：Main_Output
-*/
-static RESULT  Main_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int main_output(struct object *self, unsigned char *output_stream,
+		       unsigned int capacity, unsigned int *output_quantity,
+		       const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：Main_IOput
-*/
-static RESULT  Main_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int main_io_put(struct object *self, unsigned char *input_stream,
+		       unsigned int quantity, unsigned char *output_stream,
+		       unsigned int capacity, unsigned int *output_quantity,
+		       const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：Main_Interact0
-*/
-static RESULT  Main_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int main_interact0(struct object *self, unsigned int action,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：Main_Interact1
-*/
-static RESULT  Main_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int main_interact1(struct object *self, unsigned int action,
+			  unsigned char *output_stream, unsigned int capacity,
+			  unsigned int *output_quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：Main_Interact2
-*/
-static RESULT  Main_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int main_interact2(struct object *self, unsigned int action,
+			  unsigned char *input_stream, unsigned int quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：Main_Interact3
-*/
-static RESULT  Main_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int main_interact3(struct object *self, unsigned int action,
+			  unsigned char *input_stream, unsigned int quantity,
+			  unsigned char *output_stream, unsigned int capacity,
+			  unsigned int *output_quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：Main_Close
-*/
-static RESULT  Main_Close(OBJECT* This, const VR* pCaller)
+static int main_close(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
-
-
-	/* ... */
-
+	/* 在下面完成接口自己的任务。 */
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_Main
-*/
-void  TOG_Main(OBJECT* pObj)
+void tog_main(struct object *object)
 {
-	pObj->Open = Main_Open;
-	pObj->Input = Main_Input;
-	pObj->Output = Main_Output;
-	pObj->IOput = Main_IOput;
-	pObj->Interact0 = Main_Interact0;
-	pObj->Interact1 = Main_Interact1;
-	pObj->Interact2 = Main_Interact2;
-	pObj->Interact3 = Main_Interact3;
-	pObj->Close = Main_Close;
+	object->open = main_open;
+	object->input = main_input;
+	object->output = main_output;
+	object->io_put = main_io_put;
+	object->interact0 = main_interact0;
+	object->interact1 = main_interact1;
+	object->interact2 = main_interact2;
+	object->interact3 = main_interact3;
+	object->close = main_close;
 }
 
+/* main */
 
-/*=======================+ Main +========================*/
-
-/**
-*
-* 名称：Main
-* 描述：主体函数。
-*/
-SI32  Main(SI32 argc, SI8 **argv)
+/* 主体函数。 */
+int main(int argc, char **argv)
 {
 	printf("Hello world!\n");
 	return 0;
 }
 
+/* IRF(s) */
 
-/*=======================+ IRF(s) +======================*/
-/* ... */
-
-/*====================+ Function(s) +====================*/
-/* ... */
-
+/* Function(s) */

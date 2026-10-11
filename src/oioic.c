@@ -1,272 +1,242 @@
-/**
- *
- * 文 件 名：oioic.c
- *
- * 描    述：OIOIC 节点的 .c 文件。
- *
+/*
+ * OIOIC 节点的 .c 文件。
  * 创 建 者：赵平智   <bruce.zhao.zpz@gmail.com>
- *
- * 创建日期：20050310
- *
- * 版    本：1.0.18
- *
- * 版权(C)2005-2011 赵平智。保留所有权利。　　　
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>              <修改者>
- *   <修改内容...>
- *
- **/
+ * 版权(C)2005-2011 赵平智。保留所有权利。
+ */
 
 #include <stdlib.h>
-#include <string.h> 
+#include <string.h>
 #include "oioic.h"
 
+/* Interface */
 
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：OIOIC_Open
-* 描述：Open接口。
-* 参数：pCaller --- [IN] 来访者。
-*/
-static  RESULT  OIOIC_Open(OBJECT* This, const VR* pCaller)
+/*
+ * open接口。
+ * 参数：caller_context --- [IN] 来访者。
+ */
+static int oioic_open(struct object *self, const struct vr *caller_context)
 {
-	This->RefCnt++; 
+	self->ref_count++;
 	return R_P;
 }
 
-/**
-*
-* 名称：OIOIC_Input
-* 描述：Input接口。
-* 参数：IStrm --- [IN] 输入流；
-*       Qty --- [IN] 输入的Byte数量；
-*       pCaller --- [IN] 来访者。 
-*/
-static  RESULT  OIOIC_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+/*
+ * input接口。
+ * 参数：input_stream --- [IN] 输入流；
+ *       quantity --- [IN] 输入的Byte数量；
+ *       caller_context --- [IN] 来访者。
+ */
+static int oioic_input(struct object *self, unsigned char *input_stream,
+		       unsigned int quantity, const struct vr *caller_context)
 {
 	return RO_SBOOIX;
 }
 
-/**
-*
-* 名称：OIOIC_Output
-* 描述：Output接口。
-* 参数：OStrm --- [OUT] 输出流的流向；
-*       Cty --- [IN] OStrm所指存储空间的容量；
-*       pQty --- [OUT] 指向实际输出的Byte数量；
-*       pCaller --- [IN] 来访者。
-*/
-static  RESULT  OIOIC_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
-{	
-   	return RO_SBOOIX;
-}
-
-/**
-*
-* 名称：OIOIC_IOput
-* 描述：IOput接口。
-* 参数：IStrm --- [IN] 输入流；
-*       Qty --- [IN] 输入的Byte数量；
-*       OStrm --- [OUT] 输出流的流向；
-*       Cty --- [IN] OStrm所指存储空间的容量；
-*       pQty --- [OUT] 指向实际输出的Byte数量；
-*       pCaller --- [IN] 来访者。
-*/
-static  RESULT  OIOIC_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+/*
+ * output接口。
+ * 参数：output_stream --- [OUT] 输出流的流向；
+ *       capacity --- [IN] output_stream所指存储空间的容量；
+ *       output_quantity --- [OUT] 指向实际输出的Byte数量；
+ *       caller_context --- [IN] 来访者。
+ */
+static int oioic_output(struct object *self, unsigned char *output_stream,
+			unsigned int capacity, unsigned int *output_quantity,
+			const struct vr *caller_context)
 {
 	return RO_SBOOIX;
 }
 
-/**
-*
-* 名称：OIOIC_Interact0
-* 描述：Interact0接口。
-* 参数：Act --- [IN] 交互行为；
-*       pCaller --- [IN] 来访者。
-*/
-static  RESULT  OIOIC_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+/*
+ * io_put接口。
+ * 参数：input_stream --- [IN] 输入流；
+ *       quantity --- [IN] 输入的Byte数量；
+ *       output_stream --- [OUT] 输出流的流向；
+ *       capacity --- [IN] output_stream所指存储空间的容量；
+ *       output_quantity --- [OUT] 指向实际输出的Byte数量；
+ *       caller_context --- [IN] 来访者。
+ */
+static int oioic_io_put(struct object *self, unsigned char *input_stream,
+			unsigned int quantity, unsigned char *output_stream,
+			unsigned int capacity, unsigned int *output_quantity,
+			const struct vr *caller_context)
 {
-	EM_OIOIC*  pem = (EM_OIOIC*)This->pEM;
+	return RO_SBOOIX;
+}
 
-	switch( Act )
-	{
-		case ASK_SHARED: /* 问共享么。*/
-			if(pem->mds & MOD_SHARED) 
-				return R_N;
-			return R_P;
-		case SET_SHARED: /* 设置共享。*/
-			pem->mds &= ~MOD_SHARED;
-			return R_P;
-		case SET_UNSHARED: /* 设置非共享。*/
-			pem->mds |= MOD_SHARED;
-			return R_P;
-		case SET_BLOCKI: /* 设置阻断输入。*/
-			pem->mds &= ~MOD_BLOCKI;
-			return R_P;
-		case SET_UNBLOCKI: /* 设置非阻断输入。*/
-			pem->mds |= MOD_BLOCKI;
-			return R_P;
-		case SET_BLOCKO: /* 设置阻断输出。*/
-			pem->mds &= ~MOD_BLOCKO;
-			return R_P;
-		case SET_UNBLOCKO: /* 设置非阻断输出。*/
-			pem->mds |= MOD_BLOCKO;
-			return R_P;
-		case CMD_RESET: /* 重置。*/
-			pem->IQ.Front = pem->IQ.Rear = pem->IQ.Dtrm - 1;
-			pem->IQ.Qty = pem->IQ.Lost = 0;
-			pem->OQ.Front = pem->OQ.Rear = pem->OQ.Dtrm - 1;
-			pem->OQ.Qty = pem->OQ.Lost = 0;
-			return R_P;
-		default:
-			break;					
+/*
+ * interact0接口。
+ * 参数：action --- [IN] 交互行为；
+ *       caller_context --- [IN] 来访者。
+ */
+static int oioic_interact0(struct object *self, unsigned int action,
+			   const struct vr *caller_context)
+{
+	struct em_oioic *members = (struct em_oioic *)self->members;
+
+	switch (action) {
+	case ASK_SHARED: /* 问共享么。 */
+		if (members->mds & MOD_SHARED)
+			return R_N;
+		return R_P;
+	case SET_SHARED: /* 设置共享。 */
+		members->mds &= ~MOD_SHARED;
+		return R_P;
+	case SET_UNSHARED: /* 设置非共享。 */
+		members->mds |= MOD_SHARED;
+		return R_P;
+	case SET_BLOCKI: /* 设置阻断输入。 */
+		members->mds &= ~MOD_BLOCKI;
+		return R_P;
+	case SET_UNBLOCKI: /* 设置非阻断输入。 */
+		members->mds |= MOD_BLOCKI;
+		return R_P;
+	case SET_BLOCKO: /* 设置阻断输出。 */
+		members->mds &= ~MOD_BLOCKO;
+		return R_P;
+	case SET_UNBLOCKO: /* 设置非阻断输出。 */
+		members->mds |= MOD_BLOCKO;
+		return R_P;
+	case CMD_RESET: /* 重置。 */
+		members->iq.front = members->iq.rear = members->iq.data - 1;
+		members->iq.quantity = members->iq.lost = 0;
+		members->oq.front = members->oq.rear = members->oq.data - 1;
+		members->oq.quantity = members->oq.lost = 0;
+		return R_P;
+	default:
+		break;
 	}
 
-	return RO_SBOOIX;			
+	return RO_SBOOIX;
 }
 
-/**
-*
-* 名称：OIOIC_Interact1
-* 描述：Interact1接口。
-* 参数：Act --- [IN] 交互行为；
-*       OStrm --- [OUT] 输出流的流向；
-*       Cty --- [IN] OStrm所指存储空间的容量；
-*       pQty --- [OUT] 指向实际输出的Byte数量；
-*       pCaller --- [IN] 来访者。
-*/
-static  RESULT  OIOIC_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+/*
+ * interact1接口。
+ * 参数：action --- [IN] 交互行为；
+ *       output_stream --- [OUT] 输出流的流向；
+ *       capacity --- [IN] output_stream所指存储空间的容量；
+ *       output_quantity --- [OUT] 指向实际输出的Byte数量；
+ *       caller_context --- [IN] 来访者。
+ */
+static int oioic_interact1(struct object *self, unsigned int action,
+			   unsigned char *output_stream, unsigned int capacity,
+			   unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
-	EM_OIOIC*   pem = (EM_OIOIC*)(This->pEM);
+	struct em_oioic *members = (struct em_oioic *)(self->members);
 
-	switch( Act )
-	{
-		case GET_IQCTY: /* 获取IQ容量。*/
-			assert( Cty >= sizeof(BYTKTY) );
-			*((BYTKTY*)OStrm) = pem->IQ.Cty;
-			*pQty = sizeof(BYTKTY); 
-			return R_P;
-		case GET_OQCTY: /* 获取OQ容量。*/
-			assert( Cty >= sizeof(BYTKTY) );
-			*((BYTKTY*)OStrm) = pem->OQ.Cty;
-			*pQty = sizeof(BYTKTY); 
-			return R_P;
-		default:
-			break;						
+	switch (action) {
+	case GET_IQCTY: /* 获取iq容量。 */
+		assert(capacity >= sizeof(unsigned int));
+		*((unsigned int *)output_stream) = members->iq.capacity;
+		*output_quantity = sizeof(unsigned int);
+		return R_P;
+	case GET_OQCTY: /* 获取oq容量。 */
+		assert(capacity >= sizeof(unsigned int));
+		*((unsigned int *)output_stream) = members->oq.capacity;
+		*output_quantity = sizeof(unsigned int);
+		return R_P;
+	default:
+		break;
 	}
-	
+
 	return RO_SBOOIX;
 }
 
-/**
-*
-* 名称：OIOIC_Interact2
-* 描述：Interact2接口。
-* 参数：Act --- [IN] 交互行为；
-*       IStrm --- [IN] 输入流；
-*       Qty --- [IN] 输入的Byte数量；
-*       pCaller --- [IN] 来访者。
-*/
-static  RESULT  OIOIC_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+/*
+ * interact2接口。
+ * 参数：action --- [IN] 交互行为；
+ *       input_stream --- [IN] 输入流；
+ *       quantity --- [IN] 输入的Byte数量；
+ *       caller_context --- [IN] 来访者。
+ */
+static int oioic_interact2(struct object *self, unsigned int action,
+			   unsigned char *input_stream, unsigned int quantity,
+			   const struct vr *caller_context)
 {
-	EM_OIOIC*   pem = (EM_OIOIC*)(This->pEM);
+	struct em_oioic *members = (struct em_oioic *)(self->members);
 
-	switch( Act )
-	{
-		case SET_IQCTY: /* 设置IQ容量。*/
-			assert( sizeof(BYTKTY) == Qty );
-			if(pem->IQ.Dtrm != NULL)
-				free(pem->IQ.Dtrm); 
-			pem->IQ.Dtrm = (BYTE*)calloc(*((BYTKTY*)IStrm), 1);
-			if( pem->IQ.Dtrm != NULL )
-			{
-				pem->IQ.Front = pem->IQ.Rear = pem->IQ.Dtrm - 1;
-				pem->IQ.Cty = *((BYTKTY*)IStrm);
-				pem->IQ.Qty = pem->IQ.Lost = 0;
-				return R_P;
-			}else 
-			{ 
-				return R_N;
-			}
-		case SET_OQCTY: /* 设置OQ容量。*/
-			assert( sizeof(BYTKTY) == Qty );
-			if(pem->OQ.Dtrm != NULL)
-				free(pem->OQ.Dtrm); 
-			pem->OQ.Dtrm = (BYTE*)calloc(*((BYTKTY*)IStrm), 1);
-			if( pem->OQ.Dtrm != NULL ) 
-			{
-				pem->OQ.Front = pem->OQ.Rear = pem->OQ.Dtrm - 1;
-				pem->OQ.Cty = *((BYTKTY*)IStrm);
-				pem->OQ.Qty = pem->OQ.Lost = 0;
-				return R_P; 
-			}else 
-			{ 
-				return R_N; 
-			}
-		default:
-			break;						
+	switch (action) {
+	case SET_IQCTY: /* 设置iq容量。 */
+		assert(sizeof(unsigned int) == quantity);
+		if (members->iq.data != NULL)
+			free(members->iq.data);
+		members->iq.data = (unsigned char *)calloc(
+			*((unsigned int *)input_stream), 1);
+		if (members->iq.data != NULL) {
+			members->iq.front = members->iq.rear =
+				members->iq.data - 1;
+			members->iq.capacity = *((unsigned int *)input_stream);
+			members->iq.quantity = members->iq.lost = 0;
+			return R_P;
+		} else {
+			return R_N;
+		}
+	case SET_OQCTY: /* 设置oq容量。 */
+		assert(sizeof(unsigned int) == quantity);
+		if (members->oq.data != NULL)
+			free(members->oq.data);
+		members->oq.data = (unsigned char *)calloc(
+			*((unsigned int *)input_stream), 1);
+		if (members->oq.data != NULL) {
+			members->oq.front = members->oq.rear =
+				members->oq.data - 1;
+			members->oq.capacity = *((unsigned int *)input_stream);
+			members->oq.quantity = members->oq.lost = 0;
+			return R_P;
+		} else {
+			return R_N;
+		}
+	default:
+		break;
 	}
-	
+
 	return RO_SBOOIX;
 }
 
-/**
-*
-* 名称：OIOIC_Interact3
-* 描述：Interact3接口。
-* 参数：Act --- [IN] 交互行为；
-*       IStrm --- [IN] 输入流；
-*       Qty --- [IN] 输入的Byte数量；
-*       OStrm --- [OUT] 输出流的流向；
-*       Cty --- [IN] OStrm所指存储空间的容量；
-*       pQty --- [OUT] 指向实际输出的Byte数量；
-*       pCaller --- [IN] 来访者。
-*/
-static  RESULT  OIOIC_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
-{	
-	return RO_SBOOIX;
-}
-
-/**
-*
-* 名称：OIOIC_Close
-* 描述：Close接口。
-* 参数：pCaller --- [IN] 来访者。
-*/
-static  RESULT  OIOIC_Close(OBJECT* This, const VR* pCaller)
+/*
+ * interact3接口。
+ * 参数：action --- [IN] 交互行为；
+ *       input_stream --- [IN] 输入流；
+ *       quantity --- [IN] 输入的Byte数量；
+ *       output_stream --- [OUT] 输出流的流向；
+ *       capacity --- [IN] output_stream所指存储空间的容量；
+ *       output_quantity --- [OUT] 指向实际输出的Byte数量；
+ *       caller_context --- [IN] 来访者。
+ */
+static int oioic_interact3(struct object *self, unsigned int action,
+			   unsigned char *input_stream, unsigned int quantity,
+			   unsigned char *output_stream, unsigned int capacity,
+			   unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
-	This->RefCnt--; 
+	return RO_SBOOIX;
+}
+
+/*
+ * close接口。
+ * 参数：caller_context --- [IN] 来访者。
+ */
+static int oioic_close(struct object *self, const struct vr *caller_context)
+{
+	self->ref_count--;
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_OIOIC
-*/
-void  TOG_OIOIC(OBJECT* pObj)
+void tog_oioic(struct object *object)
 {
-	pObj->Open = OIOIC_Open;
-	pObj->Input = OIOIC_Input;
-	pObj->Output = OIOIC_Output;
-	pObj->IOput = OIOIC_IOput;
-	pObj->Interact0 = OIOIC_Interact0;
-	pObj->Interact1 = OIOIC_Interact1;
-	pObj->Interact2 = OIOIC_Interact2;
-	pObj->Interact3 = OIOIC_Interact3;
-	pObj->Close = OIOIC_Close;
+	object->open = oioic_open;
+	object->input = oioic_input;
+	object->output = oioic_output;
+	object->io_put = oioic_io_put;
+	object->interact0 = oioic_interact0;
+	object->interact1 = oioic_interact1;
+	object->interact2 = oioic_interact2;
+	object->interact3 = oioic_interact3;
+	object->close = oioic_close;
 }
 
-/*=======================+ IRF(s) +======================*/
-/* ... */
+/* IRF(s) */
 
-/*====================+ Function(s) +====================*/
-/* ... */
+/* Function(s) */

@@ -1,22 +1,4 @@
-/**
- *
- * 文 件 名：Main.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include <wchar.h>
 #include "Main.h"
@@ -26,271 +8,215 @@
 
 #define _CRTDBG_MAP_ALLOC
 
+extern struct object *g_po_main_wnd;
+extern void load_bitmaps();
+extern void unload_bitmaps();
 
+/* Global Variables: */
+const TCHAR g_sz_dialog_class[] = TEXT("Dialog"); /* main window class name. */
+const TCHAR g_sz_dialog_name[] = TEXT("Dialog");  /* main window name. */
+HINSTANCE g_h_instance = NULL;
 
-extern  OBJECT*   g_poMainWnd;
-extern  void  LoadBitmaps();
-extern  void  UnloadBitmaps();
+/* OICC label */
 
-// Global Variables:
-const  TCHAR   g_szDialogClass[] = TEXT("Dialog"); // main window class name.
-const  TCHAR   g_szDialogName[] = TEXT("Dialog"); // main window name.
-HINSTANCE      g_hInstance = NULL;
+/* <oicc> */
+/* <ibn> OIOIC </ibn> */
+/* <crt> */
+/* </crt> */
+/* </oicc> */
 
-/*=====================+ OICC label +====================*/
+/* Interface */
 
-/*<oicc>*/
-/*<ibn> OIOIC </ibn>*/
-/*<crt>*/
-/*</crt>*/
-/*</oicc>*/
-
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：Main_Open
-*/
-static  RESULT  Main_Open(OBJECT* This, const VR* pCaller)
+static int main_open(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-
-	if(1 == This->RefCnt)
+	if (1 == self->ref_count)
 		return RP_RCONE;
-
 
 	return R_P;
 }
 
-/**
-*
-* 名称：Main_Input
-*/
-static  RESULT  Main_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int main_input(struct object *self, unsigned char *input_stream,
+		      unsigned int quantity, const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：Main_Output
-*/
-static  RESULT  Main_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int main_output(struct object *self, unsigned char *output_stream,
+		       unsigned int capacity, unsigned int *output_quantity,
+		       const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：Main_IOput
-*/
-static  RESULT  Main_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int main_io_put(struct object *self, unsigned char *input_stream,
+		       unsigned int quantity, unsigned char *output_stream,
+		       unsigned int capacity, unsigned int *output_quantity,
+		       const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：Main_Interact0
-*/
-static  RESULT  Main_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int main_interact0(struct object *self, unsigned int action,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：Main_Interact1
-*/
-static  RESULT  Main_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int main_interact1(struct object *self, unsigned int action,
+			  unsigned char *output_stream, unsigned int capacity,
+			  unsigned int *output_quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：Main_Interact2
-*/
-static  RESULT  Main_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int main_interact2(struct object *self, unsigned int action,
+			  unsigned char *input_stream, unsigned int quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：Main_Interact3
-*/
-static  RESULT  Main_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int main_interact3(struct object *self, unsigned int action,
+			  unsigned char *input_stream, unsigned int quantity,
+			  unsigned char *output_stream, unsigned int capacity,
+			  unsigned int *output_quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：Main_Close
-*/
-static  RESULT  Main_Close(OBJECT* This, const VR* pCaller)
+static int main_close(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-
-	if(0 == This->RefCnt)
+	if (0 == self->ref_count)
 		return RP_RCZERO;
-
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_Main
-*/
-void  TOG_Main(OBJECT* pObj)
+void tog_main(struct object *object)
 {
-	pObj->Open = Main_Open;
-	pObj->Input = Main_Input;
-	pObj->Output = Main_Output;
-	pObj->IOput = Main_IOput;
-	pObj->Interact0 = Main_Interact0;
-	pObj->Interact1 = Main_Interact1;
-	pObj->Interact2 = Main_Interact2;
-	pObj->Interact3 = Main_Interact3;
-	pObj->Close = Main_Close;
+	object->open = main_open;
+	object->input = main_input;
+	object->output = main_output;
+	object->io_put = main_io_put;
+	object->interact0 = main_interact0;
+	object->interact1 = main_interact1;
+	object->interact2 = main_interact2;
+	object->interact3 = main_interact3;
+	object->close = main_close;
 }
 
+/* main */
 
-/*=======================+ Main +========================*/
-
-
-/**
-*
-* 名称：WinMain
-* 描述：主体函数。
-*/
-int APIENTRY WinMain(HINSTANCE hInstance,
-                     HINSTANCE hPrevInstance,
-                     LPSTR     lpCmdLine,
-                     int       nCmdShow)
+/* 主体函数。 */
+int APIENTRY WinMain(HINSTANCE instance, HINSTANCE h_prev_instance,
+		     LPSTR lp_cmd_line, int show_command)
 {
-	VR		             caller = {OID_MAIN, OID_WGIDEMO};
-	HWND                 hWnd;
-	MSG                  msg = {0};
-	int                  exitCode = 0;
-	OBJECT*              pObject;
-	INIT_VOBJECT         ivob;
-	INIT_WOBJECT         iwob;
-	HCURSOR              hCursor;
-	RESULT               r;
-	BITMAP               bm;
-	HBITMAP              hBmpNormal, hBmpFocusOver, hBmpFocusOn, hBmpActive;  // Dialog's bitmaps
-	TCHAR                szFilePath[MAX_PATH+1];
-	TCHAR*               p;
+	struct vr caller = { OID_MAIN, OID_WGIDEMO };
+	HWND window_handle;
+	MSG msg = { 0 };
+	int exit_code = 0;
+	struct object *object;
+	struct init_vobject ivob;
+	struct init_wobject iwob;
+	HCURSOR cursor;
+	int r;
+	BITMAP bm;
+	HBITMAP h_bmp_normal, h_bmp_focus_over, h_bmp_focus_on,
+		h_bmp_active; /* Dialog's bitmaps */
+	TCHAR sz_file_path[MAX_PATH + 1];
+	TCHAR *p;
 
-
-	hWnd = FindWindow(g_szDialogClass, g_szDialogName);
-	if(hWnd != NULL)
-	{
-		SetForegroundWindow(hWnd);
-		return  0;
+	window_handle = FindWindow(g_sz_dialog_class, g_sz_dialog_name);
+	if (window_handle != NULL) {
+		SetForegroundWindow(window_handle);
+		return 0;
 	}
 
-	g_hInstance = hInstance;
+	g_h_instance = instance;
 	if (FAILED(OleInitialize(NULL)))
 		return -1;
-				
-	hCursor = LoadCursor(NULL, IDC_ARROW);
-	SetCursor(hCursor);
 
-	GetModuleFileName(NULL, szFilePath, MAX_PATH);
-	p = wcsrchr(szFilePath, L'\\') + 1;
-	p += swprintf(p, MAX_PATH + 1 - (size_t)(p - szFilePath), TEXT("%ls"), TEXT("skins\\"));
-	
-	swprintf(p, MAX_PATH + 1 - (size_t)(p - szFilePath), TEXT("%ls"), TEXT("Dialog_Normal.jpg"));
-	hBmpNormal = LoadPictureFile(szFilePath);
-	assert(hBmpNormal);
+	cursor = LoadCursor(NULL, IDC_ARROW);
+	SetCursor(cursor);
 
-	swprintf(p, MAX_PATH + 1 - (size_t)(p - szFilePath), TEXT("%ls"), TEXT("Dialog_FocusOver.jpg"));
-	hBmpFocusOver = LoadPictureFile(szFilePath);
-	assert(hBmpFocusOver);
+	GetModuleFileName(NULL, sz_file_path, MAX_PATH);
+	p = wcsrchr(sz_file_path, L'\\') + 1;
+	p += swprintf(p, MAX_PATH + 1 - (size_t)(p - sz_file_path), TEXT("%ls"),
+		      TEXT("skins\\"));
 
-	swprintf(p, MAX_PATH + 1 - (size_t)(p - szFilePath), TEXT("%ls"), TEXT("Dialog_FocusOn.jpg"));
-	hBmpFocusOn = LoadPictureFile(szFilePath);
-	assert(hBmpFocusOn);
+	swprintf(p, MAX_PATH + 1 - (size_t)(p - sz_file_path), TEXT("%ls"),
+		 TEXT("Dialog_Normal.jpg"));
+	h_bmp_normal = load_picture_file(sz_file_path);
+	assert(h_bmp_normal);
 
-	swprintf(p, MAX_PATH + 1 - (size_t)(p - szFilePath), TEXT("%ls"), TEXT("Dialog_Active.jpg"));
-	hBmpActive = LoadPictureFile(szFilePath);
-	assert(hBmpActive);
+	swprintf(p, MAX_PATH + 1 - (size_t)(p - sz_file_path), TEXT("%ls"),
+		 TEXT("Dialog_FocusOver.jpg"));
+	h_bmp_focus_over = load_picture_file(sz_file_path);
+	assert(h_bmp_focus_over);
 
-	LoadBitmaps();
+	swprintf(p, MAX_PATH + 1 - (size_t)(p - sz_file_path), TEXT("%ls"),
+		 TEXT("Dialog_FocusOn.jpg"));
+	h_bmp_focus_on = load_picture_file(sz_file_path);
+	assert(h_bmp_focus_on);
 
-    // create and open object
-	r = CreateObject(MSN_MYDIALOG, 0, 0, 1, &g_poMainWnd);
-	if(RN(r))
-	{
+	swprintf(p, MAX_PATH + 1 - (size_t)(p - sz_file_path), TEXT("%ls"),
+		 TEXT("Dialog_Active.jpg"));
+	h_bmp_active = load_picture_file(sz_file_path);
+	assert(h_bmp_active);
+
+	load_bitmaps();
+
+	/* create and open object */
+	r = create_object(MSN_MYDIALOG, 0, 0, 1, &g_po_main_wnd);
+	if (RN(r)) {
 		OleUninitialize();
 		return -1;
 	}
-    r = VO_Open(g_poMainWnd, &caller);
+	r = vo_open(g_po_main_wnd, &caller);
 	assert(RP(r));
 
-	memset(&ivob, 0, sizeof(INIT_VOBJECT));
-	memset(&iwob, 0, sizeof(INIT_WOBJECT));
+	memset(&ivob, 0, sizeof(struct init_vobject));
+	memset(&iwob, 0, sizeof(struct init_wobject));
 
-	GetObject(hBmpNormal, sizeof(bm), &bm);
+	GetObject(h_bmp_normal, sizeof(bm), &bm);
 
-	ivob.ArrHBITMAP[eVOBState_Normal] = hBmpNormal;
-	ivob.ArrHBITMAP[eVOBState_FocusOver] = hBmpFocusOver;
-	ivob.ArrHBITMAP[eVOBState_FocusOn] = hBmpFocusOn;
-	ivob.ArrHBITMAP[eVOBState_Active] = hBmpActive;
+	ivob.arr_hbitmap[VOB_STATE_NORMAL] = h_bmp_normal;
+	ivob.arr_hbitmap[VOB_STATE_FOCUS_OVER] = h_bmp_focus_over;
+	ivob.arr_hbitmap[VOB_STATE_FOCUS_ON] = h_bmp_focus_on;
+	ivob.arr_hbitmap[VOB_STATE_ACTIVE] = h_bmp_active;
 	ivob.rsc.rcouter.left = 50;
 	ivob.rsc.rcouter.top = 50;
 	ivob.rsc.rcouter.right = ivob.rsc.rcouter.left + bm.bmWidth;
@@ -301,56 +227,59 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	ivob.rsc.rcinner.bottom = bm.bmHeight - 5;
 	ivob.scenew = ivob.rsc.rcinner.right - ivob.rsc.rcinner.left;
 	ivob.sceneh = ivob.rsc.rcinner.bottom - ivob.rsc.rcinner.top;
-	ivob.state = eVOBState_Active;
+	ivob.state = VOB_STATE_ACTIVE;
 
-	iwob.hInstance = hInstance;
-	iwob.pClassName = g_szDialogClass;
-	iwob.pWindowName = g_szDialogName;
+	iwob.instance = instance;
+	iwob.p_class_name = g_sz_dialog_class;
+	iwob.p_window_name = g_sz_dialog_name;
 
-	pObject = GetBN(g_poMainWnd, MSN_VOBJECT);
-	r = VO_Interact2(pObject, CMD_INITIALIZE, (BYTE*)&ivob, sizeof(INIT_VOBJECT), &caller);
-	if(!RP(r)) goto initialization_failed;
-	pObject = GetBN(g_poMainWnd, MSN_WOBJECT);
-	r = VO_Interact2(pObject, CMD_INITIALIZE, (BYTE*)&iwob, sizeof(INIT_WOBJECT), &caller);
-	if(!RP(r)) goto initialization_failed;
-	r = VO_Interact0(g_poMainWnd, CMD_PREPARE, &caller);
-	if(!RP(r)) goto initialization_failed;
-	r = VO_Interact0(g_poMainWnd, CMD_RUN, &caller);
-	if(!RP(r)) goto initialization_failed;
+	object = get_base_node(g_po_main_wnd, MSN_VOBJECT);
+	r = vo_interact2(object, CMD_INITIALIZE, (unsigned char *)&ivob,
+			 sizeof(struct init_vobject), &caller);
+	if (!RP(r))
+		goto initialization_failed;
+	object = get_base_node(g_po_main_wnd, MSN_WOBJECT);
+	r = vo_interact2(object, CMD_INITIALIZE, (unsigned char *)&iwob,
+			 sizeof(struct init_wobject), &caller);
+	if (!RP(r))
+		goto initialization_failed;
+	r = vo_interact0(g_po_main_wnd, CMD_PREPARE, &caller);
+	if (!RP(r))
+		goto initialization_failed;
+	r = vo_interact0(g_po_main_wnd, CMD_RUN, &caller);
+	if (!RP(r))
+		goto initialization_failed;
 
-	// Main message loop:
-	while (GetMessage(&msg, NULL, 0, 0) > 0)
-	{
-		
+	/* main message loop: */
+	while (GetMessage(&msg, NULL, 0, 0) > 0) {
+
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	}
-	exitCode = (int)msg.wParam;
+	exit_code = (int)msg.wParam;
 	goto cleanup;
 
 initialization_failed:
-	fprintf(stderr, "WGI initialization failed: result=%d, Windows error=%lu\n", r, GetLastError());
-	exitCode = 1;
+	fprintf(stderr,
+		"WGI initialization failed: result=%d, Windows error=%lu\n", r,
+		GetLastError());
+	exit_code = 1;
 
 cleanup:
 
-	// close and destroy object
-	r = VO_Close(g_poMainWnd, &caller);
+	/* close and destroy object */
+	r = vo_close(g_po_main_wnd, &caller);
 	assert(RP_RCZERO == r);
-	DestroyObject(g_poMainWnd); 
+	destroy_object(g_po_main_wnd);
 
-	DeleteObject(hBmpNormal);
-	DeleteObject(hBmpFocusOver);
-	DeleteObject(hBmpFocusOn);
-	DeleteObject(hBmpActive);
-	UnloadBitmaps();
+	DeleteObject(h_bmp_normal);
+	DeleteObject(h_bmp_focus_over);
+	DeleteObject(h_bmp_focus_on);
+	DeleteObject(h_bmp_active);
+	unload_bitmaps();
 	OleUninitialize();
 
-	
-
-	return exitCode;
+	return exit_code;
 }
 
-/*====================+ Function(s) +====================*/
-/* ... */
-
+/* Function(s) */

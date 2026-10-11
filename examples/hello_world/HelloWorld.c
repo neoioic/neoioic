@@ -1,197 +1,132 @@
-/**
- *
- * 文 件 名：HelloWorld.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "HelloWorld.h"
 
+/* OICC label */
 
-/*=====================+ OICC label +====================*/
+/* <oicc> */
+/* <ibn> OIOIC </ibn> */
+/* <crt> */
+/* </crt> */
+/* </oicc> */
 
-/*<oicc>*/
-/*<ibn> OIOIC </ibn>*/
-/*<crt>*/
-/*</crt>*/
-/*</oicc>*/
+/* Interface */
 
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：HelloWorld_Open
-*/
-static RESULT  HelloWorld_Open(OBJECT* This, const VR* pCaller)
+static int hello_world_open(struct object *self,
+			    const struct vr *caller_context)
 {
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
-
-
-	/* ... */
-
+	/* 在下面完成接口自己的任务。 */
 
 	return R_P;
 }
 
-/**
-*
-* 名称：HelloWorld_Input
-*/
-static RESULT  HelloWorld_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int hello_world_input(struct object *self, unsigned char *input_stream,
+			     unsigned int quantity,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：HelloWorld_Output
-*/
-static RESULT  HelloWorld_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int hello_world_output(struct object *self, unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：HelloWorld_IOput
-*/
-static RESULT  HelloWorld_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int hello_world_io_put(struct object *self, unsigned char *input_stream,
+			      unsigned int quantity,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：HelloWorld_Interact0
-*/
-static RESULT  HelloWorld_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int hello_world_interact0(struct object *self, unsigned int action,
+				 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：HelloWorld_Interact1
-*/
-static RESULT  HelloWorld_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int hello_world_interact1(struct object *self, unsigned int action,
+				 unsigned char *output_stream,
+				 unsigned int capacity,
+				 unsigned int *output_quantity,
+				 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：HelloWorld_Interact2
-*/
-static RESULT  HelloWorld_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int hello_world_interact2(struct object *self, unsigned int action,
+				 unsigned char *input_stream,
+				 unsigned int quantity,
+				 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：HelloWorld_Interact3
-*/
-static RESULT  HelloWorld_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int hello_world_interact3(struct object *self, unsigned int action,
+				 unsigned char *input_stream,
+				 unsigned int quantity,
+				 unsigned char *output_stream,
+				 unsigned int capacity,
+				 unsigned int *output_quantity,
+				 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：HelloWorld_Close
-*/
-static RESULT  HelloWorld_Close(OBJECT* This, const VR* pCaller)
+static int hello_world_close(struct object *self,
+			     const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
-
-
-	/* ... */
-
+	/* 在下面完成接口自己的任务。 */
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_HelloWorld
-*/
-void  TOG_HelloWorld(OBJECT* pObj)
+void tog_hello_world(struct object *object)
 {
-	pObj->Open = HelloWorld_Open;
-	pObj->Input = HelloWorld_Input;
-	pObj->Output = HelloWorld_Output;
-	pObj->IOput = HelloWorld_IOput;
-	pObj->Interact0 = HelloWorld_Interact0;
-	pObj->Interact1 = HelloWorld_Interact1;
-	pObj->Interact2 = HelloWorld_Interact2;
-	pObj->Interact3 = HelloWorld_Interact3;
-	pObj->Close = HelloWorld_Close;
+	object->open = hello_world_open;
+	object->input = hello_world_input;
+	object->output = hello_world_output;
+	object->io_put = hello_world_io_put;
+	object->interact0 = hello_world_interact0;
+	object->interact1 = hello_world_interact1;
+	object->interact2 = hello_world_interact2;
+	object->interact3 = hello_world_interact3;
+	object->close = hello_world_close;
 }
 
-/*=======================+ IRF(s) +======================*/
-/* ... */
+/* IRF(s) */
 
-/*====================+ Function(s) +====================*/
-/* ... */
-
+/* Function(s) */

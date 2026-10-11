@@ -1,52 +1,12 @@
-/**
- *
- * 文 件 名：Main.h
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
 
-#ifndef __MAIN_H__
-#define __MAIN_H__
+
+#ifndef OIOIC_MAIN_H
+#define OIOIC_MAIN_H
 
 #include "../ao.h"
 
+/* INIT */
 
-#define   Main    main
+/* Extended Member */
 
-
-/*========================+ INIT +=======================*/
-
-/*
-*
-* 名称：INIT_MAIN
-*/
-/*typedef struct TAG_INIT_MAIN
-{
-}INIT_MAIN;*/
-
-
-/*==================+ Extended Member +==================*/
-
-/*
-*
-* 名称：EM_MAIN
-*/
-/*typedef struct TAG_EM_MAIN
-{
-}EM_MAIN;*/
-
-
-#endif		/* #ifndef __MAIN_H__ */
+#endif /* #ifndef OIOIC_MAIN_H */

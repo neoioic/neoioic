@@ -1,1805 +1,1742 @@
-/**
- *
- * 文 件 名：CEdit.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "CEdit.h"
 #include "../CObject/CObject.h"
 
+void tog_c_edit(struct object *object);
+int c_edit_i_open(struct object *self, const struct vr *caller_context);
+int c_edit_i_close(struct object *self, const struct vr *caller_context);
+int c_edit__cmd_prepare(struct object *self, const struct vr *caller_context);
+int c_edit__cmd_initialize(struct object *self, const struct init_cedit *piced,
+			   const struct vr *caller_context);
+int c_edit__cmd_wgi_insertcharatcp(struct object *self, const TCHAR *archar,
+				   long count, const struct vr *caller_context);
+int c_edit__msg_wgi_activate(struct object *self,
+			     const struct vr *caller_context);
+int c_edit__msg_wgi_deactivate(struct object *self,
+			       const struct vr *caller_context);
+int c_edit__msg_wgi_focusdown(struct object *self, const POINT pt,
+			      const struct vr *caller_context);
+int c_edit__cmd_wgi_move(struct object *self, const struct move *pmove,
+			 const struct vr *caller_context);
 
+static long search_ll_char_by_char(struct object *self, long i_char);
+static long search_lf_char_by_char(struct object *self, long i_char);
+static void calcu_all_character_xy_lefttop_autowrap(struct object *self,
+						    int max_length);
+static void overcb_rdc_scroll_bar(struct object *self,
+				  const struct vr *caller_context);
+static long search_char_by_point(struct object *self, long x, long y);
+static long search_text_line_by_y_coord(struct object *self, long y);
 
-void  TOG_CEdit(OBJECT* pObj);
-RESULT  CEdit_I_Open(OBJECT* This, const VR* pCaller);
-RESULT  CEdit_I_Close(OBJECT* This, const VR* pCaller);
-RESULT  CEdit__CMD_PREPARE(OBJECT* This, const VR* pCaller);
-RESULT  CEdit__CMD_INITIALIZE(OBJECT* This, const INIT_CEDIT* piced, const VR* pCaller);
-RESULT  CEdit__CMD_WGI_INSERTCHARATCP(OBJECT* This, const TCHAR* archar, long count, const VR* pCaller);
-RESULT  CEdit__MSG_WGI_ACTIVATE(OBJECT* This, const VR* pCaller);
-RESULT  CEdit__MSG_WGI_DEACTIVATE(OBJECT* This, const VR* pCaller);
-RESULT  CEdit__MSG_WGI_FOCUSDOWN(OBJECT* This, const POINT pt, const VR* pCaller);
-RESULT  CEdit__CMD_WGI_MOVE(OBJECT* This, const MOVE* pmove, const VR* pCaller);
+/* OICC label */
 
-
-static long  SearchLLCharByChar (OBJECT* This, long iChar);
-static long  SearchLFCharByChar (OBJECT* This, long iChar);
-static void  CalcuAllCharacterXY_LEFTTOP_AUTOWRAP(OBJECT* This, int maxLength);
-static void  OVERCB_RDCScrollBar(OBJECT* This, const VR* pCaller);
-static long  SearchCharByPoint (OBJECT* This, long x, long y);
-static long  SearchTextLineByYCoord(OBJECT* This, long y);
-
-
-
-
-/*=====================+ OICC label +====================*/
-
-/*<oicc>*/
-/*<ibn> CObject </ibn>*/
-/*<crt>*/
-RESULT  CRT_CEdit(OBJID* pOID, BYTKTY IQCty, BYTKTY OQCty, SI32 NumCR, OBJECT** ppObj, BYTE* pExotic)
+/* <oicc> */
+/* <ibn> CObject </ibn> */
+/* <crt> */
+int crt_c_edit(uint64_t *object_id, unsigned int input_capacity,
+	       unsigned int output_capacity, int caller_capacity,
+	       struct object **object_out, unsigned char *exotic_memory)
 {
-	extern  void  InitAIBofND(OBJECT* pND, MLDSN* pMsn, NUMIB nib);
-	extern  void  InitABNofND(OBJECT* pND, MLDSN* pMsn, NUMBN nbn);
-	extern  void  TOG_CObject(OBJECT* pObj);
-	extern  void  TOG_VObject(OBJECT* pObj);
-	extern  void  TOG_OIOIC(OBJECT* pObj);
+	extern void init_direct_bases(struct object * node,
+				      unsigned short *base_msns,
+				      unsigned short nib);
+	extern void init_base_nodes(struct object * node,
+				    unsigned short *base_msns,
+				    unsigned short nbn);
+	extern void tog_c_object(struct object * object);
+	extern void tog_v_object(struct object * object);
+	extern void tog_oioic(struct object * object);
 
+	size_t ux_nd = 4;		     /* ND数量。 */
+	size_t ux_bn = 6;		     /* 各ND的BN数量之和。 */
+	size_t ux_ib = 3;		     /* 各ND的IBN数量之和。 */
+	size_t ux_cs = caller_capacity * 10; /* 各ND的最少CS数量之和。 */
+	size_t ux_em =
+		OIOIC_ALIGNED_SIZE(struct em_cedit) +
+		OIOIC_ALIGNED_SIZE(struct em_cobject) +
+		OIOIC_ALIGNED_SIZE(struct em_vobject) +
+		OIOIC_ALIGNED_SIZE(struct em_oioic); /* 各ND的void尺寸之和。 */
 
-	size_t   ux_ND = 4; 	/* ND数量。*/
-	size_t   ux_BN = 6; 	/* 各ND的BN数量之和。*/
-	size_t   ux_IB = 3; 	/* 各ND的IBN数量之和。*/
-	size_t   ux_CS = NumCR * 10; 	/* 各ND的最少CS数量之和。*/
-	size_t   ux_EM = OIOIC_ALIGNED_SIZE(EM_CEDIT) + OIOIC_ALIGNED_SIZE(EM_COBJECT) + OIOIC_ALIGNED_SIZE(EM_VOBJECT)
-		 + OIOIC_ALIGNED_SIZE(EM_OIOIC); 	/* 各ND的EM尺寸之和。*/
+	size_t sum = ux_nd * sizeof(struct object)     /* for AND. */
+		     + ux_bn * sizeof(struct object *) /* for "bases". */
+		     + ux_ib * sizeof(struct object *) /* for "direct_bases". */
+		     + ux_cs * sizeof(struct vr) +
+		     ux_em; /* for "callers" and "members". */
 
-	size_t  sum = ux_ND * sizeof(OBJECT) 	/* for AND. */
-		 + ux_BN * sizeof(OBJECT*) 	/* for "ppo_ABN". */
-		 + ux_IB * sizeof(OBJECT*) 	/* for "ppo_AIB". */
-		 + ux_CS * sizeof(VR) + ux_EM; 	/* for "pvr_ACS" and "pEM". */
+	unsigned char *p_ic = NULL;
 
-
-	BYTE*  pIC = NULL;
-
-	if(NULL == pExotic)
-	{
-		*ppObj = NULL;
-		pIC = (BYTE*)calloc(sum, 1);
-	}else
-	{
-		pIC = pExotic;
+	if (NULL == exotic_memory) {
+		*object_out = NULL;
+		p_ic = (unsigned char *)calloc(sum, 1);
+	} else {
+		p_ic = exotic_memory;
 	}
 
+	if (p_ic != NULL) {
+		struct object *node;
+		unsigned short base_msns[3];
+		unsigned char *p = p_ic + sizeof(struct object) * ux_nd;
 
-	if( pIC != NULL )
-	{
-		OBJECT*  pND;
-		MLDSN    ArrMsn[3];
-		BYTE*    p = pIC + sizeof(OBJECT) * ux_ND;
+		/* 确定AND各元素  ** */
 
+		/* CEdit * */
+		node = (struct object *)p_ic;
+		tog_c_edit(node);
+		node->model_id = MSN_CEDIT;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/***  确定AND各元素  ***/
+		/* CObject * */
+		tog_c_object(++node);
+		node->model_id = MSN_COBJECT;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** CEdit **/
-		pND = (OBJECT*)pIC;
-		TOG_CEdit(pND);
-		pND->MSN = MSN_CEDIT;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* VObject * */
+		tog_v_object(++node);
+		node->model_id = MSN_VOBJECT;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** CObject **/
-		TOG_CObject(++pND);
-		pND->MSN = MSN_COBJECT;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* OIOIC * */
+		tog_oioic(++node);
+		node->model_id = MSN_OIOIC;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** VObject **/
-		TOG_VObject(++pND);
-		pND->MSN = MSN_VOBJECT;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* 初始化各ND  ** */
 
-		/** OIOIC **/
-		TOG_OIOIC(++pND);
-		pND->MSN = MSN_OIOIC;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
-
-
-		/***  初始化各ND  ***/
-
-		/** CEdit **/
-		pND = (OBJECT*)pIC;
+		/* CEdit * */
+		node = (struct object *)p_ic;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_COBJECT;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_COBJECT;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_COBJECT;
-		ArrMsn[1] = MSN_VOBJECT;
-		ArrMsn[2] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 3);
-		p += sizeof(OBJECT*) * 3;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_COBJECT;
+		base_msns[1] = MSN_VOBJECT;
+		base_msns[2] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 3);
+		p += sizeof(struct object *) * 3;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 1;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 1;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_CEDIT);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_cedit);
 
-		/** CObject **/
-		++pND;
+		/* CObject * */
+		++node;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_VOBJECT;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_VOBJECT;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_VOBJECT;
-		ArrMsn[1] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 2);
-		p += sizeof(OBJECT*) * 2;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_VOBJECT;
+		base_msns[1] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 2);
+		p += sizeof(struct object *) * 2;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 2;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 2;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_COBJECT);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_cobject);
 
-		/** VObject **/
-		++pND;
+		/* VObject * */
+		++node;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_OIOIC;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_OIOIC;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 3;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 3;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_VOBJECT);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_vobject);
 
-		/** OIOIC **/
-		++pND;
+		/* OIOIC * */
+		++node;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 4;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 4;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		if( IQCty > 0 )
-		{
-			/* - IQ - */
-			((EM_OIOIC*)(pND->pEM))->IQ.Dtrm = (BYTE*)calloc(IQCty, 1);
-			if( NULL == ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm)
-			{
-				/* 分配IQ的容量失败！*/
-				if(NULL == pExotic)
-					free(pIC);
+		/* - void - */
+		node->members = (void *)p;
+		if (input_capacity > 0) {
+			/* - iq - */
+			((struct em_oioic *)(node->members))->iq.data =
+				(unsigned char *)calloc(input_capacity, 1);
+			if (NULL ==
+			    ((struct em_oioic *)(node->members))->iq.data) {
+				/* 分配iq的容量失败！ */
+				if (NULL == exotic_memory)
+					free(p_ic);
 				return R_N;
 			}
-			((EM_OIOIC*)(pND->pEM))->IQ.Front = ((EM_OIOIC*)(pND->pEM))->IQ.Rear = ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm - 1;
-			((EM_OIOIC*)(pND->pEM))->IQ.Cty = IQCty;
-			((EM_OIOIC*)(pND->pEM))->IQ.Qty = ((EM_OIOIC*)(pND->pEM))->IQ.Lost = 0;
+			((struct em_oioic *)(node->members))->iq.front =
+				((struct em_oioic *)(node->members))->iq.rear =
+					((struct em_oioic *)(node->members))
+						->iq.data -
+					1;
+			((struct em_oioic *)(node->members))->iq.capacity =
+				input_capacity;
+			((struct em_oioic *)(node->members))->iq.quantity =
+				((struct em_oioic *)(node->members))->iq.lost =
+					0;
 		}
 
-		if( OQCty > 0 )
- 		{
-			/* - OQ - */
-			((EM_OIOIC*)(pND->pEM))->OQ.Dtrm = (BYTE*)calloc(OQCty, 1);
-			if(NULL == ((EM_OIOIC*)(pND->pEM))->OQ.Dtrm)
-			{
-				/* 分配OQ的容量失败！*/
-				if( ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm != NULL )
-					free(((EM_OIOIC*)(pND->pEM))->IQ.Dtrm);
-				if(NULL == pExotic)
-					free(pIC);
+		if (output_capacity > 0) {
+			/* - oq - */
+			((struct em_oioic *)(node->members))->oq.data =
+				(unsigned char *)calloc(output_capacity, 1);
+			if (NULL ==
+			    ((struct em_oioic *)(node->members))->oq.data) {
+				/* 分配oq的容量失败！ */
+				if (((struct em_oioic *)(node->members))
+					    ->iq.data != NULL)
+					free(((struct em_oioic
+						       *)(node->members))
+						     ->iq.data);
+				if (NULL == exotic_memory)
+					free(p_ic);
 				return R_N;
 			}
-			((EM_OIOIC*)(pND->pEM))->OQ.Front = ((EM_OIOIC*)(pND->pEM))->OQ.Rear = ((EM_OIOIC*)(pND->pEM))->OQ.Dtrm - 1;
-			((EM_OIOIC*)(pND->pEM))->OQ.Cty = OQCty;
-			((EM_OIOIC*)(pND->pEM))->OQ.Qty = ((EM_OIOIC*)(pND->pEM))->OQ.Lost = 0;
+			((struct em_oioic *)(node->members))->oq.front =
+				((struct em_oioic *)(node->members))->oq.rear =
+					((struct em_oioic *)(node->members))
+						->oq.data -
+					1;
+			((struct em_oioic *)(node->members))->oq.capacity =
+				output_capacity;
+			((struct em_oioic *)(node->members))->oq.quantity =
+				((struct em_oioic *)(node->members))->oq.lost =
+					0;
 		}
-		p += OIOIC_ALIGNED_SIZE(EM_OIOIC);
-	}else
-	{
+		p += OIOIC_ALIGNED_SIZE(struct em_oioic);
+	} else {
 		return R_N;
 	}
 
-
-	if(NULL == pExotic)
-		*ppObj = (OBJECT*)pIC;
-
+	if (NULL == exotic_memory)
+		*object_out = (struct object *)p_ic;
 
 	return R_P;
 }
-/*</crt>*/
-/*</oicc>*/
+/* </crt> */
+/* </oicc> */
 
-/*=====================+ Interface +=====================*/
+/* Interface */
 
-/**
-*
-* 名称：CEdit_Open
-*/
-static  RESULT  CEdit_Open(OBJECT* This, const VR* pCaller)
+static int c_edit_open(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
-
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return CEdit_I_Open(This, &caller);
+	return c_edit_i_open(self, &caller);
 }
 
-/**
-*
-* 名称：CEdit_Input
-*/
-static  RESULT  CEdit_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int c_edit_input(struct object *self, unsigned char *input_stream,
+			unsigned int quantity, const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：CEdit_Output
-*/
-static  RESULT  CEdit_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_edit_output(struct object *self, unsigned char *output_stream,
+			 unsigned int capacity, unsigned int *output_quantity,
+			 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：CEdit_IOput
-*/
-static  RESULT  CEdit_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_edit_io_put(struct object *self, unsigned char *input_stream,
+			 unsigned int quantity, unsigned char *output_stream,
+			 unsigned int capacity, unsigned int *output_quantity,
+			 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：CEdit_Interact0
-*/
-static  RESULT  CEdit_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int c_edit_interact0(struct object *self, unsigned int action,
+			    const struct vr *caller_context)
 {
-	VR   caller;
-	
-    caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	struct vr caller;
 
-	switch(Act)
-	{
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
+
+	switch (action) {
 	case CMD_PREPARE:
-		return CEdit__CMD_PREPARE(This, &caller);
+		return c_edit__cmd_prepare(self, &caller);
 	case MSG_WGI_ACTIVATE:
-		return CEdit__MSG_WGI_ACTIVATE(This, &caller);
+		return c_edit__msg_wgi_activate(self, &caller);
 	case MSG_WGI_DEACTIVATE:
-		return CEdit__MSG_WGI_DEACTIVATE(This, &caller);
+		return c_edit__msg_wgi_deactivate(self, &caller);
 	default:
 		break;
 	}
 
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：CEdit_Interact1
-*/
-static  RESULT  CEdit_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_edit_interact1(struct object *self, unsigned int action,
+			    unsigned char *output_stream, unsigned int capacity,
+			    unsigned int *output_quantity,
+			    const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：CEdit_Interact2
-*/
-static  RESULT  CEdit_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int c_edit_interact2(struct object *self, unsigned int action,
+			    unsigned char *input_stream, unsigned int quantity,
+			    const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
-	switch(Act)
-	{
+	switch (action) {
 	case CMD_INITIALIZE:
-		assert(sizeof(INIT_CEDIT) == Qty);
-		return CEdit__CMD_INITIALIZE(This, (INIT_CEDIT*)IStrm, &caller);
+		assert(sizeof(struct init_cedit) == quantity);
+		return c_edit__cmd_initialize(
+			self, (struct init_cedit *)input_stream, &caller);
 	case CMD_WGI_INSERTCHARATCP:
-		return CEdit__CMD_WGI_INSERTCHARATCP(This, (TCHAR*)IStrm, (long)(Qty/sizeof(TCHAR)), &caller);
+		return c_edit__cmd_wgi_insertcharatcp(
+			self, (TCHAR *)input_stream,
+			(long)(quantity / sizeof(TCHAR)), &caller);
 	case MSG_WGI_FOCUSDOWN:
-		assert(sizeof(POINT) == Qty);
-		return CEdit__MSG_WGI_FOCUSDOWN(This, *(POINT*)IStrm, &caller);
+		assert(sizeof(POINT) == quantity);
+		return c_edit__msg_wgi_focusdown(self, *(POINT *)input_stream,
+						 &caller);
 	case CMD_WGI_MOVE:
-		assert(sizeof(MOVE) == Qty);
-		return CEdit__CMD_WGI_MOVE(This, (MOVE*)IStrm, &caller);
+		assert(sizeof(struct move) == quantity);
+		return c_edit__cmd_wgi_move(self, (struct move *)input_stream,
+					    &caller);
 	default:
 		break;
 	}
 
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：CEdit_Interact3
-*/
-static  RESULT  CEdit_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_edit_interact3(struct object *self, unsigned int action,
+			    unsigned char *input_stream, unsigned int quantity,
+			    unsigned char *output_stream, unsigned int capacity,
+			    unsigned int *output_quantity,
+			    const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：CEdit_Close
-*/
-static  RESULT  CEdit_Close(OBJECT* This, const VR* pCaller)
+static int c_edit_close(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
-	
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return CEdit_I_Close(This, &caller);
+	return c_edit_i_close(self, &caller);
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_CEdit
-*/
-void  TOG_CEdit(OBJECT* pObj)
+void tog_c_edit(struct object *object)
 {
-	pObj->Open = CEdit_Open;
-	pObj->Input = CEdit_Input;
-	pObj->Output = CEdit_Output;
-	pObj->IOput = CEdit_IOput;
-	pObj->Interact0 = CEdit_Interact0;
-	pObj->Interact1 = CEdit_Interact1;
-	pObj->Interact2 = CEdit_Interact2;
-	pObj->Interact3 = CEdit_Interact3;
-	pObj->Close = CEdit_Close;
+	object->open = c_edit_open;
+	object->input = c_edit_input;
+	object->output = c_edit_output;
+	object->io_put = c_edit_io_put;
+	object->interact0 = c_edit_interact0;
+	object->interact1 = c_edit_interact1;
+	object->interact2 = c_edit_interact2;
+	object->interact3 = c_edit_interact3;
+	object->close = c_edit_close;
 }
 
+/* Function(s) */
 
-/*====================+ Function(s) +====================*/
-
-/**
-*
-* NAME: CBF_OnMakeCurrentBitmap
-* DESC: 在当前位图上定制内容，绘制文本，由VObject节点回调。
-*/
-static void CBF_OnMakeCurrentBitmap(OBJECT* This, const HDC  hDC)
+/* DESC: 在当前位图上定制内容，绘制文本，由VObject节点回调。 */
+static void cbf_on_make_current_bitmap(struct object *self, const HDC hDC)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*    pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	HFONT          hOldFont = NULL;
-	COLORREF       crOldColor;
-	HBITMAP        hOrigBmp, hNewBmp; 
-	HDC            memdc;
-	long           x, y;
-	long           i, i1, i2;
-	int            n;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	HFONT h_old_font = NULL;
+	COLORREF cr_old_color;
+	HBITMAP h_orig_bmp, h_new_bmp;
+	HDC memdc;
+	long x, y;
+	long i, i1, i2;
+	int n;
 
-
-	if(0 == pem->ti.clen)
+	if (0 == members->ti.clen)
 		return;
-	
-	memdc = CreateCompatibleDC(hDC);	
-	hNewBmp = CreateCompatibleBitmap(hDC, pem->vpw, pem->vph);
-	hOrigBmp = GetCurrentObject(memdc, OBJ_BITMAP);
-	SelectObject(memdc, hNewBmp);
-	BitBlt(memdc, 0, 0, pem->vpw, pem->vph, hDC, pem_vob->rsc.rcinner.left, pem_vob->rsc.rcinner.top, SRCCOPY);
 
-	n = pem->ti.nSpcRow / 2 + 1;
+	memdc = CreateCompatibleDC(hDC);
+	h_new_bmp = CreateCompatibleBitmap(hDC, members->vpw, members->vph);
+	h_orig_bmp = GetCurrentObject(memdc, OBJ_BITMAP);
+	SelectObject(memdc, h_new_bmp);
+	BitBlt(memdc, 0, 0, members->vpw, members->vph, hDC,
+	       pem_vob->rsc.rcinner.left, pem_vob->rsc.rcinner.top, SRCCOPY);
+
+	n = members->ti.n_spc_row / 2 + 1;
 	x = -pem_vob->ox_irr;
-	y = (pem->pArrCWXY[0].y > -pem_vob->oy_irr) ? pem->pArrCWXY[0].y : -pem_vob->oy_irr;	
+	y = (members->p_arr_cwxy[0].y > -pem_vob->oy_irr)
+		    ? members->p_arr_cwxy[0].y
+		    : -pem_vob->oy_irr;
 
-	if(pem->ti.font)
-		hOldFont = SelectObject(memdc, pem->ti.font);
-	crOldColor = SetTextColor(memdc, pem->ti.crnor);
+	if (members->ti.font)
+		h_old_font = SelectObject(memdc, members->ti.font);
+	cr_old_color = SetTextColor(memdc, members->ti.crnor);
 
-	while( y + pem_vob->oy_irr < pem->vph )
-	{
-		i1 = SearchCharByPoint(This, x, y);
-		i2 = SearchCharByPoint(This, x+pem->vpw, y);
-		if(-1 == i1 && i2 != -1)
-		{
-			i1 = SearchLFCharByChar(This, i2);
-		}else if(i1 != -1 && -1 == i2)
-		{
-			i2 = SearchLLCharByChar(This, i1);
-		}else if(-1 == i1 && -1 == i2)
-		{
-			i = SearchTextLineByYCoord(This, y);
-			if(i < 0)
+	while (y + pem_vob->oy_irr < members->vph) {
+		i1 = search_char_by_point(self, x, y);
+		i2 = search_char_by_point(self, x + members->vpw, y);
+		if (-1 == i1 && i2 != -1) {
+			i1 = search_lf_char_by_char(self, i2);
+		} else if (i1 != -1 && -1 == i2) {
+			i2 = search_ll_char_by_char(self, i1);
+		} else if (-1 == i1 && -1 == i2) {
+			i = search_text_line_by_y_coord(self, y);
+			if (i < 0)
 				break;
-			if(pem->format & ETF_HCENTER) /* 水平居中？*/
+			if (members->format & ETF_HCENTER) /* 水平居中？ */
 			{
-				i1 = SearchLFCharByChar(This, i);
-				i2 = SearchLLCharByChar(This, i);
-			}else
-			{
-				y = pem->pArrCWXY[i].y + pem->CharHeight + n;
+				i1 = search_lf_char_by_char(self, i);
+				i2 = search_ll_char_by_char(self, i);
+			} else {
+				y = members->p_arr_cwxy[i].y +
+				    members->char_height + n;
 				continue;
 			}
 		}
-		
-		for(i = i1; i<= i2; i++)
-		{
-			if(0x0A == pem->ti.text[i])
-				continue; /* 换行符不需要显示。*/
-		    //_Debug_OutputString(TEXT("\n TextOut  "), pem->ti.text[i], NULL);
-			TextOut(memdc, pem->pArrCWXY[i].x + pem_vob->ox_irr, pem->pArrCWXY[i].y + pem_vob->oy_irr, pem->ti.text+i, 1);
+
+		for (i = i1; i <= i2; i++) {
+			if (0x0A == members->ti.text[i])
+				continue; /* 换行符不需要显示。 */
+			/* _Debug_OutputString(TEXT("\n TextOut  "), pem->ti.text[i], NULL); */
+			TextOut(memdc,
+				members->p_arr_cwxy[i].x + pem_vob->ox_irr,
+				members->p_arr_cwxy[i].y + pem_vob->oy_irr,
+				members->ti.text + i, 1);
 		}
 
-		if(i2 == pem->ti.clen-1)
+		if (i2 == members->ti.clen - 1)
 			break;
 
-		y = pem->pArrCWXY[i1].y + pem->CharHeight + n;
+		y = members->p_arr_cwxy[i1].y + members->char_height + n;
 	}
 
-	BitBlt(hDC, pem_vob->rsc.rcinner.left, pem_vob->rsc.rcinner.top, pem->vpw, pem->vph, memdc, 0, 0, SRCCOPY);
+	BitBlt(hDC, pem_vob->rsc.rcinner.left, pem_vob->rsc.rcinner.top,
+	       members->vpw, members->vph, memdc, 0, 0, SRCCOPY);
 
-	if(hOldFont != NULL)
-		SelectObject(memdc, hOldFont);
-	SetTextColor(memdc, crOldColor);
-	
-	SelectObject(memdc, hOrigBmp);
+	if (h_old_font != NULL)
+		SelectObject(memdc, h_old_font);
+	SetTextColor(memdc, cr_old_color);
+
+	SelectObject(memdc, h_orig_bmp);
 	DeleteDC(memdc);
-	
-	if(hNewBmp != NULL)
-		DeleteObject(hNewBmp);
+
+	if (h_new_bmp != NULL)
+		DeleteObject(h_new_bmp);
 
 	return;
 }
 
-
-/**
-*
-* NAME: CalcuTextSize
-* DESC: 计算文本尺寸（宽度和高度）。
-* RETU: 根据文本高度和宽度的变化情况，返回不同的数值。
-*       0 - 宽度和高度都没变化；
-*       1 - 只有宽度变化了，高度没变化；
-*       2 - 只有高度变化了，宽度没变化；
-*       3 - 宽度和高度都变化了。
-*/
-static int  CalcuTextSize(OBJECT* This)
+/*
+ * DESC: 计算文本尺寸（宽度和高度）。
+ * RETU: 根据文本高度和宽度的变化情况，返回不同的数值。
+ *       0 - 宽度和高度都没变化；
+ *       1 - 只有宽度变化了，高度没变化；
+ *       2 - 只有高度变化了，宽度没变化；
+ *       3 - 宽度和高度都变化了。
+ */
+static int calcu_text_size(struct object *self)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	long           n, w, h, i, j, iLast;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	long n, w, h, i, j, i_last;
 
-	if(0 == pem->ti.clen)
-	{
+	if (0 == members->ti.clen) {
 		w = 0;
-		h = pem->CharHeight;
-	}else
-	{
+		h = members->char_height;
+	} else {
 		w = 0;
 		i = 0;
-		iLast = pem->ti.clen-1;
-		
-		while(1)
-		{
-			j = SearchLLCharByChar(This, i);
-			n = pem->pArrCWXY[j].x + pem->pArrCWXY[j].w - pem->pArrCWXY[i].x;
-			if(n > w)
+		i_last = members->ti.clen - 1;
+
+		while (1) {
+			j = search_ll_char_by_char(self, i);
+			n = members->p_arr_cwxy[j].x +
+			    members->p_arr_cwxy[j].w - members->p_arr_cwxy[i].x;
+			if (n > w)
 				w = n;
-			
-			i = j+1;
-			if(i >= iLast)
+
+			i = j + 1;
+			if (i >= i_last)
 				break;
 		}
-		
-		h = pem->pArrCWXY[iLast].y + pem->CharHeight - pem->pArrCWXY[0].y;
+
+		h = members->p_arr_cwxy[i_last].y + members->char_height -
+		    members->p_arr_cwxy[0].y;
 	}
 
-    if(w != pem->textWidth && h != pem->textHeight)
-	{
-		pem->textWidth = w;
-		pem->textHeight = h;
+	if (w != members->text_width && h != members->text_height) {
+		members->text_width = w;
+		members->text_height = h;
 		return 3;
-	}
-	else if(h != pem->textHeight)
-	{
-		pem->textHeight = h;
+	} else if (h != members->text_height) {
+		members->text_height = h;
 		return 2;
-	}else if(w != pem->textWidth)
-	{
-		pem->textWidth = w;
+	} else if (w != members->text_width) {
+		members->text_width = w;
 		return 1;
 	}
-		
+
 	return 0;
 }
 
-/**
-*
-* NAME: CalcuSceneSize
-* DESC: 计算情景尺寸（宽度和高度）。
-*/
-static void  CalcuSceneSize(OBJECT* This)
+/* DESC: 计算情景尺寸（宽度和高度）。 */
+static void calcu_scene_size(struct object *self)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*    pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	int            n;
-	
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	int n;
+
 	n = pem_vob->rsc.rcinner.right - pem_vob->rsc.rcinner.left;
-	pem_vob->scenew = pem->textWidth > n ? pem->textWidth : n;
+	pem_vob->scenew = members->text_width > n ? members->text_width : n;
 	n = pem_vob->rsc.rcinner.bottom - pem_vob->rsc.rcinner.top;
-	pem_vob->sceneh = pem->textHeight > n ? pem->textHeight : n;
+	pem_vob->sceneh = members->text_height > n ? members->text_height : n;
 
 	return;
 }
 
-/**
-*
-* NAME: CalcuViewportSize
-* DESC: 计算视口尺寸（宽度和高度）。
-*/
-static void  CalcuViewportSize(OBJECT* This)
+/* DESC: 计算视口尺寸（宽度和高度）。 */
+static void calcu_viewport_size(struct object *self)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*    pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	int            w, h;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	int w, h;
 
 	w = pem_vob->rsc.rcinner.right - pem_vob->rsc.rcinner.left;
 	h = pem_vob->rsc.rcinner.bottom - pem_vob->rsc.rcinner.top;
 
-	if(pem->style & EDTS_SCROLLBAR)
-	{
-		pem->vpw = w;
-		pem->vph = h;
+	if (members->style & EDTS_SCROLLBAR) {
+		members->vpw = w;
+		members->vph = h;
 		return;
 	}
 
-	if(pem_vob->scenew > w)
-	{
-		pem->vph = h - pem->i2hscb.nThickness;
-		pem->vpw = (pem_vob->sceneh > h - pem->i2hscb.nThickness) ? w - pem->i2vscb.nThickness : w;
-	}else
-	{
-		if(pem_vob->sceneh > h)
-		{
-			pem->vpw = w - pem->i2vscb.nThickness;
-			pem->vph = (pem_vob->scenew > w - pem->i2vscb.nThickness) ? h - pem->i2hscb.nThickness : h;
-		}else
-		{
-			pem->vpw = w;
-			pem->vph = h;
+	if (pem_vob->scenew > w) {
+		members->vph = h - members->i2hscb.n_thickness;
+		members->vpw =
+			(pem_vob->sceneh > h - members->i2hscb.n_thickness)
+				? w - members->i2vscb.n_thickness
+				: w;
+	} else {
+		if (pem_vob->sceneh > h) {
+			members->vpw = w - members->i2vscb.n_thickness;
+			members->vph = (pem_vob->scenew >
+					w - members->i2vscb.n_thickness)
+					       ? h - members->i2hscb.n_thickness
+					       : h;
+		} else {
+			members->vpw = w;
+			members->vph = h;
 		}
 	}
 
 	return;
 }
 
-
-/**
-*
-* NAME: FormatText
-* DESC: 格式化指定文本段的每一行。
-*/
-static void  FormatText(OBJECT* This, long iBegin, long iEnd)
+/* DESC: 格式化指定文本段的每一行。 */
+static void format_text(struct object *self, long i_begin, long i_end)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*    pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	long           i, j, k, n;
-	int            dx, dy;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	long i, j, k, n;
+	int dx, dy;
 
-	assert(iBegin < iEnd);
+	assert(i_begin < i_end);
 
-	
-	if(pem->format & ETF_TOP)
+	if (members->format & ETF_TOP) {
+		dy = -members->p_arr_cwxy[0].y;
+	} else if (members->format & ETF_BOTTOM) {
+		dy = pem_vob->sceneh - members->text_height -
+		     members->p_arr_cwxy[0].y;
+	} else /* ETF_VCENTER */
 	{
-		dy = -pem->pArrCWXY[0].y;
-	}else if(pem->format & ETF_BOTTOM)
-	{
-		dy = pem_vob->sceneh - pem->textHeight - pem->pArrCWXY[0].y;
-	}else  // ETF_VCENTER
-	{
-		dy = (pem_vob->sceneh - pem->textHeight) / 2 - pem->pArrCWXY[0].y;
+		dy = (pem_vob->sceneh - members->text_height) / 2 -
+		     members->p_arr_cwxy[0].y;
 	}
-	
-	i = iBegin;
 
-	do{
-		j = SearchLFCharByChar (This, i);
-		k = SearchLLCharByChar (This, i);
-		if(pem->format & ETF_LEFT)
+	i = i_begin;
+
+	do {
+		j = search_lf_char_by_char(self, i);
+		k = search_ll_char_by_char(self, i);
+		if (members->format & ETF_LEFT) {
+			dx = -members->p_arr_cwxy[j].x;
+		} else if (members->format & ETF_RIGHT) {
+			dx = pem_vob->scenew - members->p_arr_cwxy[k].x -
+			     members->p_arr_cwxy[k].w;
+		} else /* ETF_HCENTER */
 		{
-			dx = -pem->pArrCWXY[j].x;
-		}else if(pem->format & ETF_RIGHT)
-		{
-			dx = pem_vob->scenew - pem->pArrCWXY[k].x - pem->pArrCWXY[k].w;
-		}else // ETF_HCENTER
-		{
-			n = pem->pArrCWXY[k].x + pem->pArrCWXY[k].w - pem->pArrCWXY[j].x;
-			dx = (pem_vob->scenew - n) / 2 - pem->pArrCWXY[j].x;
+			n = members->p_arr_cwxy[k].x +
+			    members->p_arr_cwxy[k].w - members->p_arr_cwxy[j].x;
+			dx = (pem_vob->scenew - n) / 2 -
+			     members->p_arr_cwxy[j].x;
 		}
 
-		for(i = j; i<=k; i++)
-		{
-			pem->pArrCWXY[i].x += dx;
-			pem->pArrCWXY[i].y += dy;
+		for (i = j; i <= k; i++) {
+			members->p_arr_cwxy[i].x += dx;
+			members->p_arr_cwxy[i].y += dy;
 		}
-		 
-		i = k+1;
-	}while(i < iEnd);
+
+		i = k + 1;
+	} while (i < i_end);
 
 	return;
 }
 
-
-/**
-*
-* NAME: SetCaretPosition
-* DESC: 根据参数iChar和bToRight设置插入符位置。
-* RETU: 0 - 没重画；1 - 重画了。
-*/
-static int  SetCaretPosition(OBJECT* This, long iChar, OIOIC_BOOL bToRight, const VR* pCaller)
+/*
+ * DESC: 根据参数i_char和b_to_right设置插入符位置。
+ * RETU: 0 - 没重画；1 - 重画了。
+ */
+static int set_caret_position(struct object *self, long i_char, char b_to_right,
+			      const struct vr *caller_context)
 {
-	EM_CEDIT*     pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*   pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	long          x, y, dx, dy;
-	int           rv, n1, n2, m1, m2;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	long x, y, dx, dy;
+	int rv, n1, n2, m1, m2;
 
-	if(-1 == iChar)
-	{
-		n1 = pem->vpw - pem->CaretWidth;
+	if (-1 == i_char) {
+		n1 = members->vpw - members->caret_width;
 		n2 = n1 / 2;
-		m1 = pem->vph - pem->CharHeight;
+		m1 = members->vph - members->char_height;
 		m2 = m1 / 2;
-		
+
 		x = pem_vob->rsc.rcinner.left;
 		y = pem_vob->rsc.rcinner.top;
-		
-		if(pem->format & ETF_RIGHT)
+
+		if (members->format & ETF_RIGHT)
 			x += n1;
-		else if(pem->format & ETF_HCENTER)
+		else if (members->format & ETF_HCENTER)
 			x += n2;
-		
-		if(pem->format & ETF_BOTTOM )
+
+		if (members->format & ETF_BOTTOM)
 			y += m1;
-		else if(pem->format & ETF_VCENTER)
+		else if (members->format & ETF_VCENTER)
 			y += m2;
 
 		rv = 0;
-	}else
-	{	
-		dx = pem ->pArrCWXY[iChar].x + pem_vob->ox_irr;
-		if(TRUE == bToRight)
-			dx += pem ->pArrCWXY[iChar].w;
-		dy = pem ->pArrCWXY[iChar].y + pem_vob->oy_irr;
-	
-		if(dx > 0)
-		{
-			dx += pem->CaretWidth - pem->vpw;
-			if(dx < 0)
+	} else {
+		dx = members->p_arr_cwxy[i_char].x + pem_vob->ox_irr;
+		if (TRUE == b_to_right)
+			dx += members->p_arr_cwxy[i_char].w;
+		dy = members->p_arr_cwxy[i_char].y + pem_vob->oy_irr;
+
+		if (dx > 0) {
+			dx += members->caret_width - members->vpw;
+			if (dx < 0)
 				dx = 0;
 		}
 
-		if(dy > 0)
-		{
-			dy += pem->CharHeight - pem->vph;
-			if(dy < 0)
+		if (dy > 0) {
+			dy += members->char_height - members->vph;
+			if (dy < 0)
 				dy = 0;
 		}
 
-		if(dx != 0 || dy != 0 ) /* 插入符在新位置不能完全出现在视口内？*/
+		if (dx != 0 ||
+		    dy != 0) /* 插入符在新位置不能完全出现在视口内？ */
 		{
 			pem_vob->ox_irr -= dx;
 			pem_vob->oy_irr -= dy;
 
-			// ........ 在这里用CMD_WGI_ROLLONCB行为访问滚动条。
+			/* ........ 在这里用CMD_WGI_ROLLONCB行为访问滚动条。 */
 
-			VO_Interact0(pem->pVObject, CMD_WGI_REPAINT, pCaller);
+			vo_interact0(members->visual_node, CMD_WGI_REPAINT,
+				     caller_context);
 			rv = 1;
 		}
 
 		rv = 0;
 
-		x = pem ->pArrCWXY[iChar].x + pem_vob->ox_irr + pem_vob->rsc.rcinner.left;
-		if(TRUE == bToRight)
-			x += pem ->pArrCWXY[iChar].w;
-		y = pem ->pArrCWXY[iChar].y + pem_vob->oy_irr + pem_vob->rsc.rcinner.top;
+		x = members->p_arr_cwxy[i_char].x + pem_vob->ox_irr +
+		    pem_vob->rsc.rcinner.left;
+		if (TRUE == b_to_right)
+			x += members->p_arr_cwxy[i_char].w;
+		y = members->p_arr_cwxy[i_char].y + pem_vob->oy_irr +
+		    pem_vob->rsc.rcinner.top;
 	}
 
-
-	do{ /* 把坐标转换到窗口对象的外部矩形坐标。*/	
+	do { /* 把坐标转换到窗口对象的外部矩形坐标。 */
 		x += pem_vob->rsc.rcouter.left;
 		y += pem_vob->rsc.rcouter.top;
-		pem_vob = (EM_VOBJECT*)GetEMofBN(pem_vob->pSuperior, MSN_VOBJECT);
+		pem_vob = (struct em_vobject *)get_base_members(
+			pem_vob->p_superior, MSN_VOBJECT);
 		x += pem_vob->rsc.rcinner.left;
 		y += pem_vob->rsc.rcinner.top;
-	}while(pem_vob->pSuperior != NULL);
+	} while (pem_vob->p_superior != NULL);
 
 	SetCaretPos(x, y);
-	ShowCaret(*pem_vob->pWndHandle);
+	ShowCaret(*pem_vob->p_wnd_handle);
 
-	pem->cp.iChar = iChar;
-	pem->cp.bToRight = bToRight;
+	members->cp.i_char = i_char;
+	members->cp.b_to_right = b_to_right;
 
-
-	return rv; 
+	return rv;
 }
 
-
-/**
-*
-* NAME: SearchTextLineByYCoord
-* DESC: 给定情景区域内一个纵坐标值，确定该值属于哪个文本行的行定位区域的纵坐标区间。
-*/
-static long  SearchTextLineByYCoord(OBJECT* This, long y)
+/* DESC: 给定情景区域内一个纵坐标值，确定该值属于哪个文本行的行定位区域的纵坐标区间。 */
+static long search_text_line_by_y_coord(struct object *self, long y)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	long           i, n1, n2, left, middle, right;
-	int            m1, m2;
-	
-	left = 0;
-	right = pem->ti.clen - 1;
-	i = -1;
-	m1 = pem->ti.nSpcRow / 2;
-	m2 = pem->CharHeight + m1;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	long i, n1, n2, left, middle, right;
+	int m1, m2;
 
-	while(left <= right)
-	{
-		middle = (left+right) / 2;
-		n1 = pem->pArrCWXY[middle].y - m1;
-		n2 = pem->pArrCWXY[middle].y + m2;
-		
-		if (y >= n1 && y <= n2) 
-		{
+	left = 0;
+	right = members->ti.clen - 1;
+	i = -1;
+	m1 = members->ti.n_spc_row / 2;
+	m2 = members->char_height + m1;
+
+	while (left <= right) {
+		middle = (left + right) / 2;
+		n1 = members->p_arr_cwxy[middle].y - m1;
+		n2 = members->p_arr_cwxy[middle].y + m2;
+
+		if (y >= n1 && y <= n2) {
 			i = middle;
 			break;
-		}else if (y < n1) 
-			right = middle-1;
-		else 
+		} else if (y < n1)
+			right = middle - 1;
+		else
 			left = middle + 1;
 	}
-	
+
 	return i;
 }
 
-/**
-*
-* NAME: SearchCharByPoint
-* DESC: 给定最大滚动区域内一个点的坐标，确定该点左哪个字符的定位区域。
-*/
-static long  SearchCharByPoint (OBJECT* This, long x, long y)
+/* DESC: 给定最大滚动区域内一个点的坐标，确定该点左哪个字符的定位区域。 */
+static long search_char_by_point(struct object *self, long x, long y)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	long           i, n1, n2, left, middle, right;
-	int            m;
-	
-	
-	// 先确定属于哪一行：
-	i = SearchTextLineByYCoord(This, y);
-	if(-1 == i)
-		return -1;
-	
-	// 确定属于哪一个字符：
-	m = pem->ti.nSpcClm / 2;
-	n1 = pem->pArrCWXY[i].x - m;
-	n2 = pem->pArrCWXY[i].x + pem->pArrCWXY[i].w + m;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	long i, n1, n2, left, middle, right;
+	int m;
 
-	if(x >= n1 && x <= n2)
-	{
+	/* 先确定属于哪一行： */
+	i = search_text_line_by_y_coord(self, y);
+	if (-1 == i)
+		return -1;
+
+	/* 确定属于哪一个字符： */
+	m = members->ti.n_spc_clm / 2;
+	n1 = members->p_arr_cwxy[i].x - m;
+	n2 = members->p_arr_cwxy[i].x + members->p_arr_cwxy[i].w + m;
+
+	if (x >= n1 && x <= n2) {
 		return i;
-	}else
-	{
-		left = SearchLFCharByChar (This, i);
-		right = SearchLLCharByChar (This, i);
+	} else {
+		left = search_lf_char_by_char(self, i);
+		right = search_ll_char_by_char(self, i);
 	}
-	
-	while(left <= right)
-	{
-		middle = (left+right) / 2;
-		n1 = pem->pArrCWXY[middle].x - m;
-		n2 = pem->pArrCWXY[middle].x + pem->pArrCWXY[middle].w + m;
-		if(x >= n1 && x <= n2)
-			return  middle;
-		else if(x < n1) 
-			right = middle-1;
-		else 
+
+	while (left <= right) {
+		middle = (left + right) / 2;
+		n1 = members->p_arr_cwxy[middle].x - m;
+		n2 = members->p_arr_cwxy[middle].x +
+		     members->p_arr_cwxy[middle].w + m;
+		if (x >= n1 && x <= n2)
+			return middle;
+		else if (x < n1)
+			right = middle - 1;
+		else
 			left = middle + 1;
 	}
-	
-	return  -1;
+
+	return -1;
 }
 
-/**
-*
-* NAME: SearchLFCharByChar
-* DESC: 给定一个字符的索引，确定该字符所在文本行的第一个字符的索引。
-*/
-static long  SearchLFCharByChar(OBJECT* This, long iChar)
+/* DESC: 给定一个字符的索引，确定该字符所在文本行的第一个字符的索引。 */
+static long search_lf_char_by_char(struct object *self, long i_char)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	long           y, left, middle = iChar, right;
-	assert(iChar >= 0 && iChar < pem->ti.clen);
-	
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	long y, left, middle = i_char, right;
+	assert(i_char >= 0 && i_char < members->ti.clen);
 
 	left = 0;
-	right = iChar;
-	y = pem->pArrCWXY[iChar].y;
-	
-	while(left <= right)
-	{
-		middle = (left+right) / 2;
-		if(pem->pArrCWXY[middle].y == y) 
-		{
-			right = middle-1;
-			if(right == -1)
+	right = i_char;
+	y = members->p_arr_cwxy[i_char].y;
+
+	while (left <= right) {
+		middle = (left + right) / 2;
+		if (members->p_arr_cwxy[middle].y == y) {
+			right = middle - 1;
+			if (right == -1)
 				break;
-			else if(pem->pArrCWXY[right].y < y)
-				break;	
-		}else 
-		{
+			else if (members->p_arr_cwxy[right].y < y)
+				break;
+		} else {
 			left = middle + 1;
 		}
 	}
-	
-	return  middle;
+
+	return middle;
 }
 
-/**
-*
-* NAME: SearchLLCharByChar
-* DESC: 给定一个字符的索引，确定该字符所在文本行的最后一个字符的索引。
-*/
-static long  SearchLLCharByChar (OBJECT* This, long iChar)
+/* DESC: 给定一个字符的索引，确定该字符所在文本行的最后一个字符的索引。 */
+static long search_ll_char_by_char(struct object *self, long i_char)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	long           n, y, left, middle = iChar, right;
-	assert(iChar >= 0 && iChar < pem->ti.clen);
-	
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	long n, y, left, middle = i_char, right;
+	assert(i_char >= 0 && i_char < members->ti.clen);
 
-	n = pem->ti.clen;
-	y = pem->pArrCWXY[iChar].y;
+	n = members->ti.clen;
+	y = members->p_arr_cwxy[i_char].y;
 	right = n - 1;
-	left = iChar;
-	
-	while(left <= right)
-	{
-		middle = (left+right) / 2;
-		if(pem->pArrCWXY[middle].y == y) 
-		{
+	left = i_char;
+
+	while (left <= right) {
+		middle = (left + right) / 2;
+		if (members->p_arr_cwxy[middle].y == y) {
 			left = middle + 1;
-			if(left == n)
+			if (left == n)
 				break;
-			else if(pem->pArrCWXY[left].y > y)
-				break;	
-		}else 
-		{
-			right = middle-1;
+			else if (members->p_arr_cwxy[left].y > y)
+				break;
+		} else {
+			right = middle - 1;
 		}
 	}
-	
-	return  middle;
+
+	return middle;
 }
 
-
-/**
-*
-* NAME: OVERCB_InsertInitialText
-* DESC: 在当前位图上方（不是上面）插入初始化的文本，计算字符宽度和
-*       坐标以及判断是否需要创建滚动条。只在CMD_PREPARE行为中调用。
-*/
-static void  OVERCB_InsertInitialText(OBJECT* This, const VR* pCaller)
+/*
+ * DESC: 在当前位图上方（不是上面）插入初始化的文本，计算字符宽度和
+ *       坐标以及判断是否需要创建滚动条。只在CMD_PREPARE行为中调用。
+ */
+static void overcb_insert_initial_text(struct object *self,
+				       const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*    pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	HDC            hdc;
-	SIZE           size;
-	long           i, n, x, y; 
-	int            vpw, vph; 
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	HDC hdc;
+	SIZE size;
+	long i, n, x, y;
+	int vpw, vph;
 
-
-	if(0 == pem->ti.clen)
+	if (0 == members->ti.clen)
 		return;
 
-	n = pem->ti.clen;
+	n = members->ti.clen;
 
 	/* 计算每个新字符的宽度 */
 
-	hdc = GetDC(*pem_vob->pWndHandle);
-	for(i = 0; i < n; i++)
-	{
-		if(0x0A == pem->ti.text[i])
-		{
-			/* 换行符也有宽度，但不需显示换行符，所以记录换行符的宽度为0。*/
-			pem->pArrCWXY[i].w = 0;
-		}else
-		{
-			GetTextExtentPoint32(hdc, pem->ti.text+i, 1, &size);
-			pem->pArrCWXY[i].w = size.cx;
+	hdc = GetDC(*pem_vob->p_wnd_handle);
+	for (i = 0; i < n; i++) {
+		if (0x0A == members->ti.text[i]) {
+			/* 换行符也有宽度，但不需显示换行符，所以记录换行符的宽度为0。 */
+			members->p_arr_cwxy[i].w = 0;
+		} else {
+			GetTextExtentPoint32(hdc, members->ti.text + i, 1,
+					     &size);
+			members->p_arr_cwxy[i].w = size.cx;
 		}
 	}
-	ReleaseDC(*pem_vob->pWndHandle, hdc);
-
+	ReleaseDC(*pem_vob->p_wnd_handle, hdc);
 
 	/* 计算字符的位置 */
 
-	vpw = pem->vpw;
-	vph = pem->vph;
+	vpw = members->vpw;
+	vph = members->vph;
 	x = y = 0;
 
-	if(pem->style & EDTS_AUTOWRAP) /* 自动换行？*/
+	if (members->style & EDTS_AUTOWRAP) /* 自动换行？ */
 	{
-		if((pem->pVScrBar != NULL) || !(pem->style & EDTS_SCROLLBAR)) /* 有纵向滚动条，或者，控件没有滚动条风格？*/
+		if ((members->p_v_scr_bar != NULL) ||
+		    !(members->style &
+		      EDTS_SCROLLBAR)) /* 有纵向滚动条，或者，控件没有滚动条风格？ */
 		{
-			for(i = 0; i < n; i++)
-			{
-				if(0x0A == pem->ti.text[i]) /* 是换行符？*/
+			for (i = 0; i < n; i++) {
+				if (0x0A ==
+				    members->ti.text[i]) /* 是换行符？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					pem->pArrCWXY[i].x = 0;
-					pem->pArrCWXY[i].y = y;
-					x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
-				}else if(x + pem->pArrCWXY[i].w > vpw) /* 超过最大行长度？*/
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					members->p_arr_cwxy[i].x = 0;
+					members->p_arr_cwxy[i].y = y;
+					x = members->p_arr_cwxy[i].w +
+					    members->ti.n_spc_clm;
+				} else if (x + members->p_arr_cwxy[i].w >
+					   vpw) /* 超过最大行长度？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					pem->pArrCWXY[i].x = 0;
-					pem->pArrCWXY[i].y = y;
-					x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
-				}else
-				{
-					pem->pArrCWXY[i].x = x;
-					pem->pArrCWXY[i].y = y;
-					x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					members->p_arr_cwxy[i].x = 0;
+					members->p_arr_cwxy[i].y = y;
+					x = members->p_arr_cwxy[i].w +
+					    members->ti.n_spc_clm;
+				} else {
+					members->p_arr_cwxy[i].x = x;
+					members->p_arr_cwxy[i].y = y;
+					x += members->p_arr_cwxy[i].w +
+					     members->ti.n_spc_clm;
 				}
 			}
-		}else /* 没有纵向滚动条，并且，控件有滚动条风格。*/
+		} else /* 没有纵向滚动条，并且，控件有滚动条风格。 */
 		{
-			for(i = 0; i < n; i++)
-			{
-				if(0x0A == pem->ti.text[i]) /* 是换行符？*/
+			for (i = 0; i < n; i++) {
+				if (0x0A ==
+				    members->ti.text[i]) /* 是换行符？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					if(y + pem->CharHeight - pem->pArrCWXY[0].y > vph) /* 需要加纵向滚动条？*/
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					if (y + members->char_height -
+						    members->p_arr_cwxy[0].y >
+					    vph) /* 需要加纵向滚动条？ */
 					{
-						CalcuAllCharacterXY_LEFTTOP_AUTOWRAP(This, vpw - pem->i2vscb.nThickness);
+						calcu_all_character_xy_lefttop_autowrap(
+							self,
+							vpw - members->i2vscb
+									.n_thickness);
 						break;
-					}else
-					{
-						pem->pArrCWXY[i].x = 0;
-						pem->pArrCWXY[i].y = y;
-						x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+					} else {
+						members->p_arr_cwxy[i].x = 0;
+						members->p_arr_cwxy[i].y = y;
+						x = members->p_arr_cwxy[i].w +
+						    members->ti.n_spc_clm;
 					}
-				}else if(x + pem->pArrCWXY[i].w > vpw) /* 超过最大行长度？*/
+				} else if (x + members->p_arr_cwxy[i].w >
+					   vpw) /* 超过最大行长度？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					if(y + pem->CharHeight - pem->pArrCWXY[0].y > vph) /* 需要加纵向滚动条？*/
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					if (y + members->char_height -
+						    members->p_arr_cwxy[0].y >
+					    vph) /* 需要加纵向滚动条？ */
 					{
-						CalcuAllCharacterXY_LEFTTOP_AUTOWRAP(This, vpw - pem->i2vscb.nThickness);
+						calcu_all_character_xy_lefttop_autowrap(
+							self,
+							vpw - members->i2vscb
+									.n_thickness);
 						break;
-					}else
-					{
-						pem->pArrCWXY[i].x = 0;
-						pem->pArrCWXY[i].y = y;
-						x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+					} else {
+						members->p_arr_cwxy[i].x = 0;
+						members->p_arr_cwxy[i].y = y;
+						x = members->p_arr_cwxy[i].w +
+						    members->ti.n_spc_clm;
 					}
-				}else
-				{
-					pem->pArrCWXY[i].x = x;
-					pem->pArrCWXY[i].y = y;
-					x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+				} else {
+					members->p_arr_cwxy[i].x = x;
+					members->p_arr_cwxy[i].y = y;
+					x += members->p_arr_cwxy[i].w +
+					     members->ti.n_spc_clm;
 				}
 			}
 		}
-	}else /* 不是自动换行。*/
+	} else /* 不是自动换行。 */
 	{
-		for(i = 0; i < n; i++)
-		{
-			if(0x0A == pem->ti.text[i]) /* 是换行符？*/
+		for (i = 0; i < n; i++) {
+			if (0x0A == members->ti.text[i]) /* 是换行符？ */
 			{
-				y += pem->CharHeight + pem->ti.nSpcRow;
-				pem->pArrCWXY[i].x = 0;
-				pem->pArrCWXY[i].y = y;
-				x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
-			}else
-			{
-				pem->pArrCWXY[i].x = x;
-				pem->pArrCWXY[i].y = y;
-				x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+				y += members->char_height +
+				     members->ti.n_spc_row;
+				members->p_arr_cwxy[i].x = 0;
+				members->p_arr_cwxy[i].y = y;
+				x = members->p_arr_cwxy[i].w +
+				    members->ti.n_spc_clm;
+			} else {
+				members->p_arr_cwxy[i].x = x;
+				members->p_arr_cwxy[i].y = y;
+				x += members->p_arr_cwxy[i].w +
+				     members->ti.n_spc_clm;
 			}
 		}
 	}
 
-	CalcuTextSize(This);
-	CalcuSceneSize(This);
-	CalcuViewportSize(This);
+	calcu_text_size(self);
+	calcu_scene_size(self);
+	calcu_viewport_size(self);
 
-	if( !((pem->format & ETF_LEFT) && (pem->format & ETF_TOP)) )
-		FormatText(This, 0, pem->ti.clen-1);
+	if (!((members->format & ETF_LEFT) && (members->format & ETF_TOP)))
+		format_text(self, 0, members->ti.clen - 1);
 
-	OVERCB_RDCScrollBar(This, pCaller);
+	overcb_rdc_scroll_bar(self, caller_context);
 
 	return;
 }
 
-
-/**
-*
-* NAME: InsertCharacter
-* DESC: 在插入符位置插入一个或多个字符。
-*/
-static void  InsertCharacter(OBJECT* This, long iat, const TCHAR* archar, long count, const VR* pCaller)
+/* DESC: 在插入符位置插入一个或多个字符。 */
+static void insert_character(struct object *self, long iat, const TCHAR *archar,
+			     long count, const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*    pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	HDC            hdc;
-	SIZE           size;
-	long           i, j, n, x, y; 
-	long           iNCB, iNCE, nNCN;  /* NCB: New Character Begin, NCE: New Character End, NCN : New Character Number */
-	int            vpw, vph, r; 
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	HDC hdc;
+	SIZE size;
+	long i, j, n, x, y;
+	long i_ncb, i_nce,
+		n_ncn; /* NCB: New Character Begin, NCE: New Character End, NCN : New Character Number */
+	int vpw, vph, r;
 
-	n = pem->ti.cpty - pem->ti.clen;
-	nNCN = count < n ? count : n; 
+	n = members->ti.cpty - members->ti.clen;
+	n_ncn = count < n ? count : n;
 
-	if(0 == nNCN)
+	if (0 == n_ncn)
 		return;
 
-	iNCB = iat;
+	i_ncb = iat;
 
-	if(pem->ti.clen > 0)
-	{
-		memmove(pem->ti.text + iNCB + nNCN, pem->ti.text + iNCB, (pem->ti.clen - iNCB) * sizeof(TCHAR));
-		memmove(pem->pArrCWXY + iNCB + nNCN, pem->pArrCWXY + iNCB, (pem->ti.clen - iNCB) * sizeof(CWXY));
+	if (members->ti.clen > 0) {
+		memmove(members->ti.text + i_ncb + n_ncn,
+			members->ti.text + i_ncb,
+			(members->ti.clen - i_ncb) * sizeof(TCHAR));
+		memmove(members->p_arr_cwxy + i_ncb + n_ncn,
+			members->p_arr_cwxy + i_ncb,
+			(members->ti.clen - i_ncb) * sizeof(struct cwxy));
 	}
-	memcpy(pem->ti.text+iNCB, archar, nNCN * sizeof(TCHAR));
-	pem->ti.clen += nNCN;
+	memcpy(members->ti.text + i_ncb, archar, n_ncn * sizeof(TCHAR));
+	members->ti.clen += n_ncn;
 
-	iNCE = iNCB + nNCN - 1;
-
+	i_nce = i_ncb + n_ncn - 1;
 
 	/* 计算每个新字符的宽度 */
 
-	hdc = GetDC(*pem_vob->pWndHandle);
-	for(i = 0; i < nNCN; i++)
-	{
-		if(0x0A == archar[i])
-		{
-			/* 换行符也有宽度，但不需显示换行符，所以记录换行符的宽度为0。*/
-			pem->pArrCWXY[iNCB+i].w = 0;
-		}else
-		{
-			GetTextExtentPoint32(hdc, archar+i, 1, &size);
-			pem->pArrCWXY[iNCB+i].w = size.cx;
+	hdc = GetDC(*pem_vob->p_wnd_handle);
+	for (i = 0; i < n_ncn; i++) {
+		if (0x0A == archar[i]) {
+			/* 换行符也有宽度，但不需显示换行符，所以记录换行符的宽度为0。 */
+			members->p_arr_cwxy[i_ncb + i].w = 0;
+		} else {
+			GetTextExtentPoint32(hdc, archar + i, 1, &size);
+			members->p_arr_cwxy[i_ncb + i].w = size.cx;
 		}
 	}
-	ReleaseDC(*pem_vob->pWndHandle, hdc);
-
+	ReleaseDC(*pem_vob->p_wnd_handle, hdc);
 
 	/* 计算字符的位置 */
 
-	vpw = pem->vpw;
-	vph = pem->vph;
+	vpw = members->vpw;
+	vph = members->vph;
 
-	if(0 == iNCB)
-	{
+	if (0 == i_ncb) {
 		x = 0;
 		y = 0;
-	}else
-	{
-		x = pem->pArrCWXY[iNCB-1].x + pem->pArrCWXY[iNCB-1].w + pem->ti.nSpcClm;
-		y = pem->pArrCWXY[iNCB-1].y;
+	} else {
+		x = members->p_arr_cwxy[i_ncb - 1].x +
+		    members->p_arr_cwxy[i_ncb - 1].w + members->ti.n_spc_clm;
+		y = members->p_arr_cwxy[i_ncb - 1].y;
 	}
 
-	i = iNCB;
-	j = iNCB + nNCN;
+	i = i_ncb;
+	j = i_ncb + n_ncn;
 
-	if(pem->style & EDTS_AUTOWRAP) /* 自动换行？*/
+	if (members->style & EDTS_AUTOWRAP) /* 自动换行？ */
 	{
-		if((pem->pVScrBar != NULL) || !(pem->style & EDTS_SCROLLBAR)) /* 有纵向滚动条，或者，控件没有滚动条风格？*/
+		if ((members->p_v_scr_bar != NULL) ||
+		    !(members->style &
+		      EDTS_SCROLLBAR)) /* 有纵向滚动条，或者，控件没有滚动条风格？ */
 		{
-			/* 先计算新字符的位置 */	
+			/* 先计算新字符的位置 */
 
-			for(; i < j; i++)
-			{
-				if(0x0A == pem->ti.text[i] || x + pem->pArrCWXY[i].w > vpw) /* 是换行符，或者，超过最大行长度？*/
+			for (; i < j; i++) {
+				if (0x0A == members->ti.text[i] ||
+				    x + members->p_arr_cwxy[i].w >
+					    vpw) /* 是换行符，或者，超过最大行长度？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					pem->pArrCWXY[i].x = 0;
-					pem->pArrCWXY[i].y = y;
-					x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
-				}else
-				{
-					pem->pArrCWXY[i].x = x;
-					pem->pArrCWXY[i].y = y;
-					x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					members->p_arr_cwxy[i].x = 0;
+					members->p_arr_cwxy[i].y = y;
+					x = members->p_arr_cwxy[i].w +
+					    members->ti.n_spc_clm;
+				} else {
+					members->p_arr_cwxy[i].x = x;
+					members->p_arr_cwxy[i].y = y;
+					x += members->p_arr_cwxy[i].w +
+					     members->ti.n_spc_clm;
 				}
 			}
 
 			/* 再计算后面字符的位置 */
 
-			j = pem->ti.clen;
+			j = members->ti.clen;
 
-			for(; i < j; i++)
-			{
-				if(0x0A == pem->ti.text[i]) /* 是换行符？*/
+			for (; i < j; i++) {
+				if (0x0A ==
+				    members->ti.text[i]) /* 是换行符？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					if(pem->pArrCWXY[i].y == y) /* 满足中途结束条件？*/
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					if (members->p_arr_cwxy[i].y ==
+					    y) /* 满足中途结束条件？ */
 					{
 						break;
-					}else 
-					{
-						pem->pArrCWXY[i].x = 0;
-						pem->pArrCWXY[i].y = y;
-						x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+					} else {
+						members->p_arr_cwxy[i].x = 0;
+						members->p_arr_cwxy[i].y = y;
+						x = members->p_arr_cwxy[i].w +
+						    members->ti.n_spc_clm;
 					}
-				}else if(x + pem->pArrCWXY[i].w > vpw) /* 超过最大行长度？*/
+				} else if (x + members->p_arr_cwxy[i].w >
+					   vpw) /* 超过最大行长度？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					pem->pArrCWXY[i].x = 0;
-					pem->pArrCWXY[i].y = y;
-					x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
-				}else
-				{
-					pem->pArrCWXY[i].x = x;
-					pem->pArrCWXY[i].y = y;
-					x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					members->p_arr_cwxy[i].x = 0;
+					members->p_arr_cwxy[i].y = y;
+					x = members->p_arr_cwxy[i].w +
+					    members->ti.n_spc_clm;
+				} else {
+					members->p_arr_cwxy[i].x = x;
+					members->p_arr_cwxy[i].y = y;
+					x += members->p_arr_cwxy[i].w +
+					     members->ti.n_spc_clm;
 				}
 			}
-		}else /* 没有纵向滚动条，并且，控件有滚动条风格。*/
+		} else /* 没有纵向滚动条，并且，控件有滚动条风格。 */
 		{
-			/* 先计算新字符的位置 */	
-			
-			for(; i < j; i++)
-			{
-				if(0x0A == pem->ti.text[i] || x + pem->pArrCWXY[i].w > vpw) /* 是换行符，或者，超过最大行长度？*/
+			/* 先计算新字符的位置 */
+
+			for (; i < j; i++) {
+				if (0x0A == members->ti.text[i] ||
+				    x + members->p_arr_cwxy[i].w >
+					    vpw) /* 是换行符，或者，超过最大行长度？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					if(y + pem->CharHeight - pem->pArrCWXY[0].y > vph) /* 需要加纵向滚动条？*/
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					if (y + members->char_height -
+						    members->p_arr_cwxy[0].y >
+					    vph) /* 需要加纵向滚动条？ */
 					{
-						CalcuAllCharacterXY_LEFTTOP_AUTOWRAP(This, vpw - pem->i2vscb.nThickness);
+						calcu_all_character_xy_lefttop_autowrap(
+							self,
+							vpw - members->i2vscb
+									.n_thickness);
 						goto INSERTCHAR_GT;
 					}
-					pem->pArrCWXY[i].x = 0;
-					pem->pArrCWXY[i].y = y;
-					x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
-				}else
-				{
-					pem->pArrCWXY[i].x = x;
-					pem->pArrCWXY[i].y = y;
-					x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+					members->p_arr_cwxy[i].x = 0;
+					members->p_arr_cwxy[i].y = y;
+					x = members->p_arr_cwxy[i].w +
+					    members->ti.n_spc_clm;
+				} else {
+					members->p_arr_cwxy[i].x = x;
+					members->p_arr_cwxy[i].y = y;
+					x += members->p_arr_cwxy[i].w +
+					     members->ti.n_spc_clm;
 				}
 			}
-			
+
 			/* 再计算后面字符的位置 */
-			
-			j = pem->ti.clen;
-			
-			for(; i < j; i++)
-			{
-				if(0x0A == pem->ti.text[i]) /* 是换行符？*/
+
+			j = members->ti.clen;
+
+			for (; i < j; i++) {
+				if (0x0A ==
+				    members->ti.text[i]) /* 是换行符？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					if(pem->pArrCWXY[i].y == y) /* 满足中途结束条件。*/
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					if (members->p_arr_cwxy[i].y ==
+					    y) /* 满足中途结束条件。 */
 					{
-						if(pem->pArrCWXY[pem->ti.clen-1].y + pem->CharHeight - pem->pArrCWXY[0].y > vph) /* 需要加纵向滚动条？*/
+						if (members->p_arr_cwxy
+								    [members->ti
+									     .clen -
+								     1]
+									    .y +
+							    members->char_height -
+							    members->p_arr_cwxy
+								    [0]
+									    .y >
+						    vph) /* 需要加纵向滚动条？ */
 						{
-							CalcuAllCharacterXY_LEFTTOP_AUTOWRAP(This, vpw - pem->i2vscb.nThickness);
+							calcu_all_character_xy_lefttop_autowrap(
+								self,
+								vpw - members->i2vscb
+										.n_thickness);
 							goto INSERTCHAR_GT;
-						}else
-						{
+						} else {
 							break;
 						}
-					}else 
-					{
-						if(y + pem->CharHeight - pem->pArrCWXY[0].y > vph) /* 需要加纵向滚动条？*/
+					} else {
+						if (y + members->char_height -
+							    members->p_arr_cwxy
+								    [0]
+									    .y >
+						    vph) /* 需要加纵向滚动条？ */
 						{
-							CalcuAllCharacterXY_LEFTTOP_AUTOWRAP(This, vpw - pem->i2vscb.nThickness);
+							calcu_all_character_xy_lefttop_autowrap(
+								self,
+								vpw - members->i2vscb
+										.n_thickness);
 							goto INSERTCHAR_GT;
-						}else
-						{
-							pem->pArrCWXY[i].x = 0;
-							pem->pArrCWXY[i].y = y;
-							x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+						} else {
+							members->p_arr_cwxy[i]
+								.x = 0;
+							members->p_arr_cwxy[i]
+								.y = y;
+							x = members->p_arr_cwxy
+								    [i]
+									    .w +
+							    members->ti
+								    .n_spc_clm;
 						}
 					}
-				}else if(x + pem->pArrCWXY[i].w > vpw) /* 超过最大行长度？*/
+				} else if (x + members->p_arr_cwxy[i].w >
+					   vpw) /* 超过最大行长度？ */
 				{
-					y += pem->CharHeight + pem->ti.nSpcRow;
-					if(y + pem->CharHeight - pem->pArrCWXY[0].y > vph) /* 需要加纵向滚动条？*/
+					y += members->char_height +
+					     members->ti.n_spc_row;
+					if (y + members->char_height -
+						    members->p_arr_cwxy[0].y >
+					    vph) /* 需要加纵向滚动条？ */
 					{
-						CalcuAllCharacterXY_LEFTTOP_AUTOWRAP(This, vpw - pem->i2vscb.nThickness);
+						calcu_all_character_xy_lefttop_autowrap(
+							self,
+							vpw - members->i2vscb
+									.n_thickness);
 						goto INSERTCHAR_GT;
-					}else
-					{
-						pem->pArrCWXY[i].x = 0;
-						pem->pArrCWXY[i].y = y;
-						x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+					} else {
+						members->p_arr_cwxy[i].x = 0;
+						members->p_arr_cwxy[i].y = y;
+						x = members->p_arr_cwxy[i].w +
+						    members->ti.n_spc_clm;
 					}
-				}else
-				{
-					pem->pArrCWXY[i].x = x;
-					pem->pArrCWXY[i].y = y;
-					x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+				} else {
+					members->p_arr_cwxy[i].x = x;
+					members->p_arr_cwxy[i].y = y;
+					x += members->p_arr_cwxy[i].w +
+					     members->ti.n_spc_clm;
 				}
 			}
 		}
-	}else /* 不是自动换行。*/
+	} else /* 不是自动换行。 */
 	{
-		/* 先计算新字符的位置 */	
-		
-		for(; i < j; i++)
-		{
-			if(0x0A == pem->ti.text[i]) /* 是换行符？*/
+		/* 先计算新字符的位置 */
+
+		for (; i < j; i++) {
+			if (0x0A == members->ti.text[i]) /* 是换行符？ */
 			{
-				y += pem->CharHeight + pem->ti.nSpcRow;
-				pem->pArrCWXY[i].x = 0;
-				pem->pArrCWXY[i].y = y;
-				x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
-			}else
-			{
-				pem->pArrCWXY[i].x = x;
-				pem->pArrCWXY[i].y = y;
-				x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+				y += members->char_height +
+				     members->ti.n_spc_row;
+				members->p_arr_cwxy[i].x = 0;
+				members->p_arr_cwxy[i].y = y;
+				x = members->p_arr_cwxy[i].w +
+				    members->ti.n_spc_clm;
+			} else {
+				members->p_arr_cwxy[i].x = x;
+				members->p_arr_cwxy[i].y = y;
+				x += members->p_arr_cwxy[i].w +
+				     members->ti.n_spc_clm;
 			}
 		}
-		
+
 		/* 再计算后面字符的位置 */
-		
-		j = pem->ti.clen;
-		
-		for(; i < j; i++)
-		{
-			if(0x0A == pem->ti.text[i]) /* 是换行符？*/
+
+		j = members->ti.clen;
+
+		for (; i < j; i++) {
+			if (0x0A == members->ti.text[i]) /* 是换行符？ */
 			{
-				y += pem->CharHeight + pem->ti.nSpcRow;
-				if(pem->pArrCWXY[i].y == y) /* 满足中途结束条件？*/
+				y += members->char_height +
+				     members->ti.n_spc_row;
+				if (members->p_arr_cwxy[i].y ==
+				    y) /* 满足中途结束条件？ */
 				{
 					break;
-				}else
-				{
-					pem->pArrCWXY[i].x = 0;
-					pem->pArrCWXY[i].y = y;
-					x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+				} else {
+					members->p_arr_cwxy[i].x = 0;
+					members->p_arr_cwxy[i].y = y;
+					x = members->p_arr_cwxy[i].w +
+					    members->ti.n_spc_clm;
 				}
-			}else
-			{
-				pem->pArrCWXY[i].x = x;
-				pem->pArrCWXY[i].y = y;
-				x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+			} else {
+				members->p_arr_cwxy[i].x = x;
+				members->p_arr_cwxy[i].y = y;
+				x += members->p_arr_cwxy[i].w +
+				     members->ti.n_spc_clm;
 			}
 		}
 	}
 
 INSERTCHAR_GT:
 
-	r = CalcuTextSize(This);
-	CalcuSceneSize(This);
-	CalcuViewportSize(This);
+	r = calcu_text_size(self);
+	calcu_scene_size(self);
+	calcu_viewport_size(self);
 
-	if( !((pem->format & ETF_LEFT) && (pem->format & ETF_TOP)) )
-	{
-		if(0 == r)
-			FormatText(This, iNCB, iNCE);
+	if (!((members->format & ETF_LEFT) && (members->format & ETF_TOP))) {
+		if (0 == r)
+			format_text(self, i_ncb, i_nce);
 		else
-			FormatText(This, 0, pem->ti.clen-1);
+			format_text(self, 0, members->ti.clen - 1);
 	}
 
-	OVERCB_RDCScrollBar(This, pCaller);
-	if(0 == SetCaretPosition(This, iNCE, TRUE, pCaller))
-		VO_Interact0(pem->pVObject, CMD_WGI_REPAINT, pCaller);
+	overcb_rdc_scroll_bar(self, caller_context);
+	if (0 == set_caret_position(self, i_nce, TRUE, caller_context))
+		vo_interact0(members->visual_node, CMD_WGI_REPAINT,
+			     caller_context);
 
 	return;
 }
 
-/**
-*
-* NAME: InitHScrollBar
-* DESC: 初始化横向滚动条。
-*/
-static void  InitHScrollBar(OBJECT* This, const VR* pCaller)
+/* DESC: 初始化横向滚动条。 */
+static void init_h_scroll_bar(struct object *self,
+			      const struct vr *caller_context)
 {
 	return;
 }
 
-/**
-*
-* NAME: InitVScrollBar
-* DESC: 初始化纵向滚动条。
-*/
-static void  InitVScrollBar(OBJECT* This, const VR* pCaller)
+/* DESC: 初始化纵向滚动条。 */
+static void init_v_scroll_bar(struct object *self,
+			      const struct vr *caller_context)
 {
 	return;
 }
 
-
-/**
-*
-* NAME: DestroyHScrollBar
-* DESC: 销毁横向滚动条。
-*/
-static void  DestroyHScrollBar(OBJECT* This, const VR* pCaller)
+/* DESC: 销毁横向滚动条。 */
+static void destroy_h_scroll_bar(struct object *self,
+				 const struct vr *caller_context)
 {
 	return;
 }
 
-
-/**
-*
-* NAME: DestroyVScrollBar
-* DESC: 销毁纵向滚动条。
-*/
-static void  DestroyVScrollBar(OBJECT* This, const VR* pCaller)
+/* DESC: 销毁纵向滚动条。 */
+static void destroy_v_scroll_bar(struct object *self,
+				 const struct vr *caller_context)
 {
 	return;
 }
 
-
-/**
-*
-* NAME: OVERCB_RDCScrollBar
-* DESC: 在当前位图的上方（不是上面）重置或销毁或创建滚动条。
-*/
-static void  OVERCB_RDCScrollBar(OBJECT* This, const VR* pCaller)
+/* DESC: 在当前位图的上方（不是上面）重置或销毁或创建滚动条。 */
+static void overcb_rdc_scroll_bar(struct object *self,
+				  const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*    pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	ROLLINGARG     rarg;
-	int            w, h;
-
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	struct rollingarg rarg;
+	int w, h;
 
 	w = pem_vob->rsc.rcinner.right - pem_vob->rsc.rcinner.left;
 	h = pem_vob->rsc.rcinner.bottom - pem_vob->rsc.rcinner.top;
 
-	if(!(pem->style & EDTS_SCROLLBAR))
-	{
-		if(pem->pHScrBar != NULL)
-			DestroyHScrollBar(This, pCaller);
-		if(pem->pVScrBar != NULL)
-			DestroyVScrollBar(This, pCaller);
+	if (!(members->style & EDTS_SCROLLBAR)) {
+		if (members->p_h_scr_bar != NULL)
+			destroy_h_scroll_bar(self, caller_context);
+		if (members->p_v_scr_bar != NULL)
+			destroy_v_scroll_bar(self, caller_context);
 		return;
-	}else
-	{
-		if(pem->vpw < w && pem->vph < h)
-		{
-			if(pem->pHScrBar != NULL && pem->pVScrBar != NULL)
-			{
-				VO_Interact2(pem->pHScrBar, CMD_WGI_ROLLONCB, (BYTE*)&rarg, sizeof(ROLLINGARG), pCaller);
-				VO_Interact2(pem->pVScrBar, CMD_WGI_ROLLONCB, (BYTE*)&rarg, sizeof(ROLLINGARG), pCaller);
+	} else {
+		if (members->vpw < w && members->vph < h) {
+			if (members->p_h_scr_bar != NULL &&
+			    members->p_v_scr_bar != NULL) {
+				vo_interact2(members->p_h_scr_bar,
+					     CMD_WGI_ROLLONCB,
+					     (unsigned char *)&rarg,
+					     sizeof(struct rollingarg),
+					     caller_context);
+				vo_interact2(members->p_v_scr_bar,
+					     CMD_WGI_ROLLONCB,
+					     (unsigned char *)&rarg,
+					     sizeof(struct rollingarg),
+					     caller_context);
 				return;
 			}
-		}else if(pem->vpw < w)
-		{
-			if(NULL == pem->pHScrBar && pem->pVScrBar != NULL)
-			{
-				VO_Interact2(pem->pVScrBar, CMD_WGI_ROLLONCB, (BYTE*)&rarg, sizeof(ROLLINGARG), pCaller);
+		} else if (members->vpw < w) {
+			if (NULL == members->p_h_scr_bar &&
+			    members->p_v_scr_bar != NULL) {
+				vo_interact2(members->p_v_scr_bar,
+					     CMD_WGI_ROLLONCB,
+					     (unsigned char *)&rarg,
+					     sizeof(struct rollingarg),
+					     caller_context);
 				return;
 			}
-		}else if(pem->vph < h)
-		{
-			if(pem->pHScrBar != NULL && NULL == pem->pVScrBar)
-			{
-				VO_Interact2(pem->pHScrBar, CMD_WGI_ROLLONCB, (BYTE*)&rarg, sizeof(ROLLINGARG), pCaller);
+		} else if (members->vph < h) {
+			if (members->p_h_scr_bar != NULL &&
+			    NULL == members->p_v_scr_bar) {
+				vo_interact2(members->p_h_scr_bar,
+					     CMD_WGI_ROLLONCB,
+					     (unsigned char *)&rarg,
+					     sizeof(struct rollingarg),
+					     caller_context);
 				return;
 			}
-		}else //视口宽度和高度等于内部矩形宽度和高度。
+		} else /* 视口宽度和高度等于内部矩形宽度和高度。 */
 		{
-			if(pem->pHScrBar != NULL)
-				DestroyHScrollBar(This, pCaller);
-			if(pem->pVScrBar != NULL)
-				DestroyVScrollBar(This, pCaller);	
+			if (members->p_h_scr_bar != NULL)
+				destroy_h_scroll_bar(self, caller_context);
+			if (members->p_v_scr_bar != NULL)
+				destroy_v_scroll_bar(self, caller_context);
 			return;
 		}
-		
-		if(pem->pHScrBar != NULL)
-			DestroyHScrollBar(This, pCaller);
-		if(pem->pVScrBar != NULL)
-			DestroyVScrollBar(This, pCaller);
-		
-		if(pem->vpw < w)
-		{
-			CreateObject(MSN_CSCROLLBAR, 0, 0, 1, &pem->pHScrBar);
-			InitHScrollBar(This, pCaller);
+
+		if (members->p_h_scr_bar != NULL)
+			destroy_h_scroll_bar(self, caller_context);
+		if (members->p_v_scr_bar != NULL)
+			destroy_v_scroll_bar(self, caller_context);
+
+		if (members->vpw < w) {
+			create_object(MSN_CSCROLLBAR, 0, 0, 1,
+				      &members->p_h_scr_bar);
+			init_h_scroll_bar(self, caller_context);
 		}
-		
-		if(pem->vph < h)
-		{
-			CreateObject(MSN_CSCROLLBAR, 0, 0, 1, &pem->pVScrBar);
-			InitVScrollBar(This, pCaller);
+
+		if (members->vph < h) {
+			create_object(MSN_CSCROLLBAR, 0, 0, 1,
+				      &members->p_v_scr_bar);
+			init_v_scroll_bar(self, caller_context);
 		}
 	}
-	
+
 	return;
 }
 
-/**
-*
-* NAME: CalcuAllCharacterXY_LEFTTOP_AUTOWRAP
-* DESC: 按左靠齐和顶靠齐格式化方式及自动换行风格，计算所有字符的位置。
-* PARA: maxLength-行的最大长度。
-*/
-static void  CalcuAllCharacterXY_LEFTTOP_AUTOWRAP(OBJECT* This, int maxLength)
+/*
+ * DESC: 按左靠齐和顶靠齐格式化方式及自动换行风格，计算所有字符的位置。
+ * PARA: max_length-行的最大长度。
+ */
+static void calcu_all_character_xy_lefttop_autowrap(struct object *self,
+						    int max_length)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	long           i, j, x, y; 
-	
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	long i, j, x, y;
+
 	x = y = 0;
-	j = pem->ti.clen;
-	
-	for(i = 0; i < j; i++)
-	{
-		if(0x0A == pem->ti.text[i] || x + pem->pArrCWXY[i].w > maxLength) /* 是换行符，或者，超过最大行长度？*/
+	j = members->ti.clen;
+
+	for (i = 0; i < j; i++) {
+		if (0x0A == members->ti.text[i] ||
+		    x + members->p_arr_cwxy[i].w >
+			    max_length) /* 是换行符，或者，超过最大行长度？ */
 		{
-			y += pem->CharHeight + pem->ti.nSpcRow;
-			pem->pArrCWXY[i].x = 0;
-			pem->pArrCWXY[i].y = y;
-			x = pem->pArrCWXY[i].w + pem->ti.nSpcClm;
-		}else
-		{
-			pem->pArrCWXY[i].x = x;
-			pem->pArrCWXY[i].y = y;
-			x += pem->pArrCWXY[i].w + pem->ti.nSpcClm;
+			y += members->char_height + members->ti.n_spc_row;
+			members->p_arr_cwxy[i].x = 0;
+			members->p_arr_cwxy[i].y = y;
+			x = members->p_arr_cwxy[i].w + members->ti.n_spc_clm;
+		} else {
+			members->p_arr_cwxy[i].x = x;
+			members->p_arr_cwxy[i].y = y;
+			x += members->p_arr_cwxy[i].w + members->ti.n_spc_clm;
 		}
 	}
 
 	return;
 }
 
-/*=======================================================*/
-
-
-/**
-*
-* NAME: CEdit_I_Open
-*/
-RESULT  CEdit_I_Open(OBJECT* This, const VR* pCaller)
+int c_edit_i_open(struct object *self, const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	
-	if(1 == This->RefCnt)
-	{
-		pem->pOIOIC = GetBN(This, MSN_OIOIC);
-		pem->pVObject = GetBN(This, MSN_VOBJECT);
-		pem->pCObject = GetBN(This, MSN_COBJECT);
+	struct em_cedit *members = (struct em_cedit *)self->members;
+
+	if (1 == self->ref_count) {
+		members->oioic_node = get_base_node(self, MSN_OIOIC);
+		members->visual_node = get_base_node(self, MSN_VOBJECT);
+		members->control_node = get_base_node(self, MSN_COBJECT);
 
 		return RP_RCONE;
 	}
-	
+
 	return R_P;
 }
 
-/**
-*
-* NAME: CEdit_I_Close
-*/
-RESULT  CEdit_I_Close(OBJECT* This, const VR* pCaller)
+int c_edit_i_close(struct object *self, const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	
-	if(0 == This->RefCnt)
-	{
-		if(pem->pArrCWXY)
-			free(pem->pArrCWXY);
+	struct em_cedit *members = (struct em_cedit *)self->members;
+
+	if (0 == self->ref_count) {
+		if (members->p_arr_cwxy)
+			free(members->p_arr_cwxy);
 		return RP_RCZERO;
 	}
-	
+
 	return R_P;
 }
 
-
-/**
-*
-* NAME: CEdit__CMD_INITIALIZE
-*/
-RESULT  CEdit__CMD_INITIALIZE(OBJECT* This, const INIT_CEDIT* piced, const VR* pCaller)
+int c_edit__cmd_initialize(struct object *self, const struct init_cedit *piced,
+			   const struct vr *caller_context)
 {
-	EM_CEDIT*        pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*      pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
 
-     
-	pem_vob->onmcb.pCustomer = This;
-	pem_vob->onmcb.OnMakeCurrentBitmap = CBF_OnMakeCurrentBitmap;
-	pem->hBmpIntAreaVHScrbar = piced->hBmpIntAreaVHScrbar;
-	pem->i2hscb = piced->i2hscb;
-	pem->i2vscb = piced->i2vscb;
-	pem->ti = piced->ti;
-	pem->style = piced->style;
-	pem->format = piced->format;
-	pem->CaretWidth = piced->CaretWidth;
-	
+	pem_vob->onmcb.p_customer = self;
+	pem_vob->onmcb.on_make_current_bitmap = cbf_on_make_current_bitmap;
+	members->h_bmp_int_area_vh_scrbar = piced->h_bmp_int_area_vh_scrbar;
+	members->i2hscb = piced->i2hscb;
+	members->i2vscb = piced->i2vscb;
+	members->ti = piced->ti;
+	members->style = piced->style;
+	members->format = piced->format;
+	members->caret_width = piced->caret_width;
+
 	return R_P;
 }
 
-/**
-*
-* NAME: CEdit__CMD_PREPARE
-*/
-RESULT CEdit__CMD_PREPARE(OBJECT* This, const VR* pCaller)
+int c_edit__cmd_prepare(struct object *self, const struct vr *caller_context)
 {
-	EM_CEDIT*        pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*      pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	HFONT            hOldFont = NULL;
-	HDC              hdc;
-	TEXTMETRIC       tm;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	HFONT h_old_font = NULL;
+	HDC hdc;
+	TEXTMETRIC tm;
 
+	if (!(0x00000007L & members->format))
+		members->format |= ETF_LEFT;
 
-	if(!(0x00000007L & pem->format))
-		pem->format |= ETF_LEFT;
+	if (!(0x00000038L & members->format))
+		members->format |= ETF_TOP;
 
-	if(!(0x00000038L & pem->format))
-		pem->format |= ETF_TOP;
+	if (0 == members->caret_width)
+		members->caret_width = 1;
 
-	if(0 == pem->CaretWidth)
-		pem->CaretWidth = 1;
-
-	if(pem->ti.cpty > 0)
-	{
-		pem->pArrCWXY = (CWXY*)calloc(pem->ti.cpty, sizeof(CWXY));
-		if(NULL == pem->pArrCWXY)
-			return R_N; 
+	if (members->ti.cpty > 0) {
+		members->p_arr_cwxy = (struct cwxy *)calloc(
+			members->ti.cpty, sizeof(struct cwxy));
+		if (NULL == members->p_arr_cwxy)
+			return R_N;
 	}
 
-	hdc = GetDC(*pem_vob->pWndHandle);
-	if(pem->ti.font)
-		hOldFont = SelectObject(hdc, pem->ti.font);
-	GetTextMetrics(hdc, &tm); 
-	if(hOldFont != NULL)
-		SelectObject(hdc, hOldFont);
-	ReleaseDC(*pem_vob->pWndHandle, hdc);
-	
-	pem->CharHeight = tm.tmHeight; 
+	hdc = GetDC(*pem_vob->p_wnd_handle);
+	if (members->ti.font)
+		h_old_font = SelectObject(hdc, members->ti.font);
+	GetTextMetrics(hdc, &tm);
+	if (h_old_font != NULL)
+		SelectObject(hdc, h_old_font);
+	ReleaseDC(*pem_vob->p_wnd_handle, hdc);
 
-	OVERCB_InsertInitialText(This, pCaller);
-	VO_Interact0(pem->pVObject, CMD_PREPARE, pCaller);
+	members->char_height = tm.tmHeight;
+
+	overcb_insert_initial_text(self, caller_context);
+	vo_interact0(members->visual_node, CMD_PREPARE, caller_context);
 
 	return R_P;
 }
 
-/**
-*
-* NAME: CEdit__MSG_WGI_ACTIVATE
-*/
-RESULT  CEdit__MSG_WGI_ACTIVATE(OBJECT* This, const VR* pCaller)
+int c_edit__msg_wgi_activate(struct object *self,
+			     const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*    pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	EM_VOBJECT*    pem_wob_sup;
-	OIOIC_BOOL           flag; 
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	struct em_vobject *pem_wob_sup;
+	char flag;
 
+	pem_wob_sup = (struct em_vobject *)get_base_members(pem_vob->p_superior,
+							    MSN_VOBJECT);
+	flag = (self->nodes != pem_wob_sup->p_active_sbdt)
+		       ? TRUE
+		       : FALSE; /* 标记是否需要创建插入符。 */
 
-	pem_wob_sup = (EM_VOBJECT*)GetEMofBN(pem_vob->pSuperior, MSN_VOBJECT);
-	flag = (This->po_AND != pem_wob_sup->pActiveSbdt) ? TRUE : FALSE; /* 标记是否需要创建插入符。*/
-	
-	VO_Interact0(pem->pVObject, MSG_WGI_ACTIVATE, pCaller);
-	
-	if(TRUE == flag) /* 需要创建插入符？*/
+	vo_interact0(members->visual_node, MSG_WGI_ACTIVATE, caller_context);
+
+	if (TRUE == flag) /* 需要创建插入符？ */
 	{
-		CreateCaret(*pem_vob->pWndHandle, NULL, pem->CaretWidth, pem->CharHeight);
-		//_Debug_OutputString(TEXT("\nCreateCaret"), 123, NULL);
+		CreateCaret(*pem_vob->p_wnd_handle, NULL, members->caret_width,
+			    members->char_height);
+		/* _Debug_OutputString(TEXT("\nCreateCaret"), 123, NULL); */
 	}
 
 	return R_P;
 }
 
-/**
-*
-* NAME: CEdit__MSG_WGI_DEACTIVATE
-*/
-RESULT  CEdit__MSG_WGI_DEACTIVATE(OBJECT* This, const VR* pCaller)
+int c_edit__msg_wgi_deactivate(struct object *self,
+			       const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
+	struct em_cedit *members = (struct em_cedit *)self->members;
 
-	DestroyCaret(); /* 销毁插入符。*/
-	VO_Interact0(pem->pVObject, MSG_WGI_DEACTIVATE, pCaller);
+	DestroyCaret(); /* 销毁插入符。 */
+	vo_interact0(members->visual_node, MSG_WGI_DEACTIVATE, caller_context);
 
 	return R_P;
 }
 
-/**
-*
-* NAME: CEdit__CMD_WGI_INSERTCHARATCP
-*/
-RESULT  CEdit__CMD_WGI_INSERTCHARATCP(OBJECT* This, const TCHAR* archar, long count, const VR* pCaller)
+int c_edit__cmd_wgi_insertcharatcp(struct object *self, const TCHAR *archar,
+				   long count, const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	long           i; 
-	
-	
-	if(-1 == pem->cp.iChar)
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	long i;
+
+	if (-1 == members->cp.i_char)
 		return R_N;
-	
-	if(0 == pem->ti.clen)
+
+	if (0 == members->ti.clen)
 		i = 0;
 	else
-		i = (TRUE == pem->cp.bToRight) ? pem->cp.iChar + 1 : pem->cp.iChar;
-	
-	InsertCharacter(This, i, archar, count, pCaller);
-	
+		i = (TRUE == members->cp.b_to_right) ? members->cp.i_char + 1
+						     : members->cp.i_char;
+
+	insert_character(self, i, archar, count, caller_context);
+
 	return R_P;
 }
 
-
-/**
-*
-* NAME: CEdit__MSG_WGI_FOCUSDOWN
-*/
-RESULT  CEdit__MSG_WGI_FOCUSDOWN(OBJECT* This, const POINT pt, const VR* pCaller)
+int c_edit__msg_wgi_focusdown(struct object *self, const POINT pt,
+			      const struct vr *caller_context)
 {
-	EM_CEDIT*     pem = (EM_CEDIT*)This->pEM;
-	EM_VOBJECT*   pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	long          x, y, i, j;
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	long x, y, i, j;
 
+	vo_interact2(members->visual_node, MSG_WGI_FOCUSDOWN,
+		     (unsigned char *)&pt, sizeof(POINT), caller_context);
 
-	VO_Interact2(pem->pVObject, MSG_WGI_FOCUSDOWN, (BYTE*)&pt, sizeof(POINT), pCaller);
-
-    x = pt.x - pem_vob->rsc.rcinner.left;
+	x = pt.x - pem_vob->rsc.rcinner.left;
 	y = pt.y - pem_vob->rsc.rcinner.top;
-	if(!(x > 0 && x < pem->vpw && y > 0 && y < pem->vph))
-		return R_P; /* 不在视口内就返回。*/
-	
-	if(0 == pem->ti.clen)
-	{
-		SetCaretPosition(This, -1, TRUE, pCaller);
+	if (!(x > 0 && x < members->vpw && y > 0 && y < members->vph))
+		return R_P; /* 不在视口内就返回。 */
+
+	if (0 == members->ti.clen) {
+		set_caret_position(self, -1, TRUE, caller_context);
 		return R_P;
 	}
-	
-	
+
 	x -= pem_vob->ox_irr;
 	y -= pem_vob->oy_irr;
-	j = pem->ti.clen - 1;
-	
-	if(y > pem->pArrCWXY[0].y && y < pem->pArrCWXY[j].y + pem->CharHeight)
-	{
-		i = SearchCharByPoint(This, x, y);
-		if(-1 == i)
-		{
-			i = SearchTextLineByYCoord(This, y);
-			i = SearchLFCharByChar(This, i);
-			if(x < pem->pArrCWXY[i].x) /* 在行首字符前面？*/
+	j = members->ti.clen - 1;
+
+	if (y > members->p_arr_cwxy[0].y &&
+	    y < members->p_arr_cwxy[j].y + members->char_height) {
+		i = search_char_by_point(self, x, y);
+		if (-1 == i) {
+			i = search_text_line_by_y_coord(self, y);
+			i = search_lf_char_by_char(self, i);
+			if (x < members->p_arr_cwxy[i].x) /* 在行首字符前面？ */
 			{
-				if(0x0A == pem->ti.text[i]) /* 是换行符？*/
-					SetCaretPosition(This, i, TRUE, pCaller);
+				if (0x0A ==
+				    members->ti.text[i]) /* 是换行符？ */
+					set_caret_position(self, i, TRUE,
+							   caller_context);
 				else
-					SetCaretPosition(This, i, FALSE, pCaller);
-			}else
-			{
-				i = SearchLLCharByChar(This, i);
-				SetCaretPosition(This, i, TRUE, pCaller);
+					set_caret_position(self, i, FALSE,
+							   caller_context);
+			} else {
+				i = search_ll_char_by_char(self, i);
+				set_caret_position(self, i, TRUE,
+						   caller_context);
 			}
-		}else if(x < pem->pArrCWXY[i].x + pem->pArrCWXY[i].w / 2) /* 在i所指字符的定位区域的左半部？*/
+		} else if (
+			x <
+			members->p_arr_cwxy[i].x +
+				members->p_arr_cwxy[i].w /
+					2) /* 在i所指字符的定位区域的左半部？ */
 		{
-			if(0x0A == pem->ti.text[i]) /* 是换行符？*/
-				SetCaretPosition(This, i, TRUE, pCaller);
-			else if(0 ==i)
-				SetCaretPosition(This, i, FALSE, pCaller);
-			else if(pem->pArrCWXY[i-1].y < pem->pArrCWXY[i].y) /* “i-1”所指的字符在上一行？*/
-				SetCaretPosition(This, i, FALSE, pCaller);
+			if (0x0A == members->ti.text[i]) /* 是换行符？ */
+				set_caret_position(self, i, TRUE,
+						   caller_context);
+			else if (0 == i)
+				set_caret_position(self, i, FALSE,
+						   caller_context);
+			else if (members->p_arr_cwxy[i - 1].y <
+				 members->p_arr_cwxy[i]
+					 .y) /* “i-1”所指的字符在上一行？ */
+				set_caret_position(self, i, FALSE,
+						   caller_context);
 			else
-				SetCaretPosition(This, i-1, TRUE, pCaller);
-		}else
-		{
-			SetCaretPosition(This, i, TRUE, pCaller);
+				set_caret_position(self, i - 1, TRUE,
+						   caller_context);
+		} else {
+			set_caret_position(self, i, TRUE, caller_context);
 		}
-	}else if(y <= pem->pArrCWXY[0].y)
-	{
-		SetCaretPosition(This, 0, FALSE, pCaller);
-	}else
-	{
-		SetCaretPosition(This, j, TRUE, pCaller);
+	} else if (y <= members->p_arr_cwxy[0].y) {
+		set_caret_position(self, 0, FALSE, caller_context);
+	} else {
+		set_caret_position(self, j, TRUE, caller_context);
 	}
 
-	
 	return R_P;
 }
 
-
-/**
-*
-* NAME: CEdit__CMD_WGI_MOVE
-*/
-RESULT  CEdit__CMD_WGI_MOVE(OBJECT* This, const MOVE* pmove, const VR* pCaller)
+int c_edit__cmd_wgi_move(struct object *self, const struct move *pmove,
+			 const struct vr *caller_context)
 {
-	EM_CEDIT*      pem = (EM_CEDIT*)This->pEM;
-	POINT          pt;
-	
-	VO_Interact2(pem->pCObject, CMD_WGI_MOVE, (BYTE*)pmove, sizeof(MOVE), pCaller);
+	struct em_cedit *members = (struct em_cedit *)self->members;
+	POINT pt;
+
+	vo_interact2(members->control_node, CMD_WGI_MOVE,
+		     (unsigned char *)pmove, sizeof(struct move),
+		     caller_context);
 
 	GetCaretPos(&pt);
 
-	pt.x += pmove->dxUL;
-	pt.y += pmove->dyUL;
+	pt.x += pmove->dx_ul;
+	pt.y += pmove->dy_ul;
 	SetCaretPos(pt.x, pt.y);
-	
+
 	return R_P;
 }

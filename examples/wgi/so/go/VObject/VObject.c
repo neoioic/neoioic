@@ -1,638 +1,582 @@
-/**
- *
- * 文 件 名：VObject.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "VObject.h"
 
+int v_object_i_open(struct object *self, const struct vr *caller_context);
+int v_object__cmd_initialize(struct object *self,
+			     const struct init_vobject *pivob,
+			     const struct vr *caller_context);
+int v_object__cmd_wgi_refreshdcllpfirstiirsbdt(struct object *self,
+					       const struct vr *caller_context);
+int v_object__mak_wgi_currentbitmap0(struct object *self,
+				     const struct vr *caller_context);
+int v_object__mak_wgi_currentbitmap2(struct object *self,
+				     const HBITMAP h_bmp_bkgd,
+				     const struct vr *caller_context);
+int v_object__cmd_wgi_paint(struct object *self,
+			    const struct vr *caller_context);
+int v_object__cmd_wgi_repaint(struct object *self,
+			      const struct vr *caller_context);
+int v_object__msg_wgi_focusoverleave(struct object *self,
+				     const struct vr *caller_context);
+int v_object__msg_wgi_focusonleave(struct object *self,
+				   const struct vr *caller_context);
+int v_object__msg_wgi_focusover(struct object *self, const POINT pt,
+				const struct vr *caller_context);
+int v_object__msg_wgi_focuson(struct object *self, const POINT pt,
+			      const struct vr *caller_context);
+int v_object__msg_wgi_focusovermove(struct object *self, const POINT pt,
+				    const struct vr *caller_context);
+int v_object__msg_wgi_focusdown(struct object *self, const POINT pt,
+				const struct vr *caller_context);
+int v_object__msg_wgi_focusup(struct object *self, const POINT pt,
+			      const struct vr *caller_context);
+int v_object__msg_wgi_focusonmove(struct object *self, const POINT pt,
+				  const struct vr *caller_context);
+int v_object__msg_wgi_activate(struct object *self,
+			       const struct vr *caller_context);
+int v_object__msg_wgi_deactivate(struct object *self,
+				 const struct vr *caller_context);
+int v_object__cmd_prepare(struct object *self, const struct vr *caller_context);
+int v_object_i_close(struct object *self, const struct vr *caller_context);
+int v_object__cmd_wgi_repaintsuperior(struct object *self,
+				      const struct vr *caller_context);
+int v_object__cmd_wgi_rollir(struct object *self,
+			     const struct irrollingdelta delta,
+			     const struct vr *caller_context);
 
-RESULT  VObject_I_Open(OBJECT* This, const VR* pCaller);
-RESULT  VObject__CMD_INITIALIZE(OBJECT* This, const INIT_VOBJECT* pivob, const VR* pCaller);
-RESULT  VObject__CMD_WGI_REFRESHDCLLPFIRSTIIRSBDT(OBJECT* This, const VR* pCaller);
-RESULT  VObject__MAK_WGI_CURRENTBITMAP0(OBJECT* This, const VR* pCaller);
-RESULT  VObject__MAK_WGI_CURRENTBITMAP2(OBJECT* This, const HBITMAP hBmpBkgd, const VR* pCaller);
-RESULT  VObject__CMD_WGI_PAINT(OBJECT* This, const VR* pCaller);
-RESULT  VObject__CMD_WGI_REPAINT(OBJECT* This, const VR* pCaller);
-RESULT  VObject__MSG_WGI_FOCUSOVERLEAVE(OBJECT* This, const VR* pCaller);
-RESULT  VObject__MSG_WGI_FOCUSONLEAVE(OBJECT* This, const VR* pCaller);
-RESULT  VObject__MSG_WGI_FOCUSOVER(OBJECT* This, const POINT pt, const VR* pCaller);
-RESULT  VObject__MSG_WGI_FOCUSON(OBJECT* This, const POINT pt, const VR* pCaller);
-RESULT  VObject__MSG_WGI_FOCUSOVERMOVE(OBJECT* This, const POINT pt, const VR* pCaller);
-RESULT  VObject__MSG_WGI_FOCUSDOWN(OBJECT* This, const POINT pt, const VR* pCaller);
-RESULT  VObject__MSG_WGI_FOCUSUP(OBJECT* This, const POINT pt, const VR* pCaller);
-RESULT  VObject__MSG_WGI_FOCUSONMOVE(OBJECT* This, const POINT pt, const VR* pCaller);
-RESULT  VObject__MSG_WGI_ACTIVATE(OBJECT* This, const VR* pCaller);
-RESULT  VObject__MSG_WGI_DEACTIVATE(OBJECT* This, const VR* pCaller);
-RESULT  VObject__CMD_PREPARE(OBJECT* This, const VR* pCaller);
-RESULT  VObject_I_Close(OBJECT* This, const VR* pCaller);
-RESULT  VObject__CMD_WGI_REPAINTSUPERIOR(OBJECT* This, const VR* pCaller);
-RESULT  VObject__CMD_WGI_ROLLIR(OBJECT* This, const IRRDELTA delta, const VR* pCaller);
+static void make_current_bitmap(struct object *self,
+				const HBITMAP h_bmp_background);
+static void Deactivate(struct object *self, const struct vr *caller_context);
 
+/* OICC label */
 
-static void MakeCurrentBitmap(OBJECT* This, const HBITMAP hBmpBackground);
-static void Deactivate(OBJECT* This, const VR* pCaller);
+/* <oicc> */
+/* <ibn> OIOIC </ibn> */
+/* <crt> */
+/* </crt> */
+/* </oicc> */
 
+/* Interface */
 
-/*=====================+ OICC label +====================*/
-
-/*<oicc>*/
-/*<ibn> OIOIC </ibn>*/
-/*<crt>*/
-/*</crt>*/
-/*</oicc>*/
-
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：VObject_Open
-*/
-static  RESULT  VObject_Open(OBJECT* This, const VR* pCaller)
+static int v_object_open(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return VObject_I_Open(This, &caller);
+	return v_object_i_open(self, &caller);
 }
 
-/**
-*
-* 名称：VObject_Input
-*/
-static  RESULT  VObject_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int v_object_input(struct object *self, unsigned char *input_stream,
+			  unsigned int quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：VObject_Output
-*/
-static  RESULT  VObject_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int v_object_output(struct object *self, unsigned char *output_stream,
+			   unsigned int capacity, unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：VObject_IOput
-*/
-static  RESULT  VObject_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int v_object_io_put(struct object *self, unsigned char *input_stream,
+			   unsigned int quantity, unsigned char *output_stream,
+			   unsigned int capacity, unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：VObject_Interact0
-*/
-static  RESULT  VObject_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int v_object_interact0(struct object *self, unsigned int action,
+			      const struct vr *caller_context)
 {
-	VR      caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
-	switch(Act)
-	{
+	switch (action) {
 	case CMD_PREPARE:
-		return VObject__CMD_PREPARE(This, &caller);
+		return v_object__cmd_prepare(self, &caller);
 	case CMD_WGI_REFRESHDCLLPFIRSTIIRSBDT:
-		return VObject__CMD_WGI_REFRESHDCLLPFIRSTIIRSBDT(This, &caller);
+		return v_object__cmd_wgi_refreshdcllpfirstiirsbdt(self,
+								  &caller);
 	case MAK_WGI_CURRENTBITMAP0:
-		return VObject__MAK_WGI_CURRENTBITMAP0(This, &caller);
+		return v_object__mak_wgi_currentbitmap0(self, &caller);
 	case CMD_WGI_PAINT:
-		return VObject__CMD_WGI_PAINT(This, &caller);
+		return v_object__cmd_wgi_paint(self, &caller);
 	case CMD_WGI_REPAINT:
-		return VObject__CMD_WGI_REPAINT(This, &caller);
+		return v_object__cmd_wgi_repaint(self, &caller);
 	case MSG_WGI_FOCUSOVERLEAVE:
-		return VObject__MSG_WGI_FOCUSOVERLEAVE(This, &caller);
+		return v_object__msg_wgi_focusoverleave(self, &caller);
 	case MSG_WGI_FOCUSONLEAVE:
-		return VObject__MSG_WGI_FOCUSONLEAVE(This, &caller);
+		return v_object__msg_wgi_focusonleave(self, &caller);
 	case MSG_WGI_ACTIVATE:
-		return VObject__MSG_WGI_ACTIVATE(This, &caller);
+		return v_object__msg_wgi_activate(self, &caller);
 	case MSG_WGI_DEACTIVATE:
-		return VObject__MSG_WGI_DEACTIVATE(This, &caller);
+		return v_object__msg_wgi_deactivate(self, &caller);
 	case CMD_WGI_REPAINTSUPERIOR:
-		return VObject__CMD_WGI_REPAINTSUPERIOR(This, &caller);
+		return v_object__cmd_wgi_repaintsuperior(self, &caller);
 	default:
 		break;
 	}
 
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：VObject_Interact1
-*/
-static  RESULT  VObject_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int v_object_interact1(struct object *self, unsigned int action,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：VObject_Interact2
-*/
-static  RESULT  VObject_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int v_object_interact2(struct object *self, unsigned int action,
+			      unsigned char *input_stream,
+			      unsigned int quantity,
+			      const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
-	switch(Act)
-	{
+	switch (action) {
 	case CMD_INITIALIZE:
-		assert(sizeof(INIT_VOBJECT) == Qty);
-		return VObject__CMD_INITIALIZE(This, (INIT_VOBJECT*)IStrm, &caller);
+		assert(sizeof(struct init_vobject) == quantity);
+		return v_object__cmd_initialize(
+			self, (struct init_vobject *)input_stream, &caller);
 	case MAK_WGI_CURRENTBITMAP2:
-		assert(sizeof(HBITMAP) == Qty);
-		return VObject__MAK_WGI_CURRENTBITMAP2(This, *(HBITMAP*)IStrm, &caller);
+		assert(sizeof(HBITMAP) == quantity);
+		return v_object__mak_wgi_currentbitmap2(
+			self, *(HBITMAP *)input_stream, &caller);
 	case MSG_WGI_FOCUSOVER:
-		assert(sizeof(POINT) == Qty);
-		return VObject__MSG_WGI_FOCUSOVER(This, *(POINT*)IStrm, &caller);
+		assert(sizeof(POINT) == quantity);
+		return v_object__msg_wgi_focusover(self, *(POINT *)input_stream,
+						   &caller);
 	case MSG_WGI_FOCUSON:
-		assert(sizeof(POINT) == Qty);
-		return VObject__MSG_WGI_FOCUSON(This, *(POINT*)IStrm, &caller);
+		assert(sizeof(POINT) == quantity);
+		return v_object__msg_wgi_focuson(self, *(POINT *)input_stream,
+						 &caller);
 	case MSG_WGI_FOCUSOVERMOVE:
-		assert(sizeof(POINT) == Qty);
-		return VObject__MSG_WGI_FOCUSOVERMOVE(This, *(POINT*)IStrm, &caller);
+		assert(sizeof(POINT) == quantity);
+		return v_object__msg_wgi_focusovermove(
+			self, *(POINT *)input_stream, &caller);
 	case MSG_WGI_FOCUSUP:
-		assert(sizeof(POINT) == Qty);
-		return VObject__MSG_WGI_FOCUSUP(This, *(POINT*)IStrm, &caller);
+		assert(sizeof(POINT) == quantity);
+		return v_object__msg_wgi_focusup(self, *(POINT *)input_stream,
+						 &caller);
 	case MSG_WGI_FOCUSDOWN:
-		assert(sizeof(POINT) == Qty);
-		return VObject__MSG_WGI_FOCUSDOWN(This, *(POINT*)IStrm, &caller);
+		assert(sizeof(POINT) == quantity);
+		return v_object__msg_wgi_focusdown(self, *(POINT *)input_stream,
+						   &caller);
 	case MSG_WGI_FOCUSONMOVE:
-		assert(sizeof(POINT) == Qty);
-		return VObject__MSG_WGI_FOCUSONMOVE(This, *(POINT*)IStrm, &caller);
+		assert(sizeof(POINT) == quantity);
+		return v_object__msg_wgi_focusonmove(
+			self, *(POINT *)input_stream, &caller);
 	case CMD_WGI_ROLLIR:
-		assert(sizeof(IRRDELTA) == Qty);
-		return VObject__CMD_WGI_ROLLIR(This, *(IRRDELTA*)IStrm, &caller);
+		assert(sizeof(struct irrollingdelta) == quantity);
+		return v_object__cmd_wgi_rollir(
+			self, *(struct irrollingdelta *)input_stream, &caller);
 	default:
 		break;
 	}
 
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：VObject_Interact3
-*/
-static  RESULT  VObject_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int v_object_interact3(struct object *self, unsigned int action,
+			      unsigned char *input_stream,
+			      unsigned int quantity,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：VObject_Close
-*/
-static  RESULT  VObject_Close(OBJECT* This, const VR* pCaller)
+static int v_object_close(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
-	
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
-	
+	struct vr caller;
+
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
+
 	OBS_OBJECT_CLOSE_;
-	
-	/* 在下面完成接口自己的任务。*/
-	
-	return VObject_I_Close(This, &caller);
+
+	/* 在下面完成接口自己的任务。 */
+
+	return v_object_i_close(self, &caller);
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_VObject
-*/
-void  TOG_VObject(OBJECT* pObj)
+void tog_v_object(struct object *object)
 {
-	pObj->Open = VObject_Open;
-	pObj->Input = VObject_Input;
-	pObj->Output = VObject_Output;
-	pObj->IOput = VObject_IOput;
-	pObj->Interact0 = VObject_Interact0;
-	pObj->Interact1 = VObject_Interact1;
-	pObj->Interact2 = VObject_Interact2;
-	pObj->Interact3 = VObject_Interact3;
-	pObj->Close = VObject_Close;
+	object->open = v_object_open;
+	object->input = v_object_input;
+	object->output = v_object_output;
+	object->io_put = v_object_io_put;
+	object->interact0 = v_object_interact0;
+	object->interact1 = v_object_interact1;
+	object->interact2 = v_object_interact2;
+	object->interact3 = v_object_interact3;
+	object->close = v_object_close;
 }
 
-/*====================+ Function(s) +====================*/
+/* Function(s) */
 
-/**
-*
-* 需求编号：	
-* 需求功能：	刷新pFirstIIRSbdt所指的双向循环链表。
-* 函    数：	void  Refresh_DCLL_pFirstIIRSbdt(OBJECT* This)
-* 描    述：	刷新pFirstIIRSbdt所指的双向循环链表。VObject节点函数。
-* 参    数：	
-* 返    回：	
-* 定 义 者：	赵平智
-* 设 计 者：	赵平智
-* 实 现 者：	赵平智
-* 使 用 者：	
-* 版    本：	V1.0.8
-* 更新日期：	20110713
-* 备    注：	DCLL - Doubly Circularly Linked List，双向循环链表。
-* 修改记录：	
-* 测试要点：	
-*/
-static void  Refresh_DCLL_pFirstIIRSbdt(OBJECT* This)
+/*
+ * 刷新p_first_iir_sbdt所指的双向循环链表。
+ * 刷新p_first_iir_sbdt所指的双向循环链表。VObject节点函数。
+ * 定 义 者：	赵平智
+ * 设 计 者：	赵平智
+ * 实 现 者：	赵平智
+ * 备    注：	DCLL - Doubly Circularly Linked List，双向循环链表。
+ */
+static void refresh_dcll_p_first_iir_sbdt(struct object *self)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	OBJECT*         pSbdt;
-	OBJECT*         pIIRSbdt;
-	EM_VOBJECT*     pem_sbdt;
-	EM_VOBJECT*     pem_IIRsbdt;
-	RECT            rc;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct object *p_sbdt;
+	struct object *p_iir_sbdt;
+	struct em_vobject *pem_sbdt;
+	struct em_vobject *pem_ii_rsbdt;
+	RECT rc;
 
-	
-	if(NULL == pem->pFirstSbdt)
+	if (NULL == members->p_first_sbdt)
 		return;
 
-	pSbdt = pem->pFirstSbdt;
-	pIIRSbdt = pem->pFirstIIRSbdt = NULL;
-	do
-	{
-		pem_sbdt = (EM_VOBJECT*)GetEMofBN(pSbdt, MSN_VOBJECT);
+	p_sbdt = members->p_first_sbdt;
+	p_iir_sbdt = members->p_first_iir_sbdt = NULL;
+	do {
+		pem_sbdt = (struct em_vobject *)get_base_members(p_sbdt,
+								 MSN_VOBJECT);
 
 		rc = pem_sbdt->rsc.rcouter;
-		rc.left += pem->rsc.rcinner.left;
-		rc.top += pem->rsc.rcinner.top;
-		rc.right += pem->rsc.rcinner.left;
-		rc.bottom += pem->rsc.rcinner.top;
+		rc.left += members->rsc.rcinner.left;
+		rc.top += members->rsc.rcinner.top;
+		rc.right += members->rsc.rcinner.left;
+		rc.bottom += members->rsc.rcinner.top;
 
-		if(IsInter2Rects(&pem->rsc.rcinner, &rc, NULL))
-		{
-			if(NULL == pem_sbdt->hBmpCurrent)
-			{
-				/* 没有当前位图，有可能是因为这个下级对象之前不在显示区而被销毁，所以现在需要重新生成当前位图。*/
-				MakeCurrentBitmap(GetBN(pSbdt, MSN_VOBJECT), NULL);	
+		if (is_inter2_rects(&members->rsc.rcinner, &rc, NULL)) {
+			if (NULL == pem_sbdt->h_bmp_current) {
+				/* 没有当前位图，有可能是因为这个下级对象之前不在显示区而被销毁，所以现在需要重新生成当前位图。 */
+				make_current_bitmap(
+					get_base_node(p_sbdt, MSN_VOBJECT),
+					NULL);
 			}
 
-			if(NULL == pIIRSbdt)
-			{
-				pem->pFirstIIRSbdt = pIIRSbdt = pSbdt;
-			}else
-			{
-				pem_IIRsbdt = (EM_VOBJECT*)GetEMofBN(pIIRSbdt, MSN_VOBJECT);
-				pem_IIRsbdt->pNextISIRCodt = pSbdt;
-				pem_IIRsbdt = (EM_VOBJECT*)GetEMofBN(pSbdt, MSN_VOBJECT);
-				pem_IIRsbdt->pPrevISIRCodt = pIIRSbdt;
-				pIIRSbdt = pSbdt;
+			if (NULL == p_iir_sbdt) {
+				members->p_first_iir_sbdt = p_iir_sbdt = p_sbdt;
+			} else {
+				pem_ii_rsbdt =
+					(struct em_vobject *)get_base_members(
+						p_iir_sbdt, MSN_VOBJECT);
+				pem_ii_rsbdt->p_next_isir_codt = p_sbdt;
+				pem_ii_rsbdt =
+					(struct em_vobject *)get_base_members(
+						p_sbdt, MSN_VOBJECT);
+				pem_ii_rsbdt->p_prev_isir_codt = p_iir_sbdt;
+				p_iir_sbdt = p_sbdt;
 			}
-		}else if(pem_sbdt->hBmpCurrent != NULL)
-		{		
-			/* 为了节省内存空间，销毁不在显示区的下级对象的当前位图。*/
-			DeleteObject(pem_sbdt->hBmpCurrent);
-			pem_sbdt->hBmpCurrent = NULL;
+		} else if (pem_sbdt->h_bmp_current != NULL) {
+			/* 为了节省内存空间，销毁不在显示区的下级对象的当前位图。 */
+			DeleteObject(pem_sbdt->h_bmp_current);
+			pem_sbdt->h_bmp_current = NULL;
 		}
 
-		pSbdt = pem_sbdt->pNextCodt;
+		p_sbdt = pem_sbdt->p_next_codt;
 
-	}while(pSbdt != pem->pFirstSbdt);
+	} while (p_sbdt != members->p_first_sbdt);
 
-	if(pIIRSbdt != NULL)
-	{
-		pem_IIRsbdt = (EM_VOBJECT*)GetEMofBN(pIIRSbdt, MSN_VOBJECT);
-		pem_IIRsbdt->pNextISIRCodt = pem->pFirstIIRSbdt;
-		pem_IIRsbdt = (EM_VOBJECT*)GetEMofBN(pem->pFirstIIRSbdt, MSN_VOBJECT);
-		pem_IIRsbdt->pPrevISIRCodt = pIIRSbdt;
+	if (p_iir_sbdt != NULL) {
+		pem_ii_rsbdt = (struct em_vobject *)get_base_members(
+			p_iir_sbdt, MSN_VOBJECT);
+		pem_ii_rsbdt->p_next_isir_codt = members->p_first_iir_sbdt;
+		pem_ii_rsbdt = (struct em_vobject *)get_base_members(
+			members->p_first_iir_sbdt, MSN_VOBJECT);
+		pem_ii_rsbdt->p_prev_isir_codt = p_iir_sbdt;
 	}
 
 	return;
 }
 
-/**
-*
-* 需求编号：	
-* 需求功能：	做好内部矩形滚动前的一些数值计算。
-* 函    数：	void  CalcuIRRoll(OBJECT* This, long dx, long dy)
-* 描    述：	做好内部矩形滚动前的一些数值计算。节点函数，VObject。
-* 参    数：	This - [IN] 对象自己；
-*               dx - [IN] 沿X坐标轴的滚动增量，可以为负值；
-*               dy - [IN] 沿Y坐标轴的滚动增量，可以为负值。
-* 返    回：	
-* 定 义 者：	赵平智
-* 设 计 者：	赵平智
-* 实 现 者：	赵平智
-* 使 用 者：	
-* 版    本：	V1.0.8
-* 更新日期：	20110713
-* 备    注：	IR - Inner Rectangle。
-* 修改记录：	
-* 测试要点：	
-*/
-static  void  CalcuIRRoll(OBJECT* This, long dx, long dy)
+/*
+ * 做好内部矩形滚动前的一些数值计算。
+ * 做好内部矩形滚动前的一些数值计算。节点函数，VObject。
+ * 参    数：	self - [IN] 对象自己；
+ *               dx - [IN] 沿X坐标轴的滚动增量，可以为负值；
+ *               dy - [IN] 沿Y坐标轴的滚动增量，可以为负值。
+ * 定 义 者：	赵平智
+ * 设 计 者：	赵平智
+ * 实 现 者：	赵平智
+ * 备    注：	IR - Inner Rectangle。
+ */
+static void calcu_ir_roll(struct object *self, long dx, long dy)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	OBJECT*         pSbdt;
-	EM_VOBJECT*     pem_sbdt;
-	SI32            adx, ady;  /* a: actual */
-	SI32            w, h, n;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct object *p_sbdt;
+	struct em_vobject *pem_sbdt;
+	int adx, ady; /* a: actual */
+	int w, h, n;
 
-    w = pem->rsc.rcinner.right - pem->rsc.rcinner.left;
-	h = pem->rsc.rcinner.bottom - pem->rsc.rcinner.top;
+	w = members->rsc.rcinner.right - members->rsc.rcinner.left;
+	h = members->rsc.rcinner.bottom - members->rsc.rcinner.top;
 
-	
-	if(dx >= 0)
-	{
-		n = -pem->ox_irr;
+	if (dx >= 0) {
+		n = -members->ox_irr;
 		adx = dx < n ? dx : n;
-	}else
-	{
-		n =  w - pem->scenew - pem->ox_irr;
+	} else {
+		n = w - members->scenew - members->ox_irr;
 		adx = dx > n ? dx : n;
 	}
-	
-	if(dy >= 0)
-	{
-		n = -pem->oy_irr;
+
+	if (dy >= 0) {
+		n = -members->oy_irr;
 		ady = dy < n ? dy : n;
-	}else
-	{
-		n =  h - pem->sceneh - pem->oy_irr;
+	} else {
+		n = h - members->sceneh - members->oy_irr;
 		ady = dy > n ? dy : n;
 	}
 
-
-	if((0 == adx && 0 == ady) || NULL == pem->pFirstSbdt)
+	if ((0 == adx && 0 == ady) || NULL == members->p_first_sbdt)
 		return;
 
-	pSbdt = pem->pFirstSbdt;
-	do
-	{
-		pem_sbdt = (EM_VOBJECT*)GetEMofBN(pSbdt, MSN_VOBJECT);
-		if(!(pem_sbdt->style & VOBS_XIRROLLABLE))
-		{
+	p_sbdt = members->p_first_sbdt;
+	do {
+		pem_sbdt = (struct em_vobject *)get_base_members(p_sbdt,
+								 MSN_VOBJECT);
+		if (!(pem_sbdt->style & VOBS_XIRROLLABLE)) {
 			pem_sbdt->rsc.rcouter.left += adx;
 			pem_sbdt->rsc.rcouter.right += adx;
 		}
-		if(!(pem_sbdt->style & VOBS_YIRROLLABLE))
-		{
+		if (!(pem_sbdt->style & VOBS_YIRROLLABLE)) {
 			pem_sbdt->rsc.rcouter.top += ady;
 			pem_sbdt->rsc.rcouter.bottom += ady;
 		}
-		pSbdt = pem_sbdt->pNextCodt;
-	}while(pSbdt != pem->pFirstSbdt);
+		p_sbdt = pem_sbdt->p_next_codt;
+	} while (p_sbdt != members->p_first_sbdt);
 
-	Refresh_DCLL_pFirstIIRSbdt(This);
+	refresh_dcll_p_first_iir_sbdt(self);
 
-	pem->ox_irr += adx;
-	pem->oy_irr += ady;
+	members->ox_irr += adx;
+	members->oy_irr += ady;
 
 	return;
 }
 
+/*
+ * 生成当前位图 struct em_vobject.h_bmp_current。
+ * 生成当前位图 struct em_vobject.h_bmp_current。节点函数，VObject。
+ * 参    数：	self - [IN] 对象自己；
+ *               h_bmp_background - [IN] 背景位图，背景位图即没有绘制下级对象的干净位图。
+ * 返    回：	无
+ * 定 义 者：	赵平智
+ * 设 计 者：	赵平智
+ * 实 现 者：	赵平智
+ */
 
-/**
-*
-* 需求编号：	
-* 需求功能：	生成当前位图 EM_VOBJECT.hBmpCurrent。
-* 函    数：	static void MakeCurrentBitmap(OBJECT* This, const HBITMAP hBmpBackground)
-* 描    述：	生成当前位图 EM_VOBJECT.hBmpCurrent。节点函数，VObject。
-* 参    数：	This - [IN] 对象自己；
-*               hBmpBackground - [IN] 背景位图，背景位图即没有绘制下级对象的干净位图。
-* 返    回：	无
-* 定 义 者：	赵平智
-* 设 计 者：	赵平智
-* 实 现 者：	赵平智
-* 使 用 者：	
-* 版    本：	V1.0
-* 更新日期：	20110713
-* 备    注：	
-* 修改记录：	
-* 测试要点：	
-*/
-
-static void MakeCurrentBitmap(OBJECT* This, const HBITMAP hBmpBackground)
+static void make_current_bitmap(struct object *self,
+				const HBITMAP h_bmp_background)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*     pem_sbdt;
-	OBJECT*         pSbdt;
-	HDC             hdc, memdc1, memdc2, memdc3;
-	HBITMAP         hBmpBkgd;
-	HBITMAP         hBmpInnerRect;  /* the bitmap of inner rectangle */
-	HBITMAP         hOrigBmp1, hOrigBmp2, hOrigBmp3;  /* original bitmap */
-	HFONT           hOldFont = NULL;
-	COLORREF        crOldColor;
-	BITMAP          bm;
-	int             w, h;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_sbdt;
+	struct object *p_sbdt;
+	HDC hdc, memdc1, memdc2, memdc3;
+	HBITMAP h_bmp_bkgd;
+	HBITMAP h_bmp_inner_rect; /* the bitmap of inner rectangle */
+	HBITMAP h_orig_bmp1, h_orig_bmp2, h_orig_bmp3; /* original bitmap */
+	HFONT h_old_font = NULL;
+	COLORREF cr_old_color;
+	BITMAP bm;
+	int w, h;
 
-	hBmpBkgd = hBmpInnerRect = hOrigBmp1 = hOrigBmp2 = NULL;
+	h_bmp_bkgd = h_bmp_inner_rect = h_orig_bmp1 = h_orig_bmp2 = NULL;
 
-	hdc = GetDC(*pem->pWndHandle);
+	hdc = GetDC(*members->p_wnd_handle);
 	memdc1 = CreateCompatibleDC(hdc);
 	memdc2 = CreateCompatibleDC(hdc);
 
-	hOrigBmp1 = GetCurrentObject(memdc1, OBJ_BITMAP);
-	hOrigBmp2 = GetCurrentObject(memdc2, OBJ_BITMAP);
+	h_orig_bmp1 = GetCurrentObject(memdc1, OBJ_BITMAP);
+	h_orig_bmp2 = GetCurrentObject(memdc2, OBJ_BITMAP);
 
-	hBmpBkgd = (NULL == hBmpBackground) ? pem->ArrHBITMAP[pem->state] : hBmpBackground;
+	h_bmp_bkgd = (NULL == h_bmp_background)
+			     ? members->arr_hbitmap[members->state]
+			     : h_bmp_background;
 
-	if(pem->hBmpCurrent != NULL)
-		DeleteObject(pem->hBmpCurrent);
-	w = pem->rsc.rcouter.right - pem->rsc.rcouter.left;
-	h = pem->rsc.rcouter.bottom - pem->rsc.rcouter.top;
-	pem->hBmpCurrent = CreateCompatibleBitmap(hdc, w, h);
-	SelectObject(memdc1, pem->hBmpCurrent);
+	if (members->h_bmp_current != NULL)
+		DeleteObject(members->h_bmp_current);
+	w = members->rsc.rcouter.right - members->rsc.rcouter.left;
+	h = members->rsc.rcouter.bottom - members->rsc.rcouter.top;
+	members->h_bmp_current = CreateCompatibleBitmap(hdc, w, h);
+	SelectObject(memdc1, members->h_bmp_current);
 
-	if(hBmpBkgd != NULL)
-	{
-		GetObject(hBmpBkgd, sizeof(bm), &bm);
-		SelectObject(memdc2, hBmpBkgd);
-		StretchBlt(memdc1, 0, 0, w, h, memdc2, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY); 
+	if (h_bmp_bkgd != NULL) {
+		GetObject(h_bmp_bkgd, sizeof(bm), &bm);
+		SelectObject(memdc2, h_bmp_bkgd);
+		StretchBlt(memdc1, 0, 0, w, h, memdc2, 0, 0, bm.bmWidth,
+			   bm.bmHeight, SRCCOPY);
 	}
 
 	SetBkMode(memdc1, TRANSPARENT);
 
-	if(pem->onmcb.pCustomer != NULL)
-		pem->onmcb.OnMakeCurrentBitmap(pem->onmcb.pCustomer, memdc1);
+	if (members->onmcb.p_customer != NULL)
+		members->onmcb.on_make_current_bitmap(members->onmcb.p_customer,
+						      memdc1);
 
-	if(pem->ci.clen > 0)
-	{
-		if(pem->ci.font)
-			hOldFont = SelectObject(memdc1, pem->ci.font);
-		crOldColor = SetTextColor(memdc1, pem->ci.color);
-		
-		DrawText(memdc1, pem->ci.text, pem->ci.clen, &pem->ci.rect, pem->ci.format);
-		
-		if(hOldFont != NULL)
-			SelectObject(memdc1, hOldFont);
-		SetTextColor(memdc1, crOldColor);
+	if (members->ci.clen > 0) {
+		if (members->ci.font)
+			h_old_font = SelectObject(memdc1, members->ci.font);
+		cr_old_color = SetTextColor(memdc1, members->ci.color);
+
+		DrawText(memdc1, members->ci.text, members->ci.clen,
+			 &members->ci.rect, members->ci.format);
+
+		if (h_old_font != NULL)
+			SelectObject(memdc1, h_old_font);
+		SetTextColor(memdc1, cr_old_color);
 	}
 
-	if(pem->pFirstIIRSbdt != NULL)
-	{
-		if(NULL != GetBN(pem->pFirstIIRSbdt, MSN_COBJECT))
-		{
-			w = pem->rsc.rcinner.right - pem->rsc.rcinner.left;
-			h = pem->rsc.rcinner.bottom - pem->rsc.rcinner.top;
-			hBmpInnerRect = CreateCompatibleBitmap(hdc, w, h);
-			SelectObject(memdc2, hBmpInnerRect);
-			BitBlt(memdc2, 0, 0, w, h, memdc1, pem->rsc.rcinner.left, pem->rsc.rcinner.top, SRCCOPY);
-			
+	if (members->p_first_iir_sbdt != NULL) {
+		if (NULL !=
+		    get_base_node(members->p_first_iir_sbdt, MSN_COBJECT)) {
+			w = members->rsc.rcinner.right -
+			    members->rsc.rcinner.left;
+			h = members->rsc.rcinner.bottom -
+			    members->rsc.rcinner.top;
+			h_bmp_inner_rect = CreateCompatibleBitmap(hdc, w, h);
+			SelectObject(memdc2, h_bmp_inner_rect);
+			BitBlt(memdc2, 0, 0, w, h, memdc1,
+			       members->rsc.rcinner.left,
+			       members->rsc.rcinner.top, SRCCOPY);
+
 			memdc3 = CreateCompatibleDC(hdc);
-			hOrigBmp3 = GetCurrentObject(memdc3, OBJ_BITMAP);
-			
-			pSbdt = pem->pFirstIIRSbdt;
-			do
-			{
-				pem_sbdt = (EM_VOBJECT*)GetEMofBN(pSbdt, MSN_VOBJECT);				
-				GetObject(pem_sbdt->hBmpCurrent, sizeof(bm), &bm);
-				SelectObject(memdc3, pem_sbdt->hBmpCurrent);
-				w = pem_sbdt->rsc.rcouter.right - pem_sbdt->rsc.rcouter.left;
-				h = pem_sbdt->rsc.rcouter.bottom - pem_sbdt->rsc.rcouter.top;
-				StretchBlt(memdc2, pem_sbdt->rsc.rcouter.left, pem_sbdt->rsc.rcouter.top, w, h, memdc3, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY); 
-				
-				pSbdt = pem_sbdt->pNextISIRCodt;
-			}while(pSbdt != pem->pFirstIIRSbdt);
-			
-			w = pem->rsc.rcinner.right - pem->rsc.rcinner.left;
-			h = pem->rsc.rcinner.bottom - pem->rsc.rcinner.top;
-			BitBlt(memdc1, pem->rsc.rcinner.left, pem->rsc.rcinner.top, w, h, memdc2, 0, 0, SRCCOPY);
-			
-			SelectObject(memdc3, hOrigBmp3);
+			h_orig_bmp3 = GetCurrentObject(memdc3, OBJ_BITMAP);
+
+			p_sbdt = members->p_first_iir_sbdt;
+			do {
+				pem_sbdt =
+					(struct em_vobject *)get_base_members(
+						p_sbdt, MSN_VOBJECT);
+				GetObject(pem_sbdt->h_bmp_current, sizeof(bm),
+					  &bm);
+				SelectObject(memdc3, pem_sbdt->h_bmp_current);
+				w = pem_sbdt->rsc.rcouter.right -
+				    pem_sbdt->rsc.rcouter.left;
+				h = pem_sbdt->rsc.rcouter.bottom -
+				    pem_sbdt->rsc.rcouter.top;
+				StretchBlt(memdc2, pem_sbdt->rsc.rcouter.left,
+					   pem_sbdt->rsc.rcouter.top, w, h,
+					   memdc3, 0, 0, bm.bmWidth,
+					   bm.bmHeight, SRCCOPY);
+
+				p_sbdt = pem_sbdt->p_next_isir_codt;
+			} while (p_sbdt != members->p_first_iir_sbdt);
+
+			w = members->rsc.rcinner.right -
+			    members->rsc.rcinner.left;
+			h = members->rsc.rcinner.bottom -
+			    members->rsc.rcinner.top;
+			BitBlt(memdc1, members->rsc.rcinner.left,
+			       members->rsc.rcinner.top, w, h, memdc2, 0, 0,
+			       SRCCOPY);
+
+			SelectObject(memdc3, h_orig_bmp3);
 			DeleteDC(memdc3);
 		}
 	}
-	
-	ReleaseDC(*pem->pWndHandle, hdc);
-	SelectObject(memdc1, hOrigBmp1);
+
+	ReleaseDC(*members->p_wnd_handle, hdc);
+	SelectObject(memdc1, h_orig_bmp1);
 	DeleteDC(memdc1);
-	SelectObject(memdc2, hOrigBmp2);
+	SelectObject(memdc2, h_orig_bmp2);
 	DeleteDC(memdc2);
 
-	if(hBmpInnerRect != NULL)
-		DeleteObject(hBmpInnerRect);
-
+	if (h_bmp_inner_rect != NULL)
+		DeleteObject(h_bmp_inner_rect);
 
 	return;
 }
 
-/**
-*
-* 需求编号：	
-* 需求功能：	显示当前位图EM_VOBJECT.hBmpCurrent。
-* 函    数：	static void  Paint(OBJECT* This)
-* 描    述：	显示当前位图EM_VOBJECT.hBmpCurrent。节点函数，VObject。
-* 参    数：	This - [IN] 对象自己。
-* 返    回：	无
-* 定 义 者：	赵平智
-* 设 计 者：	赵平智
-* 实 现 者：	赵平智
-* 使 用 者：	
-* 版    本：	V1.0.8
-* 更新日期：	20110713
-* 备    注：	
-* 修改记录：	
-* 测试要点：	
-*/
-static void  Paint(OBJECT* This)
+/*
+ * 显示当前位图struct em_vobject.h_bmp_current。
+ * 显示当前位图struct em_vobject.h_bmp_current。节点函数，VObject。
+ * 参    数：	self - [IN] 对象自己。
+ * 返    回：	无
+ * 定 义 者：	赵平智
+ * 设 计 者：	赵平智
+ * 实 现 者：	赵平智
+ */
+static void paint(struct object *self)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*     pem_super; 
-	HDC             hdc, memdc;
-	HBITMAP         hOrigBmp;   /* original bitmap */
-	RECT            rc1, rc2;
-	int             w, h, x, y, dx, dy;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_super;
+	HDC hdc, memdc;
+	HBITMAP h_orig_bmp; /* original bitmap */
+	RECT rc1, rc2;
+	int w, h, x, y, dx, dy;
 
-	hdc = GetDC(*pem->pWndHandle);
+	hdc = GetDC(*members->p_wnd_handle);
 	memdc = CreateCompatibleDC(hdc);
-	hOrigBmp = GetCurrentObject(memdc, OBJ_BITMAP);
+	h_orig_bmp = GetCurrentObject(memdc, OBJ_BITMAP);
 
-	do
-	{
-		if(pem->pSuperior != NULL)
-		{
-			if(NULL != GetBN(pem->pSuperior, MSN_COBJECT)
-				|| NULL != GetBN(pem->pSuperior, MSN_WPANEL))
+	do {
+		if (members->p_superior != NULL) {
+			if (NULL != get_base_node(members->p_superior,
+						  MSN_COBJECT) ||
+			    NULL != get_base_node(members->p_superior,
+						  MSN_WPANEL))
 				break;
 		}
 
-		SelectObject(memdc, pem->hBmpCurrent);
-		w = pem->rsc.rcouter.right - pem->rsc.rcouter.left;
-		h = pem->rsc.rcouter.bottom - pem->rsc.rcouter.top;
+		SelectObject(memdc, members->h_bmp_current);
+		w = members->rsc.rcouter.right - members->rsc.rcouter.left;
+		h = members->rsc.rcouter.bottom - members->rsc.rcouter.top;
 		BitBlt(hdc, 0, 0, w, h, memdc, 0, 0, SRCCOPY);
-		ReleaseDC(*pem->pWndHandle, hdc);
-		SelectObject(memdc, hOrigBmp);
+		ReleaseDC(*members->p_wnd_handle, hdc);
+		SelectObject(memdc, h_orig_bmp);
 		DeleteDC(memdc);
 		return;
-	}while(0);
+	} while (0);
 
-
-
-	rc1 = pem->rsc.rcouter;
-	dx = rc1.left; 
+	rc1 = members->rsc.rcouter;
+	dx = rc1.left;
 	dy = rc1.top;
-	pem_super = (EM_VOBJECT*)GetEMofBN(pem->pSuperior, MSN_VOBJECT);
+	pem_super = (struct em_vobject *)get_base_members(members->p_superior,
+							  MSN_VOBJECT);
 
-	/* 计算对象的显示区域，dx和dy保存外部矩形左上角到Panel对象的外部矩形左上角的距离。*/
-	while(1)
-	{		
+	/* 计算对象的显示区域，dx和dy保存外部矩形左上角到Panel对象的外部矩形左上角的距离。 */
+	while (1) {
 		dx += pem_super->rsc.rcinner.left;
 		dy += pem_super->rsc.rcinner.top;
 		rc1.left += pem_super->rsc.rcinner.left;
@@ -640,16 +584,16 @@ static void  Paint(OBJECT* This)
 		rc1.right += pem_super->rsc.rcinner.left;
 		rc1.bottom += pem_super->rsc.rcinner.top;
 
-		/* 在此永远不会出现不相交的情况，因为如果对象不在显示区就不会调用Paint函数。*/
-		IsInter2Rects(&pem_super->rsc.rcinner, &rc1, &rc2);
-		
-		if(NULL == pem_super->pSuperior)
+		/* 在此永远不会出现不相交的情况，因为如果对象不在显示区就不会调用paint函数。 */
+		is_inter2_rects(&pem_super->rsc.rcinner, &rc1, &rc2);
+
+		if (NULL == pem_super->p_superior)
 			break;
 
-		if(NULL == GetBN(pem_super->pSuperior, MSN_COBJECT)
-			&& NULL == GetBN(pem_super->pSuperior, MSN_WPANEL))
+		if (NULL == get_base_node(pem_super->p_superior, MSN_COBJECT) &&
+		    NULL == get_base_node(pem_super->p_superior, MSN_WPANEL))
 			break;
-		
+
 		dx += pem_super->rsc.rcouter.left;
 		dy += pem_super->rsc.rcouter.top;
 		rc1 = rc2;
@@ -657,606 +601,519 @@ static void  Paint(OBJECT* This)
 		rc1.top += pem_super->rsc.rcouter.top;
 		rc1.right += pem_super->rsc.rcouter.left;
 		rc1.bottom += pem_super->rsc.rcouter.top;
-		
-		pem_super = (EM_VOBJECT*)GetEMofBN(pem_super->pSuperior, MSN_VOBJECT);
+
+		pem_super = (struct em_vobject *)get_base_members(
+			pem_super->p_superior, MSN_VOBJECT);
 	}
-	
+
 	x = rc2.left - dx;
 	y = rc2.top - dy;
 	w = rc2.right - rc2.left;
 	h = rc2.bottom - rc2.top;
-	SelectObject(memdc, pem->hBmpCurrent);
+	SelectObject(memdc, members->h_bmp_current);
 	BitBlt(hdc, rc2.left, rc2.top, w, h, memdc, x, y, SRCCOPY);
 
-
-	ReleaseDC(*pem->pWndHandle, hdc);
-	SelectObject(memdc, hOrigBmp);
+	ReleaseDC(*members->p_wnd_handle, hdc);
+	SelectObject(memdc, h_orig_bmp);
 	DeleteDC(memdc);
 
 	return;
 }
 
-/**
-*
-* 需求编号：	
-* 需求功能：	重新绘制上级对象。
-* 函    数：	static void  RepaintSuperior(OBJECT*  This)
-* 描    述：	重新绘制上级对象。节点函数，VObject。
-* 参    数：	This - [IN] 对象自己；
-* 返    回：	无
-* 定 义 者：	赵平智
-* 设 计 者：	赵平智
-* 实 现 者：	赵平智
-* 使 用 者：	
-* 版    本：	V1.0.8
-* 更新日期：	20110713
-* 备    注：	
-* 修改记录：	
-* 测试要点：	
-*/
-static void  RepaintSuperior(OBJECT*  This)
+/*
+ * 重新绘制上级对象。
+ * 重新绘制上级对象。节点函数，VObject。
+ * 参    数：	self - [IN] 对象自己；
+ * 返    回：	无
+ * 定 义 者：	赵平智
+ * 设 计 者：	赵平智
+ * 实 现 者：	赵平智
+ */
+static void repaint_superior(struct object *self)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	OBJECT*         pVObject_super = GetBN(pem->pSuperior, MSN_VOBJECT);
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct object *p_v_object_super =
+		get_base_node(members->p_superior, MSN_VOBJECT);
 
-	assert(pem->pSuperior != NULL);
+	assert(members->p_superior != NULL);
 
-	Refresh_DCLL_pFirstIIRSbdt(pVObject_super);
-	MakeCurrentBitmap(pVObject_super, NULL);
-	Paint(pVObject_super);
+	refresh_dcll_p_first_iir_sbdt(p_v_object_super);
+	make_current_bitmap(p_v_object_super, NULL);
+	paint(p_v_object_super);
 
 	return;
 }
 
-/**
-*
-* 需求编号：	
-* 需求功能：	激活对象
-* 函    数：	static void Activate(OBJECT* This, const VR* pCaller)
-* 描    述：	激活对象，MSG_WGI_ACTIVATE行为调用。VObject节点函数。
-* 参    数：	
-* 返    回：	无
-* 定 义 者：	赵平智
-* 设 计 者：	赵平智
-* 实 现 者：	赵平智
-* 使 用 者：	
-* 版    本：	V1.0.8
-* 更新日期：	20110713
-* 备    注：	
-* 修改记录：	
-* 测试要点：	
-*/
-static void Activate(OBJECT* This, const VR* pCaller)
+/*
+ * 激活对象
+ * 激活对象，MSG_WGI_ACTIVATE行为调用。VObject节点函数。
+ * 返    回：	无
+ * 定 义 者：	赵平智
+ * 设 计 者：	赵平智
+ * 实 现 者：	赵平智
+ */
+static void Activate(struct object *self, const struct vr *caller_context)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	OBJECT*         pvob1;
-	OBJECT*         pvob2;
-	EM_VOBJECT*     pem_vob1;
-	EM_VOBJECT*     pem_vob2;
-	EVOBSTATE       state;
-	
-	if(eVOBState_Active == pem->state)
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct object *pvob1;
+	struct object *pvob2;
+	struct em_vobject *pem_vob1;
+	struct em_vobject *pem_vob2;
+	enum evobstate state;
+
+	if (VOB_STATE_ACTIVE == members->state)
 		return;
 
-	state = pem->state;
-	pem->state = eVOBState_Active;
-	if(pem->ArrHBITMAP[state] != pem->ArrHBITMAP[pem->state])
-		MakeCurrentBitmap(This, NULL);
-	
-	pvob1 = This;
-	pvob2 = NULL;
-	pem_vob1 = (EM_VOBJECT*) pvob1->pEM;
-	while(pem_vob1->pSuperior != NULL)
-	{
-		pvob2 = GetBN(pem_vob1->pSuperior, MSN_VOBJECT);
-		pem_vob2 = (EM_VOBJECT*)pvob2->pEM;
+	state = members->state;
+	members->state = VOB_STATE_ACTIVE;
+	if (members->arr_hbitmap[state] != members->arr_hbitmap[members->state])
+		make_current_bitmap(self, NULL);
 
-		if(pem_vob2->pActiveSbdt != pvob1->po_AND)
-		{
-			if(pem_vob2->pActiveSbdt != NULL)
-				//Deactivate(GetBN(pem_vob2->pActiveSbdt, MSN_VOBJECT), pCaller);
-				VO_Interact0(pem_vob2->pActiveSbdt, MSG_WGI_DEACTIVATE, pCaller);
-			pem_vob2->pActiveSbdt = pvob1->po_AND;
+	pvob1 = self;
+	pvob2 = NULL;
+	pem_vob1 = (struct em_vobject *)pvob1->members;
+	while (pem_vob1->p_superior != NULL) {
+		pvob2 = get_base_node(pem_vob1->p_superior, MSN_VOBJECT);
+		pem_vob2 = (struct em_vobject *)pvob2->members;
+
+		if (pem_vob2->p_active_sbdt != pvob1->nodes) {
+			if (pem_vob2->p_active_sbdt != NULL)
+				/* Deactivate(get_base_node(pem_vob2->p_active_sbdt, MSN_VOBJECT), caller_context); */
+				vo_interact0(pem_vob2->p_active_sbdt,
+					     MSG_WGI_DEACTIVATE,
+					     caller_context);
+			pem_vob2->p_active_sbdt = pvob1->nodes;
 		}
 
-		if(pem_vob2->state != eVOBState_Active)
-		{		
-			pem_vob2->state = eVOBState_Active;
-			MakeCurrentBitmap(pvob2, NULL);	
+		if (pem_vob2->state != VOB_STATE_ACTIVE) {
+			pem_vob2->state = VOB_STATE_ACTIVE;
+			make_current_bitmap(pvob2, NULL);
 			pvob1 = pvob2;
 			pem_vob1 = pem_vob2;
-		}else
-		{
-			MakeCurrentBitmap(pvob2, NULL);
+		} else {
+			make_current_bitmap(pvob2, NULL);
 			break;
-        }
+		}
 	}
-	
-	Paint((NULL == pvob2) ? pvob1 : pvob2);
+
+	paint((NULL == pvob2) ? pvob1 : pvob2);
 
 	return;
 }
 
-/**
-*
-* 需求编号：	
-* 需求功能：	使对象退出激活状态
-* 函    数：	static void Deactivate(OBJECT* This, const VR* pCaller)
-* 描    述：	使对象退出激活状态，MSG_WGI_DEACTIVATE行为调用。VObject节点函数。
-* 参    数：	
-* 返    回：	无
-* 定 义 者：	赵平智
-* 设 计 者：	赵平智
-* 实 现 者：	赵平智
-* 使 用 者：	
-* 版    本：	V1.0.8
-* 更新日期：	20110713
-* 备    注：	
-* 修改记录：	
-* 测试要点：	
-*/
-static void Deactivate(OBJECT* This, const VR* pCaller)
+/*
+ * 使对象退出激活状态
+ * 使对象退出激活状态，MSG_WGI_DEACTIVATE行为调用。VObject节点函数。
+ * 返    回：	无
+ * 定 义 者：	赵平智
+ * 设 计 者：	赵平智
+ * 实 现 者：	赵平智
+ */
+static void Deactivate(struct object *self, const struct vr *caller_context)
 {
-	EM_VOBJECT*   pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*   pem_super;
-	
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_super;
 
-	if(pem->state != eVOBState_Active)
+	if (members->state != VOB_STATE_ACTIVE)
 		return;
 
+	if (members->p_active_sbdt != NULL)
+		vo_interact0(members->p_active_sbdt, MSG_WGI_DEACTIVATE,
+			     caller_context);
 
-	if(pem->pActiveSbdt != NULL)
-		VO_Interact0(pem->pActiveSbdt, MSG_WGI_DEACTIVATE, pCaller);
+	if (members->p_superior != NULL) {
+		pem_super = get_base_members(members->p_superior, MSN_VOBJECT);
 
-	if(pem->pSuperior != NULL)
-	{
-		pem_super = GetEMofBN(pem->pSuperior, MSN_VOBJECT);
-		
-		if(pem->style & VOBS_NOSEMIACTIVE || pem_super->state == eVOBState_Active) 
-		{
-			if(pem_super->pCFOverSbdt == This->po_AND) // pem_super->pActiveSbdt)
-				pem->state = eVOBState_FocusOver;
-			else if(pem_super->pCFOnSbdt == This->po_AND) //pem_super->pActiveSbdt)
-				pem->state = eVOBState_FocusOn;
+		if (members->style & VOBS_NOSEMIACTIVE ||
+		    pem_super->state == VOB_STATE_ACTIVE) {
+			if (pem_super->p_cf_over_sbdt ==
+			    self->nodes) /* pem_super->p_active_sbdt) */
+				members->state = VOB_STATE_FOCUS_OVER;
+			else if (pem_super->p_cf_on_sbdt ==
+				 self->nodes) /* pem_super->p_active_sbdt) */
+				members->state = VOB_STATE_FOCUS_ON;
 			else
-				pem->state = eVOBState_Normal;
-		}else
-		{
-			pem->state = eVOBState_SemiActive;
+				members->state = VOB_STATE_NORMAL;
+		} else {
+			members->state = VOB_STATE_SEMI_ACTIVE;
 		}
-		
-		pem_super->pActiveSbdt = NULL;
-	}else
-	{
-		pem->state = eVOBState_Normal;
+
+		pem_super->p_active_sbdt = NULL;
+	} else {
+		members->state = VOB_STATE_NORMAL;
 	}
 
-	MakeCurrentBitmap(This, NULL);
-	Paint(This);
+	make_current_bitmap(self, NULL);
+	paint(self);
 
 	return;
 }
 
-
-/*=======================================================*/
-
-/**
-*
-* NAME: VObject_I_Open
-*/
-RESULT  VObject_I_Open(OBJECT* This, const VR* pCaller)
+int v_object_i_open(struct object *self, const struct vr *caller_context)
 {
-	EM_VOBJECT*      pem = (EM_VOBJECT*)This->pEM;
-	
-	if(1 == This->RefCnt)
-	{
-		pem->pOIOIC = GetBN(This, MSN_OIOIC); 
+	struct em_vobject *members = (struct em_vobject *)self->members;
+
+	if (1 == self->ref_count) {
+		members->oioic_node = get_base_node(self, MSN_OIOIC);
 
 		return RP_RCONE;
 	}
-	
+
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject_I_Close
-*/
-RESULT  VObject_I_Close(OBJECT* This, const VR* pCaller)
+int v_object_i_close(struct object *self, const struct vr *caller_context)
 {
-	EM_VOBJECT*      pem = (EM_VOBJECT*)This->pEM;
-	
-	if(0 == This->RefCnt)
-	{
-		if(pem->hBmpCurrent != NULL)
-		{
-			DeleteObject(pem->hBmpCurrent);
-			pem->hBmpCurrent = NULL;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+
+	if (0 == self->ref_count) {
+		if (members->h_bmp_current != NULL) {
+			DeleteObject(members->h_bmp_current);
+			members->h_bmp_current = NULL;
 		}
 
 		return RP_RCZERO;
 	}
 
+	return R_P;
+}
+
+int v_object__cmd_prepare(struct object *self, const struct vr *caller_context)
+{
+	refresh_dcll_p_first_iir_sbdt(self);
+	make_current_bitmap(self, NULL);
+	return R_P;
+}
+
+int v_object__cmd_wgi_refreshdcllpfirstiirsbdt(struct object *self,
+					       const struct vr *caller_context)
+{
+	refresh_dcll_p_first_iir_sbdt(self);
+	return R_P;
+}
+
+int v_object__mak_wgi_currentbitmap0(struct object *self,
+				     const struct vr *caller_context)
+{
+	make_current_bitmap(self, NULL);
+	return R_P;
+}
+
+int v_object__cmd_wgi_paint(struct object *self,
+			    const struct vr *caller_context)
+{
+	paint(self);
+	return R_P;
+}
+
+int v_object__cmd_wgi_repaint(struct object *self,
+			      const struct vr *caller_context)
+{
+	refresh_dcll_p_first_iir_sbdt(self);
+	make_current_bitmap(self, NULL);
+	paint(self);
 
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__CMD_PREPARE
-*/
-RESULT VObject__CMD_PREPARE(OBJECT* This, const VR* pCaller)
+int v_object__cmd_wgi_repaintsuperior(struct object *self,
+				      const struct vr *caller_context)
 {
-	Refresh_DCLL_pFirstIIRSbdt(This);
-	MakeCurrentBitmap(This, NULL);
+	repaint_superior(self);
 	return R_P;
 }
 
-
-/**
-*
-* NAME: VObject__CMD_WGI_REFRESHDCLLPFIRSTIIRSBDT
-*/
-RESULT  VObject__CMD_WGI_REFRESHDCLLPFIRSTIIRSBDT(OBJECT* This, const VR* pCaller)
+int v_object__msg_wgi_focusoverleave(struct object *self,
+				     const struct vr *caller_context)
 {
-	Refresh_DCLL_pFirstIIRSbdt(This);
-	return R_P;
-}
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	enum evobstate state;
 
-/**
-*
-* NAME: VObject__MAK_WGI_CURRENTBITMAP0
-*/
-RESULT  VObject__MAK_WGI_CURRENTBITMAP0(OBJECT* This, const VR* pCaller)
-{
-	MakeCurrentBitmap(This, NULL);
-	return R_P;
-}
-
-
-/**
-*
-* NAME: VObject__CMD_WGI_PAINT
-*/
-RESULT  VObject__CMD_WGI_PAINT(OBJECT* This, const VR* pCaller)
-{
-	Paint(This);
-	return R_P;
-}
-
-/**
-*
-* NAME: VObject__CMD_WGI_REPAINT
-*/
-RESULT  VObject__CMD_WGI_REPAINT(OBJECT* This, const VR* pCaller)
-{
-	Refresh_DCLL_pFirstIIRSbdt(This);
-	MakeCurrentBitmap(This, NULL);
-	Paint(This);
-
-	return R_P;
-}
-
-
-/**
-*
-* NAME: VObject__CMD_WGI_REPAINTSUPERIOR
-*/
-RESULT  VObject__CMD_WGI_REPAINTSUPERIOR(OBJECT* This, const VR* pCaller)
-{
-	RepaintSuperior(This);
-	return R_P;
-}
-
-/**
-*
-* NAME: VObject__MSG_WGI_FOCUSOVERLEAVE
-*/
-RESULT  VObject__MSG_WGI_FOCUSOVERLEAVE(OBJECT* This, const VR* pCaller)
-{
-	EM_VOBJECT*      pem = (EM_VOBJECT*)This->pEM;
-	EVOBSTATE        state;
-	
-	if(pem->state != eVOBState_Active &&
-		pem->state != eVOBState_Selected &&
-		pem->state != eVOBState_Disable)
-	{
-		state = pem->state;
-		pem->state = eVOBState_Normal;
-		if(pem->ArrHBITMAP[state] != pem->ArrHBITMAP[pem->state])
-		{
-			MakeCurrentBitmap(This, NULL);
-			Paint(This);
+	if (members->state != VOB_STATE_ACTIVE &&
+	    members->state != VOB_STATE_SELECTED &&
+	    members->state != VOB_STATE_DISABLE) {
+		state = members->state;
+		members->state = VOB_STATE_NORMAL;
+		if (members->arr_hbitmap[state] !=
+		    members->arr_hbitmap[members->state]) {
+			make_current_bitmap(self, NULL);
+			paint(self);
 		}
 	}
 
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__MSG_WGI_FOCUSONLEAVE
-*/
-RESULT  VObject__MSG_WGI_FOCUSONLEAVE(OBJECT* This, const VR* pCaller)
+int v_object__msg_wgi_focusonleave(struct object *self,
+				   const struct vr *caller_context)
 {
-	return VObject__MSG_WGI_FOCUSOVERLEAVE(This, pCaller);
+	return v_object__msg_wgi_focusoverleave(self, caller_context);
 }
 
-/**
-*
-* NAME: VObject__MSG_WGI_ACTIVATE
-*/
-RESULT  VObject__MSG_WGI_ACTIVATE(OBJECT* This, const VR* pCaller)
+int v_object__msg_wgi_activate(struct object *self,
+			       const struct vr *caller_context)
 {
-	Activate(This, pCaller);
+	Activate(self, caller_context);
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__MSG_WGI_DEACTIVATE
-*/
-RESULT  VObject__MSG_WGI_DEACTIVATE(OBJECT* This, const VR* pCaller)
+int v_object__msg_wgi_deactivate(struct object *self,
+				 const struct vr *caller_context)
 {
-	Deactivate(This, pCaller);
+	Deactivate(self, caller_context);
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__CMD_INITIALIZE
-*/
-RESULT  VObject__CMD_INITIALIZE(OBJECT* This, const INIT_VOBJECT* pivob, const VR* pCaller)
+int v_object__cmd_initialize(struct object *self,
+			     const struct init_vobject *pivob,
+			     const struct vr *caller_context)
 {
-	EM_VOBJECT*      pem = (EM_VOBJECT*)This->pEM;
-	
-	pem->pSuperior = pivob->pSuperior;
-//	pem->pFirstSbdt = pivob->pFirstSbdt;
-	pem->pPrevCodt = pivob->pPrevCodt;
-	pem->pNextCodt = pivob->pNextCodt; 
-//	pem->pFirstIIRSbdt = pivob->pFirstIIRSbdt;
-//	pem->pPrevISIRCodt = pivob->pPrevISIRCodt;
-//	pem->pNextISIRCodt = pivob->pNextISIRCodt;
-//	pem->ox_irr = pivob->ox_irr;
-//	pem->oy_irr = pivob->oy_irr;
-	pem->scenew = pivob->scenew;
-	pem->sceneh = pivob->sceneh;
-//	pem->hDC = pivob->hDC;
-	memcpy(pem->ArrHBITMAP, pivob->ArrHBITMAP, sizeof(pem->ArrHBITMAP));
-	pem->style = pivob->style;
-	pem->state = pivob->state;
-	pem->ci = pivob->ci;
-	pem->rsc = pivob->rsc;
-	pem->as = pivob->as;
-	pem->rgn = pivob->rgn;
-	
+	struct em_vobject *members = (struct em_vobject *)self->members;
+
+	members->p_superior = pivob->p_superior;
+	/* pem->p_first_sbdt = pivob->p_first_sbdt; */
+	members->p_prev_codt = pivob->p_prev_codt;
+	members->p_next_codt = pivob->p_next_codt;
+	/* pem->p_first_iir_sbdt = pivob->p_first_iir_sbdt; */
+	/* pem->p_prev_isir_codt = pivob->p_prev_isir_codt; */
+	/* pem->p_next_isir_codt = pivob->p_next_isir_codt; */
+	/* pem->ox_irr = pivob->ox_irr; */
+	/* pem->oy_irr = pivob->oy_irr; */
+	members->scenew = pivob->scenew;
+	members->sceneh = pivob->sceneh;
+	/* pem->hDC = pivob->hDC; */
+	memcpy(members->arr_hbitmap, pivob->arr_hbitmap,
+	       sizeof(members->arr_hbitmap));
+	members->style = pivob->style;
+	members->state = pivob->state;
+	members->ci = pivob->ci;
+	members->rsc = pivob->rsc;
+	members->as = pivob->as;
+	members->rgn = pivob->rgn;
+
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__MAK_WGI_CURRENTBITMAP2
-*/
-RESULT  VObject__MAK_WGI_CURRENTBITMAP2(OBJECT* This, const HBITMAP hBmpBkgd, const VR* pCaller)
+int v_object__mak_wgi_currentbitmap2(struct object *self,
+				     const HBITMAP h_bmp_bkgd,
+				     const struct vr *caller_context)
 {
-	MakeCurrentBitmap(This, hBmpBkgd);
+	make_current_bitmap(self, h_bmp_bkgd);
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__MSG_WGI_FOCUSOVER
-*/
-RESULT  VObject__MSG_WGI_FOCUSOVER(OBJECT* This, const POINT pt, const VR* pCaller)
+int v_object__msg_wgi_focusover(struct object *self, const POINT pt,
+				const struct vr *caller_context)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*     pem_sbdt;
-	OBJECT*         pIIRSbdt;
-	OBJECT*         pPrevOfFirstSbdt;
-	EVOBSTATE       state;
-	RESULT          r;
-	POINT           pt1;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_sbdt;
+	struct object *p_iir_sbdt;
+	struct object *p_prev_of_first_sbdt;
+	enum evobstate state;
+	int r;
+	POINT pt1;
 
-	pem->pCFUpSbdt = NULL;
+	members->p_cf_up_sbdt = NULL;
 
-    if(pem->state != eVOBState_Active &&
-		pem->state != eVOBState_Selected &&
-		pem->state != eVOBState_Disable)
-	{
-		state = pem->state;
-		pem->state = eVOBState_FocusOver;
-		if(pem->ArrHBITMAP[state] != pem->ArrHBITMAP[pem->state])
-		{
-			MakeCurrentBitmap(This, NULL);
-			Paint(This);
+	if (members->state != VOB_STATE_ACTIVE &&
+	    members->state != VOB_STATE_SELECTED &&
+	    members->state != VOB_STATE_DISABLE) {
+		state = members->state;
+		members->state = VOB_STATE_FOCUS_OVER;
+		if (members->arr_hbitmap[state] !=
+		    members->arr_hbitmap[members->state]) {
+			make_current_bitmap(self, NULL);
+			paint(self);
 		}
 	}
-	
-	if(NULL == pem->pFirstIIRSbdt)
-		return R_P; 
-	
-	if(!PtInRect(&pem->rsc.rcinner, pt))
+
+	if (NULL == members->p_first_iir_sbdt)
 		return R_P;
 
-
-	pem_sbdt = GetEMofBN(pem->pFirstIIRSbdt, MSN_VOBJECT);
-	pPrevOfFirstSbdt = pem_sbdt->pPrevCodt;
-	pIIRSbdt = pPrevOfFirstSbdt;
-
-	while(1)
-	{
-		pt1 = pt;
-		pt1.x -= pem->rsc.rcinner.left;
-		pt1.y -= pem->rsc.rcinner.top;
-
-		pem_sbdt = GetEMofBN(pIIRSbdt, MSN_VOBJECT);
-
-		if(0 == pem_sbdt->as.zp.plg.npt)
-			r = PtInRect(&pem_sbdt->rsc.rcouter, pt1) ? R_P : R_N;
-		else
-			r = IsPointInPolygon(pt1.x - pem_sbdt->rsc.rcouter.left, pt1.y - pem_sbdt->rsc.rcouter.top, &pem_sbdt->as.zp.plg) ? R_P : R_N;
-
-		if(R_P == r && pem_sbdt->state != eVOBState_Hidden)
-		{
-			pt1.x -= pem_sbdt->rsc.rcouter.left;
-			pt1.y -= pem_sbdt->rsc.rcouter.top;	
-
-			pem->pCFOverSbdt = pIIRSbdt;
-			VO_Interact2(pem->pCFOverSbdt, MSG_WGI_FOCUSOVER, (BYTE*)&pt1, sizeof(POINT), pCaller);
-			break;
-		}else if(pem_sbdt->pPrevISIRCodt != pPrevOfFirstSbdt)
-		{
-			pIIRSbdt = pem_sbdt->pPrevISIRCodt;
-		}else
-		{
-			pem->pCFOverSbdt = NULL;
-			break;
-		}
-	}
-	
-
-	return R_P;
-}
-
-/**
-*
-* NAME: VObject__MSG_WGI_FOCUSON
-* REMARK: 焦点ON与OVER的实现类似，修改时以OVER的实现为准。
-*/
-RESULT  VObject__MSG_WGI_FOCUSON(OBJECT* This, const POINT pt, const VR* pCaller)
-{
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*     pem_sbdt;
-	OBJECT*         pIIRSbdt;
-	OBJECT*         pPrevOfFirstSbdt;
-	EVOBSTATE       state;
-	RESULT          r;
-	POINT           pt1;
-
-	pem->pCFDownSbdt = NULL;
-
-    if(pem->state != eVOBState_Active &&
-		pem->state != eVOBState_Selected &&
-		pem->state != eVOBState_Disable)
-	{
-		state = pem->state;
-		pem->state = eVOBState_FocusOn;
-		if(pem->ArrHBITMAP[state] != pem->ArrHBITMAP[pem->state])
-		{
-			MakeCurrentBitmap(This, NULL);
-			Paint(This);
-		}
-	}
-
-	if(NULL == pem->pFirstIIRSbdt)
-		return R_P; 
-	
-	if(!PtInRect(&pem->rsc.rcinner, pt))
+	if (!PtInRect(&members->rsc.rcinner, pt))
 		return R_P;
-	
 
-	pem_sbdt = GetEMofBN(pem->pFirstIIRSbdt, MSN_VOBJECT);
-	pPrevOfFirstSbdt = pem_sbdt->pPrevCodt;
-	pIIRSbdt = pPrevOfFirstSbdt;
+	pem_sbdt = get_base_members(members->p_first_iir_sbdt, MSN_VOBJECT);
+	p_prev_of_first_sbdt = pem_sbdt->p_prev_codt;
+	p_iir_sbdt = p_prev_of_first_sbdt;
 
-	while(1)
-	{
+	while (1) {
 		pt1 = pt;
-		pt1.x -= pem->rsc.rcinner.left;
-		pt1.y -= pem->rsc.rcinner.top;
+		pt1.x -= members->rsc.rcinner.left;
+		pt1.y -= members->rsc.rcinner.top;
 
-		pem_sbdt = GetEMofBN(pIIRSbdt, MSN_VOBJECT);
+		pem_sbdt = get_base_members(p_iir_sbdt, MSN_VOBJECT);
 
-		if(0 == pem_sbdt->as.zp.plg.npt)
+		if (0 == pem_sbdt->as.zp.plg.npt)
 			r = PtInRect(&pem_sbdt->rsc.rcouter, pt1) ? R_P : R_N;
 		else
-			r = IsPointInPolygon(pt1.x - pem_sbdt->rsc.rcouter.left, pt1.y - pem_sbdt->rsc.rcouter.top, &pem_sbdt->as.zp.plg) ? R_P : R_N;
+			r = is_point_in_polygon(
+				    pt1.x - pem_sbdt->rsc.rcouter.left,
+				    pt1.y - pem_sbdt->rsc.rcouter.top,
+				    &pem_sbdt->as.zp.plg)
+				    ? R_P
+				    : R_N;
 
-		if(R_P == r && pem_sbdt->state != eVOBState_Hidden)
-		{
+		if (R_P == r && pem_sbdt->state != VOB_STATE_HIDDEN) {
 			pt1.x -= pem_sbdt->rsc.rcouter.left;
-			pt1.y -= pem_sbdt->rsc.rcouter.top;	
-			
-			pem->pCFOnSbdt = pIIRSbdt;
-			VO_Interact2(pem->pCFOnSbdt, MSG_WGI_FOCUSON, (BYTE*)&pt1, sizeof(POINT), pCaller);
+			pt1.y -= pem_sbdt->rsc.rcouter.top;
+
+			members->p_cf_over_sbdt = p_iir_sbdt;
+			vo_interact2(members->p_cf_over_sbdt, MSG_WGI_FOCUSOVER,
+				     (unsigned char *)&pt1, sizeof(POINT),
+				     caller_context);
 			break;
-		}else if(pem_sbdt->pPrevISIRCodt != pPrevOfFirstSbdt)
-		{
-			pIIRSbdt = pem_sbdt->pPrevISIRCodt;
-		}else
-		{
-			pem->pCFOnSbdt = NULL;
+		} else if (pem_sbdt->p_prev_isir_codt != p_prev_of_first_sbdt) {
+			p_iir_sbdt = pem_sbdt->p_prev_isir_codt;
+		} else {
+			members->p_cf_over_sbdt = NULL;
 			break;
 		}
 	}
-	
 
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__MSG_WGI_FOCUSOVERMOVE
-*/
-RESULT  VObject__MSG_WGI_FOCUSOVERMOVE(OBJECT* This, const POINT pt, const VR* pCaller)
+/* REMARK: 焦点ON与OVER的实现类似，修改时以OVER的实现为准。 */
+int v_object__msg_wgi_focuson(struct object *self, const POINT pt,
+			      const struct vr *caller_context)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*     pem_sbdt;
-	OBJECT*         pIIRSbdt;
-	OBJECT*         pPrevOfFirstIIRSbdt;
-	RESULT          r;
-	POINT           pt1;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_sbdt;
+	struct object *p_iir_sbdt;
+	struct object *p_prev_of_first_sbdt;
+	enum evobstate state;
+	int r;
+	POINT pt1;
 
+	members->p_cf_down_sbdt = NULL;
 
-	if(NULL == pem->pFirstIIRSbdt || !PtInRect(&pem->rsc.rcinner, pt))
-		return R_P; 
+	if (members->state != VOB_STATE_ACTIVE &&
+	    members->state != VOB_STATE_SELECTED &&
+	    members->state != VOB_STATE_DISABLE) {
+		state = members->state;
+		members->state = VOB_STATE_FOCUS_ON;
+		if (members->arr_hbitmap[state] !=
+		    members->arr_hbitmap[members->state]) {
+			make_current_bitmap(self, NULL);
+			paint(self);
+		}
+	}
 
+	if (NULL == members->p_first_iir_sbdt)
+		return R_P;
 
-	pem_sbdt = GetEMofBN(pem->pFirstIIRSbdt, MSN_VOBJECT);
-	pPrevOfFirstIIRSbdt = pem_sbdt->pPrevISIRCodt;
-	pIIRSbdt = pPrevOfFirstIIRSbdt;
+	if (!PtInRect(&members->rsc.rcinner, pt))
+		return R_P;
 
-	while(1)
-	{
+	pem_sbdt = get_base_members(members->p_first_iir_sbdt, MSN_VOBJECT);
+	p_prev_of_first_sbdt = pem_sbdt->p_prev_codt;
+	p_iir_sbdt = p_prev_of_first_sbdt;
+
+	while (1) {
 		pt1 = pt;
-		pt1.x -= pem->rsc.rcinner.left;
-		pt1.y -= pem->rsc.rcinner.top;
+		pt1.x -= members->rsc.rcinner.left;
+		pt1.y -= members->rsc.rcinner.top;
 
-		pem_sbdt = GetEMofBN(pIIRSbdt, MSN_VOBJECT);
+		pem_sbdt = get_base_members(p_iir_sbdt, MSN_VOBJECT);
 
-		if(0 == pem_sbdt->as.zp.plg.npt)
+		if (0 == pem_sbdt->as.zp.plg.npt)
 			r = PtInRect(&pem_sbdt->rsc.rcouter, pt1) ? R_P : R_N;
 		else
-			r = IsPointInPolygon(pt1.x - pem_sbdt->rsc.rcouter.left, pt1.y - pem_sbdt->rsc.rcouter.top, &pem_sbdt->as.zp.plg) ? R_P : R_N;
+			r = is_point_in_polygon(
+				    pt1.x - pem_sbdt->rsc.rcouter.left,
+				    pt1.y - pem_sbdt->rsc.rcouter.top,
+				    &pem_sbdt->as.zp.plg)
+				    ? R_P
+				    : R_N;
 
-		if(R_P == r && pem_sbdt->state != eVOBState_Hidden)
-		{
+		if (R_P == r && pem_sbdt->state != VOB_STATE_HIDDEN) {
 			pt1.x -= pem_sbdt->rsc.rcouter.left;
-			pt1.y -= pem_sbdt->rsc.rcouter.top;	
+			pt1.y -= pem_sbdt->rsc.rcouter.top;
 
-			if(pIIRSbdt == pem->pCFOverSbdt)
-			{
-				VO_Interact2(pIIRSbdt, MSG_WGI_FOCUSOVERMOVE, (BYTE*)&pt1, sizeof(POINT), pCaller);
+			members->p_cf_on_sbdt = p_iir_sbdt;
+			vo_interact2(members->p_cf_on_sbdt, MSG_WGI_FOCUSON,
+				     (unsigned char *)&pt1, sizeof(POINT),
+				     caller_context);
+			break;
+		} else if (pem_sbdt->p_prev_isir_codt != p_prev_of_first_sbdt) {
+			p_iir_sbdt = pem_sbdt->p_prev_isir_codt;
+		} else {
+			members->p_cf_on_sbdt = NULL;
+			break;
+		}
+	}
+
+	return R_P;
+}
+
+int v_object__msg_wgi_focusovermove(struct object *self, const POINT pt,
+				    const struct vr *caller_context)
+{
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_sbdt;
+	struct object *p_iir_sbdt;
+	struct object *p_prev_of_first_iir_sbdt;
+	int r;
+	POINT pt1;
+
+	if (NULL == members->p_first_iir_sbdt ||
+	    !PtInRect(&members->rsc.rcinner, pt))
+		return R_P;
+
+	pem_sbdt = get_base_members(members->p_first_iir_sbdt, MSN_VOBJECT);
+	p_prev_of_first_iir_sbdt = pem_sbdt->p_prev_isir_codt;
+	p_iir_sbdt = p_prev_of_first_iir_sbdt;
+
+	while (1) {
+		pt1 = pt;
+		pt1.x -= members->rsc.rcinner.left;
+		pt1.y -= members->rsc.rcinner.top;
+
+		pem_sbdt = get_base_members(p_iir_sbdt, MSN_VOBJECT);
+
+		if (0 == pem_sbdt->as.zp.plg.npt)
+			r = PtInRect(&pem_sbdt->rsc.rcouter, pt1) ? R_P : R_N;
+		else
+			r = is_point_in_polygon(
+				    pt1.x - pem_sbdt->rsc.rcouter.left,
+				    pt1.y - pem_sbdt->rsc.rcouter.top,
+				    &pem_sbdt->as.zp.plg)
+				    ? R_P
+				    : R_N;
+
+		if (R_P == r && pem_sbdt->state != VOB_STATE_HIDDEN) {
+			pt1.x -= pem_sbdt->rsc.rcouter.left;
+			pt1.y -= pem_sbdt->rsc.rcouter.top;
+
+			if (p_iir_sbdt == members->p_cf_over_sbdt) {
+				vo_interact2(p_iir_sbdt, MSG_WGI_FOCUSOVERMOVE,
+					     (unsigned char *)&pt1,
+					     sizeof(POINT), caller_context);
 				break;
 			}
 
-			if(NULL != pem->pCFOverSbdt)
-				VO_Interact0(pem->pCFOverSbdt, MSG_WGI_FOCUSOVERLEAVE, pCaller);
-			pem->pCFOverSbdt = pIIRSbdt;
-			VO_Interact2(pIIRSbdt, MSG_WGI_FOCUSOVER, (BYTE*)&pt1, sizeof(POINT), pCaller);
+			if (NULL != members->p_cf_over_sbdt)
+				vo_interact0(members->p_cf_over_sbdt,
+					     MSG_WGI_FOCUSOVERLEAVE,
+					     caller_context);
+			members->p_cf_over_sbdt = p_iir_sbdt;
+			vo_interact2(p_iir_sbdt, MSG_WGI_FOCUSOVER,
+				     (unsigned char *)&pt1, sizeof(POINT),
+				     caller_context);
 
 			break;
-		}else if(pem_sbdt->pPrevISIRCodt != pPrevOfFirstIIRSbdt)
-		{
-			pIIRSbdt = pem_sbdt->pPrevISIRCodt;
-		}else
-		{
-			if(NULL != pem->pCFOverSbdt)
-			{
-				VO_Interact0(pem->pCFOverSbdt, MSG_WGI_FOCUSOVERLEAVE, pCaller);
-				pem->pCFOverSbdt = NULL;
+		} else if (pem_sbdt->p_prev_isir_codt !=
+			   p_prev_of_first_iir_sbdt) {
+			p_iir_sbdt = pem_sbdt->p_prev_isir_codt;
+		} else {
+			if (NULL != members->p_cf_over_sbdt) {
+				vo_interact0(members->p_cf_over_sbdt,
+					     MSG_WGI_FOCUSOVERLEAVE,
+					     caller_context);
+				members->p_cf_over_sbdt = NULL;
 			}
-			
+
 			break;
 		}
 	}
@@ -1264,68 +1121,72 @@ RESULT  VObject__MSG_WGI_FOCUSOVERMOVE(OBJECT* This, const POINT pt, const VR* p
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__MSG_WGI_FOCUSONMOVE
-* REMARK: 焦点ON-MOVE与OVER-MOVE的实现类似，修改时以OVER-MOVE的实现为准。
-*/
-RESULT  VObject__MSG_WGI_FOCUSONMOVE(OBJECT* This, const POINT pt, const VR* pCaller)
+/* REMARK: 焦点ON-struct move与OVER-struct move的实现类似，修改时以OVER-struct move的实现为准。 */
+int v_object__msg_wgi_focusonmove(struct object *self, const POINT pt,
+				  const struct vr *caller_context)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*     pem_sbdt;
-	OBJECT*         pIIRSbdt;
-	OBJECT*         pPrevOfFirstIIRSbdt;
-	RESULT          r;
-	POINT           pt1;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_sbdt;
+	struct object *p_iir_sbdt;
+	struct object *p_prev_of_first_iir_sbdt;
+	int r;
+	POINT pt1;
 
+	if (NULL == members->p_first_iir_sbdt ||
+	    !PtInRect(&members->rsc.rcinner, pt))
+		return R_P;
 
-	if(NULL == pem->pFirstIIRSbdt || !PtInRect(&pem->rsc.rcinner, pt))
-		return R_P; 
+	pem_sbdt = get_base_members(members->p_first_iir_sbdt, MSN_VOBJECT);
+	p_prev_of_first_iir_sbdt = pem_sbdt->p_prev_isir_codt;
+	p_iir_sbdt = p_prev_of_first_iir_sbdt;
 
-
-	pem_sbdt = GetEMofBN(pem->pFirstIIRSbdt, MSN_VOBJECT);
-	pPrevOfFirstIIRSbdt = pem_sbdt->pPrevISIRCodt;
-	pIIRSbdt = pPrevOfFirstIIRSbdt;
-
-	while(1)
-	{
+	while (1) {
 		pt1 = pt;
-		pt1.x -= pem->rsc.rcinner.left;
-		pt1.y -= pem->rsc.rcinner.top;
+		pt1.x -= members->rsc.rcinner.left;
+		pt1.y -= members->rsc.rcinner.top;
 
-		pem_sbdt = GetEMofBN(pIIRSbdt, MSN_VOBJECT);
-		
-		if(0 == pem_sbdt->as.zp.plg.npt)
+		pem_sbdt = get_base_members(p_iir_sbdt, MSN_VOBJECT);
+
+		if (0 == pem_sbdt->as.zp.plg.npt)
 			r = PtInRect(&pem_sbdt->rsc.rcouter, pt1) ? R_P : R_N;
 		else
-			r = IsPointInPolygon(pt1.x - pem_sbdt->rsc.rcouter.left, pt1.y - pem_sbdt->rsc.rcouter.top, &pem_sbdt->as.zp.plg) ? R_P : R_N;
+			r = is_point_in_polygon(
+				    pt1.x - pem_sbdt->rsc.rcouter.left,
+				    pt1.y - pem_sbdt->rsc.rcouter.top,
+				    &pem_sbdt->as.zp.plg)
+				    ? R_P
+				    : R_N;
 
-		if(R_P == r && pem_sbdt->state != eVOBState_Hidden)
-		{
+		if (R_P == r && pem_sbdt->state != VOB_STATE_HIDDEN) {
 			pt1.x -= pem_sbdt->rsc.rcouter.left;
-			pt1.y -= pem_sbdt->rsc.rcouter.top;	
+			pt1.y -= pem_sbdt->rsc.rcouter.top;
 
-			if(pIIRSbdt == pem->pCFOnSbdt)
-			{
-				VO_Interact2(pIIRSbdt, MSG_WGI_FOCUSONMOVE, (BYTE*)&pt1, sizeof(POINT), pCaller);
+			if (p_iir_sbdt == members->p_cf_on_sbdt) {
+				vo_interact2(p_iir_sbdt, MSG_WGI_FOCUSONMOVE,
+					     (unsigned char *)&pt1,
+					     sizeof(POINT), caller_context);
 				break;
 			}
 
-			if(NULL != pem->pCFOnSbdt)
-				VO_Interact0(pem->pCFOnSbdt, MSG_WGI_FOCUSONLEAVE, pCaller);
-			pem->pCFOnSbdt = pIIRSbdt;
-			VO_Interact2(pIIRSbdt, MSG_WGI_FOCUSON, (BYTE*)&pt1, sizeof(POINT), pCaller);
+			if (NULL != members->p_cf_on_sbdt)
+				vo_interact0(members->p_cf_on_sbdt,
+					     MSG_WGI_FOCUSONLEAVE,
+					     caller_context);
+			members->p_cf_on_sbdt = p_iir_sbdt;
+			vo_interact2(p_iir_sbdt, MSG_WGI_FOCUSON,
+				     (unsigned char *)&pt1, sizeof(POINT),
+				     caller_context);
 
 			break;
-		}else if(pem_sbdt->pPrevISIRCodt != pPrevOfFirstIIRSbdt)
-		{
-			pIIRSbdt = pem_sbdt->pPrevISIRCodt;
-		}else 
-		{
-			if(NULL != pem->pCFOnSbdt)
-			{
-				VO_Interact0(pem->pCFOnSbdt, MSG_WGI_FOCUSONLEAVE, pCaller);
-				pem->pCFOnSbdt = NULL;
+		} else if (pem_sbdt->p_prev_isir_codt !=
+			   p_prev_of_first_iir_sbdt) {
+			p_iir_sbdt = pem_sbdt->p_prev_isir_codt;
+		} else {
+			if (NULL != members->p_cf_on_sbdt) {
+				vo_interact0(members->p_cf_on_sbdt,
+					     MSG_WGI_FOCUSONLEAVE,
+					     caller_context);
+				members->p_cf_on_sbdt = NULL;
 			}
 
 			break;
@@ -1335,65 +1196,60 @@ RESULT  VObject__MSG_WGI_FOCUSONMOVE(OBJECT* This, const POINT pt, const VR* pCa
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__MSG_WGI_FOCUSDOWN
-*/
-RESULT  VObject__MSG_WGI_FOCUSDOWN(OBJECT* This, const POINT pt, const VR* pCaller)
+int v_object__msg_wgi_focusdown(struct object *self, const POINT pt,
+				const struct vr *caller_context)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*     pem_sbdt;
-	POINT           pt1;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_sbdt;
+	POINT pt1;
 
-	pem->pCFDownSbdt = pem->pCFOverSbdt;
+	members->p_cf_down_sbdt = members->p_cf_over_sbdt;
 
-	if(pem->pCFDownSbdt != NULL)
-	{
+	if (members->p_cf_down_sbdt != NULL) {
 		pt1 = pt;
-		pem_sbdt = GetEMofBN(pem->pCFDownSbdt, MSN_VOBJECT);
-		pt1.x -= pem->rsc.rcinner.left + pem_sbdt->rsc.rcouter.left;
-		pt1.y -= pem->rsc.rcinner.top + pem_sbdt->rsc.rcouter.top;
-		VO_Interact2(pem->pCFDownSbdt, MSG_WGI_FOCUSDOWN, (BYTE*)&pt1, sizeof(POINT), pCaller);
-		pem->pCFOverSbdt = NULL;
+		pem_sbdt =
+			get_base_members(members->p_cf_down_sbdt, MSN_VOBJECT);
+		pt1.x -= members->rsc.rcinner.left + pem_sbdt->rsc.rcouter.left;
+		pt1.y -= members->rsc.rcinner.top + pem_sbdt->rsc.rcouter.top;
+		vo_interact2(members->p_cf_down_sbdt, MSG_WGI_FOCUSDOWN,
+			     (unsigned char *)&pt1, sizeof(POINT),
+			     caller_context);
+		members->p_cf_over_sbdt = NULL;
 	}
 
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__MSG_WGI_FOCUSUP
-* REMARK: 焦点UP与DOWN的实现类似，修改时要参考DOWN的实现。
-*/
-RESULT  VObject__MSG_WGI_FOCUSUP(OBJECT* This, const POINT pt, const VR* pCaller)
+/* REMARK: 焦点UP与DOWN的实现类似，修改时要参考DOWN的实现。 */
+int v_object__msg_wgi_focusup(struct object *self, const POINT pt,
+			      const struct vr *caller_context)
 {
-	EM_VOBJECT*     pem = (EM_VOBJECT*)This->pEM;
-	EM_VOBJECT*     pem_sbdt;
-	POINT           pt1;
+	struct em_vobject *members = (struct em_vobject *)self->members;
+	struct em_vobject *pem_sbdt;
+	POINT pt1;
 
-	pem->pCFUpSbdt = pem->pCFOnSbdt;
+	members->p_cf_up_sbdt = members->p_cf_on_sbdt;
 
-	if(pem->pCFUpSbdt != NULL)
-	{
+	if (members->p_cf_up_sbdt != NULL) {
 		pt1 = pt;
-		pem_sbdt = GetEMofBN(pem->pCFUpSbdt, MSN_VOBJECT);
-		pt1.x -= pem->rsc.rcinner.left + pem_sbdt->rsc.rcouter.left;
-		pt1.y -= pem->rsc.rcinner.top + pem_sbdt->rsc.rcouter.top;
-		VO_Interact2(pem->pCFUpSbdt, MSG_WGI_FOCUSUP, (BYTE*)&pt1, sizeof(POINT), pCaller);
-		pem->pCFOnSbdt = NULL;
+		pem_sbdt = get_base_members(members->p_cf_up_sbdt, MSN_VOBJECT);
+		pt1.x -= members->rsc.rcinner.left + pem_sbdt->rsc.rcouter.left;
+		pt1.y -= members->rsc.rcinner.top + pem_sbdt->rsc.rcouter.top;
+		vo_interact2(members->p_cf_up_sbdt, MSG_WGI_FOCUSUP,
+			     (unsigned char *)&pt1, sizeof(POINT),
+			     caller_context);
+		members->p_cf_on_sbdt = NULL;
 	}
 
 	return R_P;
 }
 
-/**
-*
-* NAME: VObject__CMD_WGI_ROLLIR
-*/
-RESULT  VObject__CMD_WGI_ROLLIR(OBJECT* This, const IRRDELTA delta, const VR* pCaller)
+int v_object__cmd_wgi_rollir(struct object *self,
+			     const struct irrollingdelta delta,
+			     const struct vr *caller_context)
 {
-	CalcuIRRoll(This, delta.dx, delta.dy);
-	MakeCurrentBitmap(This, NULL);
-	Paint(This);
+	calcu_ir_roll(self, delta.dx, delta.dy);
+	make_current_bitmap(self, NULL);
+	paint(self);
 	return R_P;
 }

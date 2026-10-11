@@ -1,116 +1,73 @@
-/**
- *
- * 文 件 名：CScrollBar.h
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
 
-#ifndef __CSCROLLBAR_H__
-#define __CSCROLLBAR_H__
+
+#ifndef OIOIC_CSCROLLBAR_H
+#define OIOIC_CSCROLLBAR_H
 
 #include "../go.h"
 
+struct rollingarg {
+	long lrs1;
+	long lrs2;
+	long lrs3;
+};
 
+/* INIT */
 
-/*
-*
-* 名称：ROLLINGARG
-*/
-typedef struct TAG_ROLLINGARG
-{
-	long    lrs1;  
-	long    lrs2;  
-	long    lrs3;  
-}ROLLINGARG;
+struct init_cscrollbar {
+	int n_rb1_l_margin;
+	int n_rb1_t_margin;
+	int n_rb2_r_margin;
+	int n_rb2_b_margin;
+	int n_rg_margin;
+	int n_rb1_width;
+	int n_rb1_height;
+	int n_rb2_width;
+	int n_rb2_height;
+	int n_rg_thickness;
+	HBITMAP h_bmp_rb1_normal;
+	HBITMAP h_bmp_rb1_focus_over;
+	HBITMAP h_bmp_rb1_focus_on;
+	HBITMAP h_bmp_rb2_normal;
+	HBITMAP h_bmp_rb2_focus_over;
+	HBITMAP h_bmp_rb2_focus_on;
+	HBITMAP h_bmp_rg_normal;
+	HBITMAP h_bmp_rg_focus_over;
+	HBITMAP h_bmp_rg_focus_on;
+};
 
-/*========================+ INIT +=======================*/
+struct init2_cscrollbar {
+	struct init_cscrollbar iscb;
+	HBITMAP h_bmp_normal;
+	HBITMAP h_bmp_focus_over;
+	HBITMAP h_bmp_focus_on;
+	int n_thickness;
+};
 
-/*
-*
-* 名称：INIT_CSCROLLBAR
-*/
-typedef struct TAG_INIT_CSCROLLBAR
-{
-	int         nRB1LMargin;
-	int         nRB1TMargin;
-	int         nRB2RMargin;
-	int         nRB2BMargin;
-	int         nRGMargin;
-	int         nRB1Width;
-	int         nRB1Height;
-	int         nRB2Width;
-	int         nRB2Height;
-	int         nRGThickness;
-	HBITMAP     hBmpRB1Normal;
-	HBITMAP     hBmpRB1FocusOver; 
-	HBITMAP     hBmpRB1FocusOn;
-	HBITMAP     hBmpRB2Normal;
-	HBITMAP     hBmpRB2FocusOver; 
-	HBITMAP     hBmpRB2FocusOn;   
-	HBITMAP     hBmpRGNormal;
-	HBITMAP     hBmpRGFocusOver; 
-	HBITMAP     hBmpRGFocusOn;  
-}INIT_CSCROLLBAR;
+/* Extended Member */
 
+struct em_cscrollbar {
+	struct object *oioic_node;
+	struct object *visual_node;
+	struct object *control_node;
+	int n_rb1_l_margin;
+	int n_rb1_t_margin;
+	int n_rb2_r_margin;
+	int n_rb2_b_margin;
+	int n_rg_margin;
+	int n_rb1_width;
+	int n_rb1_height;
+	int n_rb2_width;
+	int n_rb2_height;
+	int n_rg_thickness;
+	HBITMAP h_bmp_rb1_normal;
+	HBITMAP h_bmp_rb1_focus_over;
+	HBITMAP h_bmp_rb1_focus_on;
+	HBITMAP h_bmp_rb2_normal;
+	HBITMAP h_bmp_rb2_focus_over;
+	HBITMAP h_bmp_rb2_focus_on;
+	HBITMAP h_bmp_rg_normal;
+	HBITMAP h_bmp_rg_focus_over;
+	HBITMAP h_bmp_rg_focus_on;
+};
 
-/*
-*
-* 名称：INIT2_CSCROLLBAR
-*/
-typedef struct TAG_INIT2_CSCROLLBAR
-{
-	INIT_CSCROLLBAR    iscb;
-	HBITMAP     hBmpNormal;
-	HBITMAP     hBmpFocusOver; 
-	HBITMAP     hBmpFocusOn;
-	int         nThickness;
-}INIT2_CSCROLLBAR;
-
-
-/*==================+ Extended Member +==================*/
-
-/*
-*
-* 名称：EM_CSCROLLBAR
-*/
-typedef struct TAG_EM_CSCROLLBAR
-{
-	OBJECT*     pOIOIC;
-	OBJECT*     pVObject;
-	OBJECT*     pCObject;
-	int         nRB1LMargin;
-	int         nRB1TMargin;
-	int         nRB2RMargin;
-	int         nRB2BMargin;
-	int         nRGMargin;
-	int         nRB1Width;
-	int         nRB1Height;
-	int         nRB2Width;
-	int         nRB2Height;
-	int         nRGThickness;
-	HBITMAP     hBmpRB1Normal;
-	HBITMAP     hBmpRB1FocusOver; 
-	HBITMAP     hBmpRB1FocusOn;
-	HBITMAP     hBmpRB2Normal;
-	HBITMAP     hBmpRB2FocusOver; 
-	HBITMAP     hBmpRB2FocusOn;   
-	HBITMAP     hBmpRGNormal;
-	HBITMAP     hBmpRGFocusOver; 
-	HBITMAP     hBmpRGFocusOn;  
-}EM_CSCROLLBAR;
-
-
-#endif		/* #ifndef __CSCROLLBAR_H__ */
+#endif /* #ifndef OIOIC_CSCROLLBAR_H */

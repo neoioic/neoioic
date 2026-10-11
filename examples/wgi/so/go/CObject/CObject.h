@@ -1,53 +1,22 @@
-/**
- *
- * 文 件 名：CObject.h
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
 
-#ifndef __COBJECT_H__
-#define __COBJECT_H__
+
+#ifndef OIOIC_COBJECT_H
+#define OIOIC_COBJECT_H
 
 #include "../go.h"
 #include "../VObject/VObject.h"
 
+/* INIT */
 
-/*========================+ INIT +=======================*/
+struct init_cobject {
+	const HWND *p_wnd_handle;
+};
 
-/*
-*
-* 名称：INIT_COBJECT
-*/
-typedef struct TAG_INIT_COBJECT
-{
-	const HWND*    pWndHandle;
-}INIT_COBJECT;
+/* Extended Member */
 
+struct em_cobject {
+	struct object *oioic_node;
+	struct object *visual_node;
+};
 
-/*==================+ Extended Member +==================*/
-
-/*
-*
-* 名称：EM_COBJECT
-*/
-typedef struct TAG_EM_COBJECT
-{
-	OBJECT*     pOIOIC;
-	OBJECT*     pVObject;
-}EM_COBJECT;
-
-
-#endif		/* #ifndef __COBJECT_H__ */
+#endif /* #ifndef OIOIC_COBJECT_H */

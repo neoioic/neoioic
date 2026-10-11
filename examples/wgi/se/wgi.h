@@ -1,60 +1,26 @@
-/**
- *
- * 文 件 名：wgi.h
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 版    本：1.0.8
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
 
-#ifndef __WGI_H__
-#define __WGI_H__
+
+#ifndef OIOIC_WGI_H
+#define OIOIC_WGI_H
 
 #include "se.h"
 
+/* 多边形结构体 */
+struct polygon {
+	POINT *p_apt;
+	int npt;
+};
 
-/*
-*
-* 名称：POLYGON
-* 描述：多边形结构体
-*/
-typedef struct TAG_POLYGON
-{
-	POINT*    pAPT;
-	int       npt;
-}POLYGON;
+/* Z轴多边形结构体。 */
+struct zpolygon {
+	struct polygon plg;
+	int z;
+};
 
+extern HBITMAP load_picture_file(const TCHAR *adrame);
+extern char is_point_in_polygon(int x, int y, const struct polygon *pplg);
+extern char is_inter2_rects(const RECT *p_src_rect1, const RECT *p_src_rect2,
+			    RECT *p_dst_rect);
+extern void calcu_ora_coord(struct object *object, RECT *p_aor);
 
-/*
-*
-* 名称：ZPOLYGON
-* 描述：Z轴多边形结构体。
-*/
-typedef struct TAG_ZPOLYGON
-{
-	POLYGON     plg;
-	int         z;
-}ZPOLYGON;
-
-
-/*=======================================================*/
-
-extern  HBITMAP  LoadPictureFile(const TCHAR* adrame);
-extern  OIOIC_BOOL  IsPointInPolygon(int x, int y, const POLYGON*  pplg);
-extern  OIOIC_BOOL  IsInter2Rects(const RECT* pSrcRect1, const RECT* pSrcRect2, RECT*  pDstRect);
-extern  void  CalcuORACoord(OBJECT* pObj, RECT* pAOR);
-
-#endif		/* #ifndef __WGI_H__ */
+#endif /* #ifndef OIOIC_WGI_H */

@@ -1,1294 +1,1417 @@
-/**
- *
- * 文 件 名：WMenu.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "WMenu.h"
 #include "../CObject/CObject.h"
 
+void tog_w_menu(struct object *object);
+int w_menu_i_open(struct object *self, const struct vr *caller_context);
+int w_menu_i_close(struct object *self, const struct vr *caller_context);
+int w_menu__cmd_prepare(struct object *self, const struct vr *caller_context);
+int w_menu__cmd_initialize(struct object *self, const struct init_wmenu *piwmu,
+			   const struct vr *caller_context);
+int w_menu__cmd_run(struct object *self, const struct vr *caller_context);
 
-void  TOG_WMenu(OBJECT* pObj);
-RESULT  WMenu_I_Open(OBJECT* This, const VR* pCaller);
-RESULT  WMenu_I_Close(OBJECT* This, const VR* pCaller);
-RESULT WMenu__CMD_PREPARE(OBJECT* This, const VR* pCaller);
-RESULT  WMenu__CMD_INITIALIZE(OBJECT* This, const INIT_WMENU* piwmu, const VR* pCaller);
-RESULT WMenu__CMD_RUN(OBJECT* This, const VR* pCaller);
+static ATOM my_register_class(struct object *self);
+static LRESULT CALLBACK cbf_w_menu_proc(HWND window_handle, UINT message,
+					WPARAM wparam, LPARAM lparam);
 
+/* OICC label */
 
-static ATOM  MyRegisterClass(OBJECT* This);
-static LRESULT CALLBACK CBF_WMenuProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
-
-/*=====================+ OICC label +====================*/
-
-/*<oicc>*/
-/*<ibn> WPanel </ibn>*/
-/*<crt>*/
-RESULT  CRT_WMenu(OBJID* pOID, BYTKTY IQCty, BYTKTY OQCty, SI32 NumCR, OBJECT** ppObj, BYTE* pExotic)
+/* <oicc> */
+/* <ibn> WPanel </ibn> */
+/* <crt> */
+int crt_w_menu(uint64_t *object_id, unsigned int input_capacity,
+	       unsigned int output_capacity, int caller_capacity,
+	       struct object **object_out, unsigned char *exotic_memory)
 {
-	extern  void  InitAIBofND(OBJECT* pND, MLDSN* pMsn, NUMIB nib);
-	extern  void  InitABNofND(OBJECT* pND, MLDSN* pMsn, NUMBN nbn);
-	extern  void  TOG_WPanel(OBJECT* pObj);
-	extern  void  TOG_WObject(OBJECT* pObj);
-	extern  void  TOG_VObject(OBJECT* pObj);
-	extern  void  TOG_OIOIC(OBJECT* pObj);
+	extern void init_direct_bases(struct object * node,
+				      unsigned short *base_msns,
+				      unsigned short nib);
+	extern void init_base_nodes(struct object * node,
+				    unsigned short *base_msns,
+				    unsigned short nbn);
+	extern void tog_w_panel(struct object * object);
+	extern void tog_w_object(struct object * object);
+	extern void tog_v_object(struct object * object);
+	extern void tog_oioic(struct object * object);
 
+	size_t ux_nd = 5;		     /* ND数量。 */
+	size_t ux_bn = 10;		     /* 各ND的BN数量之和。 */
+	size_t ux_ib = 4;		     /* 各ND的IBN数量之和。 */
+	size_t ux_cs = caller_capacity * 15; /* 各ND的最少CS数量之和。 */
+	size_t ux_em =
+		OIOIC_ALIGNED_SIZE(struct em_wmenu) +
+		OIOIC_ALIGNED_SIZE(struct em_wpanel) +
+		OIOIC_ALIGNED_SIZE(struct em_wobject) +
+		OIOIC_ALIGNED_SIZE(struct em_vobject) +
+		OIOIC_ALIGNED_SIZE(struct em_oioic); /* 各ND的void尺寸之和。 */
 
-	size_t   ux_ND = 5; 	/* ND数量。*/
-	size_t   ux_BN = 10; 	/* 各ND的BN数量之和。*/
-	size_t   ux_IB = 4; 	/* 各ND的IBN数量之和。*/
-	size_t   ux_CS = NumCR * 15; 	/* 各ND的最少CS数量之和。*/
-	size_t   ux_EM = OIOIC_ALIGNED_SIZE(EM_WMENU) + OIOIC_ALIGNED_SIZE(EM_WPANEL) + OIOIC_ALIGNED_SIZE(EM_WOBJECT)
-		 + OIOIC_ALIGNED_SIZE(EM_VOBJECT) + OIOIC_ALIGNED_SIZE(EM_OIOIC); 	/* 各ND的EM尺寸之和。*/
+	size_t sum = ux_nd * sizeof(struct object)     /* for AND. */
+		     + ux_bn * sizeof(struct object *) /* for "bases". */
+		     + ux_ib * sizeof(struct object *) /* for "direct_bases". */
+		     + ux_cs * sizeof(struct vr) +
+		     ux_em; /* for "callers" and "members". */
 
-	size_t  sum = ux_ND * sizeof(OBJECT) 	/* for AND. */
-		 + ux_BN * sizeof(OBJECT*) 	/* for "ppo_ABN". */
-		 + ux_IB * sizeof(OBJECT*) 	/* for "ppo_AIB". */
-		 + ux_CS * sizeof(VR) + ux_EM; 	/* for "pvr_ACS" and "pEM". */
+	unsigned char *p_ic = NULL;
 
-
-	BYTE*  pIC = NULL;
-
-	if(NULL == pExotic)
-	{
-		*ppObj = NULL;
-		pIC = (BYTE*)calloc(sum, 1);
-	}else
-	{
-		pIC = pExotic;
+	if (NULL == exotic_memory) {
+		*object_out = NULL;
+		p_ic = (unsigned char *)calloc(sum, 1);
+	} else {
+		p_ic = exotic_memory;
 	}
 
+	if (p_ic != NULL) {
+		struct object *node;
+		unsigned short base_msns[4];
+		unsigned char *p = p_ic + sizeof(struct object) * ux_nd;
 
-	if( pIC != NULL )
-	{
-		OBJECT*  pND;
-		MLDSN    ArrMsn[4];
-		BYTE*    p = pIC + sizeof(OBJECT) * ux_ND;
+		/* 确定AND各元素  ** */
 
+		/* WMenu * */
+		node = (struct object *)p_ic;
+		tog_w_menu(node);
+		node->model_id = MSN_WMENU;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/***  确定AND各元素  ***/
+		/* WPanel * */
+		tog_w_panel(++node);
+		node->model_id = MSN_WPANEL;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** WMenu **/
-		pND = (OBJECT*)pIC;
-		TOG_WMenu(pND);
-		pND->MSN = MSN_WMENU;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* WObject * */
+		tog_w_object(++node);
+		node->model_id = MSN_WOBJECT;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** WPanel **/
-		TOG_WPanel(++pND);
-		pND->MSN = MSN_WPANEL;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* VObject * */
+		tog_v_object(++node);
+		node->model_id = MSN_VOBJECT;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** WObject **/
-		TOG_WObject(++pND);
-		pND->MSN = MSN_WOBJECT;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* OIOIC * */
+		tog_oioic(++node);
+		node->model_id = MSN_OIOIC;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** VObject **/
-		TOG_VObject(++pND);
-		pND->MSN = MSN_VOBJECT;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* 初始化各ND  ** */
 
-		/** OIOIC **/
-		TOG_OIOIC(++pND);
-		pND->MSN = MSN_OIOIC;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
-
-
-		/***  初始化各ND  ***/
-
-		/** WMenu **/
-		pND = (OBJECT*)pIC;
+		/* WMenu * */
+		node = (struct object *)p_ic;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_WPANEL;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_WPANEL;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_WPANEL;
-		ArrMsn[1] = MSN_WOBJECT;
-		ArrMsn[2] = MSN_VOBJECT;
-		ArrMsn[3] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 4);
-		p += sizeof(OBJECT*) * 4;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_WPANEL;
+		base_msns[1] = MSN_WOBJECT;
+		base_msns[2] = MSN_VOBJECT;
+		base_msns[3] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 4);
+		p += sizeof(struct object *) * 4;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 1;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 1;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_WMENU);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_wmenu);
 
-		/** WPanel **/
-		++pND;
+		/* WPanel * */
+		++node;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_WOBJECT;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_WOBJECT;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_WOBJECT;
-		ArrMsn[1] = MSN_VOBJECT;
-		ArrMsn[2] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 3);
-		p += sizeof(OBJECT*) * 3;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_WOBJECT;
+		base_msns[1] = MSN_VOBJECT;
+		base_msns[2] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 3);
+		p += sizeof(struct object *) * 3;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 2;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 2;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_WPANEL);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_wpanel);
 
-		/** WObject **/
-		++pND;
+		/* WObject * */
+		++node;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_VOBJECT;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_VOBJECT;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_VOBJECT;
-		ArrMsn[1] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 2);
-		p += sizeof(OBJECT*) * 2;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_VOBJECT;
+		base_msns[1] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 2);
+		p += sizeof(struct object *) * 2;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 3;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 3;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_WOBJECT);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_wobject);
 
-		/** VObject **/
-		++pND;
+		/* VObject * */
+		++node;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_OIOIC;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_OIOIC;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 4;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 4;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_VOBJECT);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_vobject);
 
-		/** OIOIC **/
-		++pND;
+		/* OIOIC * */
+		++node;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 5;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 5;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		if( IQCty > 0 )
-		{
-			/* - IQ - */
-			((EM_OIOIC*)(pND->pEM))->IQ.Dtrm = (BYTE*)calloc(IQCty, 1);
-			if( NULL == ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm)
-			{
-				/* 分配IQ的容量失败！*/
-				if(NULL == pExotic)
-					free(pIC);
+		/* - void - */
+		node->members = (void *)p;
+		if (input_capacity > 0) {
+			/* - iq - */
+			((struct em_oioic *)(node->members))->iq.data =
+				(unsigned char *)calloc(input_capacity, 1);
+			if (NULL ==
+			    ((struct em_oioic *)(node->members))->iq.data) {
+				/* 分配iq的容量失败！ */
+				if (NULL == exotic_memory)
+					free(p_ic);
 				return R_N;
 			}
-			((EM_OIOIC*)(pND->pEM))->IQ.Front = ((EM_OIOIC*)(pND->pEM))->IQ.Rear = ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm - 1;
-			((EM_OIOIC*)(pND->pEM))->IQ.Cty = IQCty;
-			((EM_OIOIC*)(pND->pEM))->IQ.Qty = ((EM_OIOIC*)(pND->pEM))->IQ.Lost = 0;
+			((struct em_oioic *)(node->members))->iq.front =
+				((struct em_oioic *)(node->members))->iq.rear =
+					((struct em_oioic *)(node->members))
+						->iq.data -
+					1;
+			((struct em_oioic *)(node->members))->iq.capacity =
+				input_capacity;
+			((struct em_oioic *)(node->members))->iq.quantity =
+				((struct em_oioic *)(node->members))->iq.lost =
+					0;
 		}
 
-		if( OQCty > 0 )
- 		{
-			/* - OQ - */
-			((EM_OIOIC*)(pND->pEM))->OQ.Dtrm = (BYTE*)calloc(OQCty, 1);
-			if(NULL == ((EM_OIOIC*)(pND->pEM))->OQ.Dtrm)
-			{
-				/* 分配OQ的容量失败！*/
-				if( ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm != NULL )
-					free(((EM_OIOIC*)(pND->pEM))->IQ.Dtrm);
-				if(NULL == pExotic)
-					free(pIC);
+		if (output_capacity > 0) {
+			/* - oq - */
+			((struct em_oioic *)(node->members))->oq.data =
+				(unsigned char *)calloc(output_capacity, 1);
+			if (NULL ==
+			    ((struct em_oioic *)(node->members))->oq.data) {
+				/* 分配oq的容量失败！ */
+				if (((struct em_oioic *)(node->members))
+					    ->iq.data != NULL)
+					free(((struct em_oioic
+						       *)(node->members))
+						     ->iq.data);
+				if (NULL == exotic_memory)
+					free(p_ic);
 				return R_N;
 			}
-			((EM_OIOIC*)(pND->pEM))->OQ.Front = ((EM_OIOIC*)(pND->pEM))->OQ.Rear = ((EM_OIOIC*)(pND->pEM))->OQ.Dtrm - 1;
-			((EM_OIOIC*)(pND->pEM))->OQ.Cty = OQCty;
-			((EM_OIOIC*)(pND->pEM))->OQ.Qty = ((EM_OIOIC*)(pND->pEM))->OQ.Lost = 0;
+			((struct em_oioic *)(node->members))->oq.front =
+				((struct em_oioic *)(node->members))->oq.rear =
+					((struct em_oioic *)(node->members))
+						->oq.data -
+					1;
+			((struct em_oioic *)(node->members))->oq.capacity =
+				output_capacity;
+			((struct em_oioic *)(node->members))->oq.quantity =
+				((struct em_oioic *)(node->members))->oq.lost =
+					0;
 		}
-		p += OIOIC_ALIGNED_SIZE(EM_OIOIC);
-	}else
-	{
+		p += OIOIC_ALIGNED_SIZE(struct em_oioic);
+	} else {
 		return R_N;
 	}
 
-
-	if(NULL == pExotic)
-		*ppObj = (OBJECT*)pIC;
-
+	if (NULL == exotic_memory)
+		*object_out = (struct object *)p_ic;
 
 	return R_P;
 }
-/*</crt>*/
-/*</oicc>*/
+/* </crt> */
+/* </oicc> */
 
-/*=====================+ Interface +=====================*/
+/* Interface */
 
-/**
-*
-* 名称：WMenu_Open
-*/
-static  RESULT  WMenu_Open(OBJECT* This, const VR* pCaller)
+static int w_menu_open(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return WMenu_I_Open(This, &caller);
+	return w_menu_i_open(self, &caller);
 }
 
-/**
-*
-* 名称：WMenu_Input
-*/
-static  RESULT  WMenu_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int w_menu_input(struct object *self, unsigned char *input_stream,
+			unsigned int quantity, const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：WMenu_Output
-*/
-static  RESULT  WMenu_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_menu_output(struct object *self, unsigned char *output_stream,
+			 unsigned int capacity, unsigned int *output_quantity,
+			 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：WMenu_IOput
-*/
-static  RESULT  WMenu_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_menu_io_put(struct object *self, unsigned char *input_stream,
+			 unsigned int quantity, unsigned char *output_stream,
+			 unsigned int capacity, unsigned int *output_quantity,
+			 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：WMenu_Interact0
-*/
-static  RESULT  WMenu_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int w_menu_interact0(struct object *self, unsigned int action,
+			    const struct vr *caller_context)
 {
-	VR   caller;
-	
-    caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	struct vr caller;
 
-	switch(Act)
-	{
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
+
+	switch (action) {
 	case CMD_PREPARE:
-		return WMenu__CMD_PREPARE(This, &caller);
+		return w_menu__cmd_prepare(self, &caller);
 	case CMD_RUN:
-		return WMenu__CMD_RUN(This, &caller);
+		return w_menu__cmd_run(self, &caller);
 	default:
 		break;
 	}
 
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：WMenu_Interact1
-*/
-static  RESULT  WMenu_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_menu_interact1(struct object *self, unsigned int action,
+			    unsigned char *output_stream, unsigned int capacity,
+			    unsigned int *output_quantity,
+			    const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：WMenu_Interact2
-*/
-static  RESULT  WMenu_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int w_menu_interact2(struct object *self, unsigned int action,
+			    unsigned char *input_stream, unsigned int quantity,
+			    const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
-	switch(Act)
-	{
+	switch (action) {
 	case CMD_INITIALIZE:
-		assert(sizeof(INIT_WMENU) == Qty);
-		return WMenu__CMD_INITIALIZE(This, (INIT_WMENU*)IStrm, &caller);
+		assert(sizeof(struct init_wmenu) == quantity);
+		return w_menu__cmd_initialize(
+			self, (struct init_wmenu *)input_stream, &caller);
 	default:
 		break;
 	}
 
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：WMenu_Interact3
-*/
-static  RESULT  WMenu_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_menu_interact3(struct object *self, unsigned int action,
+			    unsigned char *input_stream, unsigned int quantity,
+			    unsigned char *output_stream, unsigned int capacity,
+			    unsigned int *output_quantity,
+			    const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：WMenu_Close
-*/
-static  RESULT  WMenu_Close(OBJECT* This, const VR* pCaller)
+static int w_menu_close(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return WMenu_I_Close(This, &caller);
+	return w_menu_i_close(self, &caller);
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_WMenu
-*/
-void  TOG_WMenu(OBJECT* pObj)
+void tog_w_menu(struct object *object)
 {
-	pObj->Open = WMenu_Open;
-	pObj->Input = WMenu_Input;
-	pObj->Output = WMenu_Output;
-	pObj->IOput = WMenu_IOput;
-	pObj->Interact0 = WMenu_Interact0;
-	pObj->Interact1 = WMenu_Interact1;
-	pObj->Interact2 = WMenu_Interact2;
-	pObj->Interact3 = WMenu_Interact3;
-	pObj->Close = WMenu_Close;
+	object->open = w_menu_open;
+	object->input = w_menu_input;
+	object->output = w_menu_output;
+	object->io_put = w_menu_io_put;
+	object->interact0 = w_menu_interact0;
+	object->interact1 = w_menu_interact1;
+	object->interact2 = w_menu_interact2;
+	object->interact3 = w_menu_interact3;
+	object->close = w_menu_close;
 }
 
+/* Function(s) */
 
-/*====================+ Function(s) +====================*/
-
-/**
-*
-* 名称：MyRegisterClass
-* 描述：
-*/
-static ATOM  MyRegisterClass(OBJECT* This)
+static ATOM my_register_class(struct object *self)
 {
-	EM_WMENU*           pem = (EM_WMENU*)This->pEM;
-	EM_WOBJECT*         pem_wob = (EM_WOBJECT*)pem->pWObject->pEM;
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct em_wobject *pem_wob =
+		(struct em_wobject *)members->window_node->members;
 	WNDCLASS wc;
 
-	wc.style			= CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc	    = (WNDPROC)CBF_WMenuProc;
-	wc.cbClsExtra		= 0;
-	wc.cbWndExtra		= 0;
-	wc.hInstance		= pem_wob->hInstance;
-	wc.hIcon			= LoadIcon(pem_wob->hInstance, MAKEINTRESOURCE(IDI_WGIDEMO));
-	wc.hCursor		    = NULL;//LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
-	wc.lpszMenuName	    = NULL;
-	wc.lpszClassName	= pem_wob->pClassName;
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.lpfnWndProc = (WNDPROC)cbf_w_menu_proc;
+	wc.cbClsExtra = 0;
+	wc.cbWndExtra = 0;
+	wc.hInstance = pem_wob->instance;
+	wc.hIcon = LoadIcon(pem_wob->instance, MAKEINTRESOURCE(IDI_WGIDEMO));
+	wc.hCursor = NULL; /* LoadCursor(NULL, IDC_ARROW); */
+	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wc.lpszMenuName = NULL;
+	wc.lpszClassName = pem_wob->p_class_name;
 
 	return RegisterClass(&wc);
 }
 
-
-/**
-*
-* 名称：InitTRButton
-* 描述：Initialize Top Rolling Button
-*/
-static void  InitTRButton(OBJECT* This, const VR* pCaller)
+/* Initialize Top Rolling Button */
+static void init_tr_button(struct object *self, const struct vr *caller_context)
 {
-	EM_WMENU*           pem = (EM_WMENU*)This->pEM;
-	EM_VOBJECT*         pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	EM_WOBJECT*         pem_wob = (EM_WOBJECT*)pem->pWObject->pEM;
-	EM_VOBJECT*         pem_vob_sbdt;
-	INIT_VOBJECT        ivob;
-	INIT_COBJECT        icob;
-	int                 n;
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	struct em_wobject *pem_wob =
+		(struct em_wobject *)members->window_node->members;
+	struct em_vobject *pem_vob_sbdt;
+	struct init_vobject ivob;
+	struct init_cobject icob;
+	int n;
 
-	assert(pem->pTRButton != NULL);
+	assert(members->p_tr_button != NULL);
 
-	memset(&ivob, 0, sizeof(INIT_VOBJECT));
-	memset(&icob, 0, sizeof(INIT_COBJECT));
+	memset(&ivob, 0, sizeof(struct init_vobject));
+	memset(&icob, 0, sizeof(struct init_cobject));
 
-	ivob.pSuperior = This;
+	ivob.p_superior = self;
 	ivob.style |= VOBS_NOSEMIACTIVE | VOBS_YIRROLLABLE;
-	ivob.state = eVOBState_Normal;
+	ivob.state = VOB_STATE_NORMAL;
 
 	n = pem_vob->rsc.rcinner.right - pem_vob->rsc.rcinner.left;
 	ivob.rsc.rcouter.right = n;
 	ivob.rsc.rcinner.right = n;
-	ivob.rsc.rcinner.bottom = pem->nRBHeight;
+	ivob.rsc.rcinner.bottom = members->n_rb_height;
 	ivob.scenew = n;
-	ivob.sceneh =  pem->nRBHeight;
-	icob.pWndHandle = &pem_wob->hWnd;
+	ivob.sceneh = members->n_rb_height;
+	icob.p_wnd_handle = &pem_wob->window_handle;
 
-	ivob.rsc.rcouter.bottom = pem->nRBHeight;
-	ivob.ArrHBITMAP[eVOBState_Normal] = pem->hBmpTRBNormal;
-	ivob.ArrHBITMAP[eVOBState_FocusOver] = pem->hBmpTRBFocusOver;
-	ivob.ArrHBITMAP[eVOBState_FocusOn] = pem->hBmpTRBFocusOn;
+	ivob.rsc.rcouter.bottom = members->n_rb_height;
+	ivob.arr_hbitmap[VOB_STATE_NORMAL] = members->h_bmp_trb_normal;
+	ivob.arr_hbitmap[VOB_STATE_FOCUS_OVER] = members->h_bmp_trb_focus_over;
+	ivob.arr_hbitmap[VOB_STATE_FOCUS_ON] = members->h_bmp_trb_focus_on;
 
-	pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(pem_vob->pFirstSbdt, MSN_VOBJECT);
-	ivob.pPrevCodt = pem_vob_sbdt->pPrevCodt;	
-	pem_vob_sbdt->pPrevCodt = pem->pTRButton;
-	ivob.pNextCodt = pem_vob->pFirstSbdt;
-	pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(ivob.pPrevCodt, MSN_VOBJECT);
-	pem_vob_sbdt->pNextCodt = pem->pTRButton;
+	pem_vob_sbdt = (struct em_vobject *)get_base_members(
+		pem_vob->p_first_sbdt, MSN_VOBJECT);
+	ivob.p_prev_codt = pem_vob_sbdt->p_prev_codt;
+	pem_vob_sbdt->p_prev_codt = members->p_tr_button;
+	ivob.p_next_codt = pem_vob->p_first_sbdt;
+	pem_vob_sbdt = (struct em_vobject *)get_base_members(ivob.p_prev_codt,
+							     MSN_VOBJECT);
+	pem_vob_sbdt->p_next_codt = members->p_tr_button;
 
-	VO_Open(pem->pTRButton, pCaller);
-	VO_Interact2(GetBN(pem->pTRButton, MSN_VOBJECT), CMD_INITIALIZE, (BYTE*)&ivob, sizeof(INIT_VOBJECT), pCaller);
-	VO_Interact2(GetBN(pem->pTRButton, MSN_COBJECT), CMD_INITIALIZE, (BYTE*)&icob, sizeof(INIT_COBJECT), pCaller);
-	VO_Interact0(pem->pTRButton, CMD_PREPARE, pCaller);
+	vo_open(members->p_tr_button, caller_context);
+	vo_interact2(get_base_node(members->p_tr_button, MSN_VOBJECT),
+		     CMD_INITIALIZE, (unsigned char *)&ivob,
+		     sizeof(struct init_vobject), caller_context);
+	vo_interact2(get_base_node(members->p_tr_button, MSN_COBJECT),
+		     CMD_INITIALIZE, (unsigned char *)&icob,
+		     sizeof(struct init_cobject), caller_context);
+	vo_interact0(members->p_tr_button, CMD_PREPARE, caller_context);
 
 	return;
 }
 
-/**
-*
-* 名称：InitBRButton
-* 描述：Initialize Bottom Rolling Button
-*/
-static void  InitBRButton(OBJECT* This, const VR* pCaller)
+/* Initialize Bottom Rolling Button */
+static void init_br_button(struct object *self, const struct vr *caller_context)
 {
-	EM_WMENU*           pem = (EM_WMENU*)This->pEM;
-	EM_VOBJECT*         pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	EM_WOBJECT*         pem_wob = (EM_WOBJECT*)pem->pWObject->pEM;
-	EM_VOBJECT*         pem_vob_sbdt;
-	INIT_VOBJECT        ivob;
-	INIT_COBJECT        icob;
-	int                 n;
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	struct em_wobject *pem_wob =
+		(struct em_wobject *)members->window_node->members;
+	struct em_vobject *pem_vob_sbdt;
+	struct init_vobject ivob;
+	struct init_cobject icob;
+	int n;
 
-	assert(pem->pBRButton != NULL);
+	assert(members->p_br_button != NULL);
 
-	memset(&ivob, 0, sizeof(INIT_VOBJECT));
-	memset(&icob, 0, sizeof(INIT_COBJECT));
+	memset(&ivob, 0, sizeof(struct init_vobject));
+	memset(&icob, 0, sizeof(struct init_cobject));
 
-	ivob.pSuperior = This;
+	ivob.p_superior = self;
 	ivob.style |= VOBS_NOSEMIACTIVE | VOBS_YIRROLLABLE;
-	ivob.state = eVOBState_Normal;
+	ivob.state = VOB_STATE_NORMAL;
 
 	n = pem_vob->rsc.rcinner.right - pem_vob->rsc.rcinner.left;
 	ivob.rsc.rcouter.right = n;
 	ivob.rsc.rcinner.right = n;
-	ivob.rsc.rcinner.bottom = pem->nRBHeight;
+	ivob.rsc.rcinner.bottom = members->n_rb_height;
 	ivob.scenew = n;
-	ivob.sceneh =  pem->nRBHeight;
-	icob.pWndHandle = &pem_wob->hWnd;
+	ivob.sceneh = members->n_rb_height;
+	icob.p_wnd_handle = &pem_wob->window_handle;
 
-	ivob.rsc.rcouter.top = pem_vob->rsc.rcinner.bottom - pem->nRBHeight;
-	ivob.rsc.rcouter.bottom =  pem_vob->rsc.rcinner.bottom;
-	ivob.ArrHBITMAP[eVOBState_Normal] = pem->hBmpBRBNormal;
-	ivob.ArrHBITMAP[eVOBState_FocusOver] = pem->hBmpBRBFocusOver;
-	ivob.ArrHBITMAP[eVOBState_FocusOn] = pem->hBmpBRBFocusOn;
-	
-	if(pem->pTRButton != NULL)
-	{
-		ivob.pNextCodt = pem->pTRButton;
-		pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(pem->pTRButton, MSN_VOBJECT);
-	}else
-	{
-		ivob.pNextCodt = pem_vob->pFirstSbdt;
-		pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(pem_vob->pFirstSbdt, MSN_VOBJECT);
+	ivob.rsc.rcouter.top =
+		pem_vob->rsc.rcinner.bottom - members->n_rb_height;
+	ivob.rsc.rcouter.bottom = pem_vob->rsc.rcinner.bottom;
+	ivob.arr_hbitmap[VOB_STATE_NORMAL] = members->h_bmp_brb_normal;
+	ivob.arr_hbitmap[VOB_STATE_FOCUS_OVER] = members->h_bmp_brb_focus_over;
+	ivob.arr_hbitmap[VOB_STATE_FOCUS_ON] = members->h_bmp_brb_focus_on;
+
+	if (members->p_tr_button != NULL) {
+		ivob.p_next_codt = members->p_tr_button;
+		pem_vob_sbdt = (struct em_vobject *)get_base_members(
+			members->p_tr_button, MSN_VOBJECT);
+	} else {
+		ivob.p_next_codt = pem_vob->p_first_sbdt;
+		pem_vob_sbdt = (struct em_vobject *)get_base_members(
+			pem_vob->p_first_sbdt, MSN_VOBJECT);
 	}
-	ivob.pPrevCodt = pem_vob_sbdt->pPrevCodt;
-	pem_vob_sbdt->pPrevCodt = pem->pBRButton;
-	pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(ivob.pPrevCodt, MSN_VOBJECT);
-	pem_vob_sbdt->pNextCodt = pem->pBRButton;
+	ivob.p_prev_codt = pem_vob_sbdt->p_prev_codt;
+	pem_vob_sbdt->p_prev_codt = members->p_br_button;
+	pem_vob_sbdt = (struct em_vobject *)get_base_members(ivob.p_prev_codt,
+							     MSN_VOBJECT);
+	pem_vob_sbdt->p_next_codt = members->p_br_button;
 
-	VO_Open(pem->pBRButton, pCaller);
-	VO_Interact2(GetBN(pem->pBRButton, MSN_VOBJECT), CMD_INITIALIZE, (BYTE*)&ivob, sizeof(INIT_VOBJECT), pCaller);
-	VO_Interact2(GetBN(pem->pBRButton, MSN_COBJECT), CMD_INITIALIZE, (BYTE*)&icob, sizeof(INIT_COBJECT), pCaller);
-	VO_Interact0(pem->pBRButton, CMD_PREPARE, pCaller);
+	vo_open(members->p_br_button, caller_context);
+	vo_interact2(get_base_node(members->p_br_button, MSN_VOBJECT),
+		     CMD_INITIALIZE, (unsigned char *)&ivob,
+		     sizeof(struct init_vobject), caller_context);
+	vo_interact2(get_base_node(members->p_br_button, MSN_COBJECT),
+		     CMD_INITIALIZE, (unsigned char *)&icob,
+		     sizeof(struct init_cobject), caller_context);
+	vo_interact0(members->p_br_button, CMD_PREPARE, caller_context);
 
 	return;
 }
 
-/**
-*
-* 名称：DestroyTRButton
-* 描述：Destroy Top Rolling Button
-*/
-static void  DestroyTRButton(OBJECT* This, const VR* pCaller)
+/* Destroy Top Rolling Button */
+static void destroy_tr_button(struct object *self,
+			      const struct vr *caller_context)
 {
-	EM_WMENU*         pem = (EM_WMENU*)This->pEM;
-	EM_VOBJECT*       pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	EM_VOBJECT*       pem_vob_sbdt;
-	EM_VOBJECT*       pem_vob_sbdt2;
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	struct em_vobject *pem_vob_sbdt;
+	struct em_vobject *pem_vob_sbdt2;
 
-	assert(pem->pTRButton != NULL);
+	assert(members->p_tr_button != NULL);
 
-	if(pem_vob->pActiveSbdt == pem->pTRButton)
-		pem_vob->pActiveSbdt = NULL;
-	if(pem_vob->pCFDownSbdt == pem->pTRButton)
-		pem_vob->pCFDownSbdt = NULL;
-	if(pem_vob->pCFOnSbdt == pem->pTRButton)
-		pem_vob->pCFOnSbdt = NULL;
-	if(pem_vob->pCFOverSbdt == pem->pTRButton)
-		pem_vob->pCFOverSbdt = NULL;
-	if(pem_vob->pCFUpSbdt == pem->pTRButton)
-		pem_vob->pCFUpSbdt = NULL;
+	if (pem_vob->p_active_sbdt == members->p_tr_button)
+		pem_vob->p_active_sbdt = NULL;
+	if (pem_vob->p_cf_down_sbdt == members->p_tr_button)
+		pem_vob->p_cf_down_sbdt = NULL;
+	if (pem_vob->p_cf_on_sbdt == members->p_tr_button)
+		pem_vob->p_cf_on_sbdt = NULL;
+	if (pem_vob->p_cf_over_sbdt == members->p_tr_button)
+		pem_vob->p_cf_over_sbdt = NULL;
+	if (pem_vob->p_cf_up_sbdt == members->p_tr_button)
+		pem_vob->p_cf_up_sbdt = NULL;
 
-	pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(pem->pTRButton, MSN_VOBJECT);
-	pem_vob_sbdt2 = (EM_VOBJECT*)GetEMofBN(pem_vob_sbdt->pPrevCodt, MSN_VOBJECT);
-	pem_vob_sbdt2->pNextCodt = pem_vob_sbdt->pNextCodt;
-	pem_vob_sbdt2 = (EM_VOBJECT*)GetEMofBN(pem_vob_sbdt->pNextCodt, MSN_VOBJECT);
-	pem_vob_sbdt2->pPrevCodt = pem_vob_sbdt->pPrevCodt;
-	VO_Close(pem->pTRButton, pCaller);
-	DestroyObject(pem->pTRButton);
-	
+	pem_vob_sbdt = (struct em_vobject *)get_base_members(
+		members->p_tr_button, MSN_VOBJECT);
+	pem_vob_sbdt2 = (struct em_vobject *)get_base_members(
+		pem_vob_sbdt->p_prev_codt, MSN_VOBJECT);
+	pem_vob_sbdt2->p_next_codt = pem_vob_sbdt->p_next_codt;
+	pem_vob_sbdt2 = (struct em_vobject *)get_base_members(
+		pem_vob_sbdt->p_next_codt, MSN_VOBJECT);
+	pem_vob_sbdt2->p_prev_codt = pem_vob_sbdt->p_prev_codt;
+	vo_close(members->p_tr_button, caller_context);
+	destroy_object(members->p_tr_button);
+
 	return;
 }
 
-/**
-*
-* 名称：DestroyBRButton
-* 描述：Destroy Bottom Rolling Button
-*/
-static void  DestroyBRButton(OBJECT* This, const VR* pCaller)
+/* Destroy Bottom Rolling Button */
+static void destroy_br_button(struct object *self,
+			      const struct vr *caller_context)
 {
-	EM_WMENU*         pem = (EM_WMENU*)This->pEM;
-	EM_VOBJECT*       pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	EM_VOBJECT*       pem_vob_sbdt;
-	EM_VOBJECT*       pem_vob_sbdt2;
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	struct em_vobject *pem_vob_sbdt;
+	struct em_vobject *pem_vob_sbdt2;
 
-	assert(pem->pBRButton != NULL);
+	assert(members->p_br_button != NULL);
 
-	if(pem_vob->pActiveSbdt == pem->pBRButton)
-		pem_vob->pActiveSbdt = NULL;
-	if(pem_vob->pCFDownSbdt == pem->pBRButton)
-		pem_vob->pCFDownSbdt = NULL;
-	if(pem_vob->pCFOnSbdt == pem->pBRButton)
-		pem_vob->pCFOnSbdt = NULL;
-	if(pem_vob->pCFOverSbdt == pem->pBRButton)
-		pem_vob->pCFOverSbdt = NULL;
-	if(pem_vob->pCFUpSbdt == pem->pBRButton)
-		pem_vob->pCFUpSbdt = NULL;
+	if (pem_vob->p_active_sbdt == members->p_br_button)
+		pem_vob->p_active_sbdt = NULL;
+	if (pem_vob->p_cf_down_sbdt == members->p_br_button)
+		pem_vob->p_cf_down_sbdt = NULL;
+	if (pem_vob->p_cf_on_sbdt == members->p_br_button)
+		pem_vob->p_cf_on_sbdt = NULL;
+	if (pem_vob->p_cf_over_sbdt == members->p_br_button)
+		pem_vob->p_cf_over_sbdt = NULL;
+	if (pem_vob->p_cf_up_sbdt == members->p_br_button)
+		pem_vob->p_cf_up_sbdt = NULL;
 
-	pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(pem->pBRButton, MSN_VOBJECT);
-	pem_vob_sbdt2 = (EM_VOBJECT*)GetEMofBN(pem_vob_sbdt->pPrevCodt, MSN_VOBJECT);
-	pem_vob_sbdt2->pNextCodt = pem_vob_sbdt->pNextCodt;
-	pem_vob_sbdt2 = (EM_VOBJECT*)GetEMofBN(pem_vob_sbdt->pNextCodt, MSN_VOBJECT);
-	pem_vob_sbdt2->pPrevCodt = pem_vob_sbdt->pPrevCodt;
-	VO_Close(pem->pBRButton, pCaller);
-	DestroyObject(pem->pBRButton);
+	pem_vob_sbdt = (struct em_vobject *)get_base_members(
+		members->p_br_button, MSN_VOBJECT);
+	pem_vob_sbdt2 = (struct em_vobject *)get_base_members(
+		pem_vob_sbdt->p_prev_codt, MSN_VOBJECT);
+	pem_vob_sbdt2->p_next_codt = pem_vob_sbdt->p_next_codt;
+	pem_vob_sbdt2 = (struct em_vobject *)get_base_members(
+		pem_vob_sbdt->p_next_codt, MSN_VOBJECT);
+	pem_vob_sbdt2->p_prev_codt = pem_vob_sbdt->p_prev_codt;
+	vo_close(members->p_br_button, caller_context);
+	destroy_object(members->p_br_button);
 
-	
 	return;
 }
 
-/**
-*
-* 名称：CBF_WMenuProc
-* 描述：Mesage handler for WMenu.
-*/
-static LRESULT CALLBACK CBF_WMenuProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+/* Mesage handler for WMenu. */
+static LRESULT CALLBACK cbf_w_menu_proc(HWND window_handle, UINT message,
+					WPARAM wparam, LPARAM lparam)
 {
-	VR                caller;
-	OBJECT*           This;
-	EM_WMENU*         pem;
-	EM_VOBJECT*       pem_vob;
-	EM_VOBJECT*       pem_vob_sbdt;
-	EM_VOBJECT*       pem_vob_sbdt2;
-	PAINTSTRUCT       ps;
-	POINT             pt;
-	IRRDELTA          irrd;
-	BYTKTY			  qty;
-	int               n;
-
+	struct vr caller;
+	struct object *self;
+	struct em_wmenu *members;
+	struct em_vobject *pem_vob;
+	struct em_vobject *pem_vob_sbdt;
+	struct em_vobject *pem_vob_sbdt2;
+	PAINTSTRUCT ps;
+	POINT pt;
+	struct irrollingdelta irrd;
+	unsigned int qty;
+	int n;
 
 	caller.cr = OID_MAIN;
 
-	switch (message)
-	{
+	switch (message) {
 	case WM_INITDIALOG:
-		//This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+		/* self = (struct object*)GetWindowLongPtr(window_handle, GWLP_USERDATA); */
 		break;
-	case WM_PAINT:	
-		if(NULL == (This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA))) 
+	case WM_PAINT:
+		if (NULL == (self = (struct object *)GetWindowLongPtr(
+				     window_handle, GWLP_USERDATA)))
 			break;
-		pem = (EM_WMENU*)This->pEM;
-		caller.mr = This->OID;
-		BeginPaint(hWnd, &ps);
-		VO_Interact0(pem->pWPanel, CMD_WGI_PAINT, &caller);
-		EndPaint(hWnd, &ps);
+		members = (struct em_wmenu *)self->members;
+		caller.mr = self->oid;
+		BeginPaint(window_handle, &ps);
+		vo_interact0(members->panel_node, CMD_WGI_PAINT, &caller);
+		EndPaint(window_handle, &ps);
 		break;
 	case WM_MOUSEACTIVATE:
-		return MA_NOACTIVATEANDEAT; /* 不激活菜单。*/
+		return MA_NOACTIVATEANDEAT; /* 不激活菜单。 */
 	case WM_MOUSEMOVE:
-		This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA);   
-		pem = (EM_WMENU*)This->pEM;
-		caller.mr = This->OID;
-		pem_vob = (EM_VOBJECT*)GetEMofBN(This, MSN_VOBJECT);
-		pt.x = GET_X_LPARAM(lParam);
-		pt.y = GET_Y_LPARAM(lParam);
-		if(wParam != MK_LBUTTON)
-		{
-			VO_Interact2(pem->pWPanel, MSG_WGI_FOCUSOVERMOVE, (BYTE*)&pt, sizeof(POINT), &caller);
-			if(pem_vob->pCFOverSbdt != pem->pCFOverSbdt)
-			{
-				if(pem->pSubMenu)
-				{
-					VO_Close(pem->pSubMenu, &caller);
-					DestroyObject(pem->pSubMenu);
+		self = (struct object *)GetWindowLongPtr(window_handle,
+							 GWLP_USERDATA);
+		members = (struct em_wmenu *)self->members;
+		caller.mr = self->oid;
+		pem_vob = (struct em_vobject *)get_base_members(self,
+								MSN_VOBJECT);
+		pt.x = GET_X_LPARAM(lparam);
+		pt.y = GET_Y_LPARAM(lparam);
+		if (wparam != MK_LBUTTON) {
+			vo_interact2(members->panel_node, MSG_WGI_FOCUSOVERMOVE,
+				     (unsigned char *)&pt, sizeof(POINT),
+				     &caller);
+			if (pem_vob->p_cf_over_sbdt !=
+			    members->p_cf_over_sbdt) {
+				if (members->p_sub_menu) {
+					vo_close(members->p_sub_menu, &caller);
+					destroy_object(members->p_sub_menu);
 				}
 
-				if(pem_vob->pCFOverSbdt != NULL)
-				{
-					if(pem_vob->pCFOverSbdt == pem->pTRButton)
-					{
-						//_Debug_OutputString(TEXT("\nif(pem_vob->pCFOverSbdt == pem->pTRButton)"), 123, NULL);
-						if(pem->timerid != 0)  
-						{
-							if(pem->rollstep < 0) /* 当前的定时器是底端滚动按钮的？*/
+				if (pem_vob->p_cf_over_sbdt != NULL) {
+					if (pem_vob->p_cf_over_sbdt ==
+					    members->p_tr_button) {
+						/* _Debug_OutputString(TEXT("\nif(pem_vob->p_cf_over_sbdt == pem->p_tr_button)"), 123, NULL); */
+						if (members->timerid != 0) {
+							if (members->rollstep <
+							    0) /* 当前的定时器是底端滚动按钮的？ */
 							{
-								KillTimer(hWnd, pem->timerid);
-								pem->rollstep = -pem->rollstep;
-								pem->timerid = SetTimer(hWnd, 1, pem->timertov, NULL); /* nIDEvent参数为1，表示是顶端滚动按钮的定时器。*/
+								KillTimer(
+									window_handle,
+									members->timerid);
+								members->rollstep =
+									-members->rollstep;
+								members->timerid = SetTimer(
+									window_handle,
+									1,
+									members->timertov,
+									NULL); /* nIDEvent参数为1，表示是顶端滚动按钮的定时器。 */
 							}
-						}else
-						{
-							if(pem->rollstep < 0)
-								pem->rollstep = -pem->rollstep;
-							
-							if(NULL == pem->pBRButton)
-							{
-								CreateObject(MSN_CBUTTON, 0, 0, 1, &pem->pBRButton);
-								InitBRButton(This, &caller);
-								VO_Interact0(pem->pWPanel, CMD_WGI_REPAINT, &caller);
+						} else {
+							if (members->rollstep <
+							    0)
+								members->rollstep =
+									-members->rollstep;
+
+							if (NULL ==
+							    members->p_br_button) {
+								create_object(
+									MSN_CBUTTON,
+									0, 0, 1,
+									&members->p_br_button);
+								init_br_button(
+									self,
+									&caller);
+								vo_interact0(
+									members->panel_node,
+									CMD_WGI_REPAINT,
+									&caller);
 							}
-							
-							pem->timerid = SetTimer(hWnd, 1, pem->timertov, NULL); /* nIDEvent参数为1，表示是顶端滚动按钮的定时器。*/
+
+							members->timerid = SetTimer(
+								window_handle,
+								1,
+								members->timertov,
+								NULL); /* nIDEvent参数为1，表示是顶端滚动按钮的定时器。 */
 						}
-					}else if(pem_vob->pCFOverSbdt == pem->pBRButton)
-					{
-						if(pem->timerid != 0)  
-						{
-							if(pem->rollstep > 0)/* 当前的定时器是顶端滚动按钮的？*/
+					} else if (pem_vob->p_cf_over_sbdt ==
+						   members->p_br_button) {
+						if (members->timerid != 0) {
+							if (members->rollstep >
+							    0) /* 当前的定时器是顶端滚动按钮的？ */
 							{
-								KillTimer(hWnd, pem->timerid);
-								pem->rollstep = -pem->rollstep;
-								pem->timerid = SetTimer(hWnd, 2, pem->timertov, NULL); /* nIDEvent参数为2，表示是底端滚动按钮的定时器。*/
+								KillTimer(
+									window_handle,
+									members->timerid);
+								members->rollstep =
+									-members->rollstep;
+								members->timerid = SetTimer(
+									window_handle,
+									2,
+									members->timertov,
+									NULL); /* nIDEvent参数为2，表示是底端滚动按钮的定时器。 */
 							}
-						}else
-						{
-							if(pem->rollstep > 0)
-								pem->rollstep = -pem->rollstep;
-							
-							if(NULL == pem->pTRButton)
-							{
-								CreateObject(MSN_CBUTTON, 0, 0, 1, &pem->pTRButton);
-								InitTRButton(This, &caller);
-								VO_Interact0(pem->pWPanel, CMD_WGI_REPAINT, &caller);
+						} else {
+							if (members->rollstep >
+							    0)
+								members->rollstep =
+									-members->rollstep;
+
+							if (NULL ==
+							    members->p_tr_button) {
+								create_object(
+									MSN_CBUTTON,
+									0, 0, 1,
+									&members->p_tr_button);
+								init_tr_button(
+									self,
+									&caller);
+								vo_interact0(
+									members->panel_node,
+									CMD_WGI_REPAINT,
+									&caller);
 							}
-							pem->timerid = SetTimer(hWnd, 2, pem->timertov, NULL); /* nIDEvent参数为2，表示是底端滚动按钮的定时器。*/
+							members->timerid = SetTimer(
+								window_handle,
+								2,
+								members->timertov,
+								NULL); /* nIDEvent参数为2，表示是底端滚动按钮的定时器。 */
 						}
-					}else 
-					{
-						if(pem->timerid != 0)  
-						{
-							KillTimer(hWnd, pem->timerid);
-							pem->timerid = 0;
+					} else {
+						if (members->timerid != 0) {
+							KillTimer(
+								window_handle,
+								members->timerid);
+							members->timerid = 0;
 						}
-						
-						if(pem->pTRButton != NULL || pem->pBRButton != NULL)
-						{
+
+						if (members->p_tr_button !=
+							    NULL ||
+						    members->p_br_button !=
+							    NULL) {
 							irrd.dx = 0;
-							pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(pem_vob->pCFOverSbdt, MSN_VOBJECT);
-							if(pem->pTRButton != NULL)
-							{
-								pem_vob_sbdt2 = (EM_VOBJECT*)GetEMofBN(pem->pTRButton, MSN_VOBJECT);
-								if(IsInter2Rects(&pem_vob_sbdt->rsc.rcouter, &pem_vob_sbdt2->rsc.rcouter, NULL))
-								{
-									if(NULL == pem->pBRButton)
-									{
-										CreateObject(MSN_CBUTTON, 0, 0, 1, &pem->pBRButton);
-										InitBRButton(This, &caller);
+							pem_vob_sbdt = (struct
+									em_vobject
+										*)
+								get_base_members(
+									pem_vob->p_cf_over_sbdt,
+									MSN_VOBJECT);
+							if (members->p_tr_button !=
+							    NULL) {
+								pem_vob_sbdt2 = (struct
+										 em_vobject
+											 *)
+									get_base_members(
+										members->p_tr_button,
+										MSN_VOBJECT);
+								if (is_inter2_rects(
+									    &pem_vob_sbdt
+										     ->rsc
+										     .rcouter,
+									    &pem_vob_sbdt2
+										     ->rsc
+										     .rcouter,
+									    NULL)) {
+									if (NULL ==
+									    members->p_br_button) {
+										create_object(
+											MSN_CBUTTON,
+											0,
+											0,
+											1,
+											&members->p_br_button);
+										init_br_button(
+											self,
+											&caller);
 									}
-									irrd.dy = pem_vob_sbdt2->rsc.rcouter.bottom - pem_vob_sbdt->rsc.rcouter.top;
-									VO_Interact2(pem->pVObject, CMD_WGI_ROLLIR, (BYTE*)&irrd, sizeof(IRRDELTA), &caller);
-									if(0 == pem_vob->oy_irr)
-									{
-										DestroyTRButton(This, &caller);
-										VO_Interact0(pem->pWPanel, CMD_WGI_REPAINT, &caller);
+									irrd.dy =
+										pem_vob_sbdt2
+											->rsc
+											.rcouter
+											.bottom -
+										pem_vob_sbdt
+											->rsc
+											.rcouter
+											.top;
+									vo_interact2(
+										members->visual_node,
+										CMD_WGI_ROLLIR,
+										(unsigned char
+											 *)&irrd,
+										sizeof(struct
+										       irrollingdelta),
+										&caller);
+									if (0 ==
+									    pem_vob->oy_irr) {
+										destroy_tr_button(
+											self,
+											&caller);
+										vo_interact0(
+											members->panel_node,
+											CMD_WGI_REPAINT,
+											&caller);
 									}
-								}else if(pem->pBRButton != NULL)
-								{
-									pem_vob_sbdt2 = (EM_VOBJECT*)GetEMofBN(pem->pBRButton, MSN_VOBJECT);
-									if(IsInter2Rects(&pem_vob_sbdt->rsc.rcouter, &pem_vob_sbdt2->rsc.rcouter, NULL))
-									{
-										irrd.dy = pem_vob_sbdt2->rsc.rcouter.top - pem_vob_sbdt->rsc.rcouter.bottom;
-										VO_Interact2(pem->pVObject, CMD_WGI_ROLLIR, (BYTE*)&irrd, sizeof(IRRDELTA), &caller);
+								} else if (
+									members->p_br_button !=
+									NULL) {
+									pem_vob_sbdt2 = (struct
+											 em_vobject
+												 *)
+										get_base_members(
+											members->p_br_button,
+											MSN_VOBJECT);
+									if (is_inter2_rects(
+										    &pem_vob_sbdt
+											     ->rsc
+											     .rcouter,
+										    &pem_vob_sbdt2
+											     ->rsc
+											     .rcouter,
+										    NULL)) {
+										irrd.dy =
+											pem_vob_sbdt2
+												->rsc
+												.rcouter
+												.top -
+											pem_vob_sbdt
+												->rsc
+												.rcouter
+												.bottom;
+										vo_interact2(
+											members->visual_node,
+											CMD_WGI_ROLLIR,
+											(unsigned char
+												 *)&irrd,
+											sizeof(struct
+											       irrollingdelta),
+											&caller);
 									}
 								}
-							}else  /* pem->pBRButton != NULL */
+							} else /* members->p_br_button != NULL */
 							{
-								pem_vob_sbdt2 = (EM_VOBJECT*)GetEMofBN(pem->pBRButton, MSN_VOBJECT);
-								if(IsInter2Rects(&pem_vob_sbdt->rsc.rcouter, &pem_vob_sbdt2->rsc.rcouter, NULL))
-								{
-									irrd.dy = pem_vob_sbdt2->rsc.rcouter.top - pem_vob_sbdt->rsc.rcouter.bottom;
-									CreateObject(MSN_CBUTTON, 0, 0, 1, &pem->pTRButton);
-									InitTRButton(This, &caller);
-									VO_Interact2(pem->pVObject, CMD_WGI_ROLLIR, (BYTE*)&irrd, sizeof(IRRDELTA), &caller);
+								pem_vob_sbdt2 = (struct
+										 em_vobject
+											 *)
+									get_base_members(
+										members->p_br_button,
+										MSN_VOBJECT);
+								if (is_inter2_rects(
+									    &pem_vob_sbdt
+										     ->rsc
+										     .rcouter,
+									    &pem_vob_sbdt2
+										     ->rsc
+										     .rcouter,
+									    NULL)) {
+									irrd.dy =
+										pem_vob_sbdt2
+											->rsc
+											.rcouter
+											.top -
+										pem_vob_sbdt
+											->rsc
+											.rcouter
+											.bottom;
+									create_object(
+										MSN_CBUTTON,
+										0,
+										0,
+										1,
+										&members->p_tr_button);
+									init_tr_button(
+										self,
+										&caller);
+									vo_interact2(
+										members->visual_node,
+										CMD_WGI_ROLLIR,
+										(unsigned char
+											 *)&irrd,
+										sizeof(struct
+										       irrollingdelta),
+										&caller);
 								}
-							}		
+							}
 						}
-						VO_Interact3(pem->pParent, MSG_WGI_MENUITEMFOCUSOVER, (BYTE*)&pem_vob->pCFOverSbdt, sizeof(OBJECT*), (BYTE*)&pem->pSubMenu, sizeof(OBJECT*), &qty, &caller);
+						vo_interact3(
+							members->p_parent,
+							MSG_WGI_MENUITEMFOCUSOVER,
+							(unsigned char
+								 *)&pem_vob
+								->p_cf_over_sbdt,
+							sizeof(struct object *),
+							(unsigned char
+								 *)&members
+								->p_sub_menu,
+							sizeof(struct object *),
+							&qty, &caller);
 					}
 				}
-				
-				pem->pCFOverSbdt = pem_vob->pCFOverSbdt;
+
+				members->p_cf_over_sbdt =
+					pem_vob->p_cf_over_sbdt;
 			}
-		}else
-		{
-			VO_Interact2(pem->pWPanel, MSG_WGI_FOCUSONMOVE, (BYTE*)&pt, sizeof(POINT), &caller);
+		} else {
+			vo_interact2(members->panel_node, MSG_WGI_FOCUSONMOVE,
+				     (unsigned char *)&pt, sizeof(POINT),
+				     &caller);
 		}
 		break;
 	case WM_LBUTTONDOWN:
-		This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA);   
-		pem = (EM_WMENU*)This->pEM;
+		self = (struct object *)GetWindowLongPtr(window_handle,
+							 GWLP_USERDATA);
+		members = (struct em_wmenu *)self->members;
 
-		caller.mr = This->OID;
-		pem_vob = (EM_VOBJECT*)GetEMofBN(This, MSN_VOBJECT);
+		caller.mr = self->oid;
+		pem_vob = (struct em_vobject *)get_base_members(self,
+								MSN_VOBJECT);
 
-		pt.x = GET_X_LPARAM(lParam);
-		pt.y = GET_Y_LPARAM(lParam);
+		pt.x = GET_X_LPARAM(lparam);
+		pt.y = GET_Y_LPARAM(lparam);
 
-		VO_Interact2(pem->pWPanel, MSG_WGI_FOCUSDOWN, (BYTE*)&pt, sizeof(POINT), &caller);
-		VO_Interact2(pem->pWPanel, MSG_WGI_FOCUSON, (BYTE*)&pt, sizeof(POINT), &caller);
+		vo_interact2(members->panel_node, MSG_WGI_FOCUSDOWN,
+			     (unsigned char *)&pt, sizeof(POINT), &caller);
+		vo_interact2(members->panel_node, MSG_WGI_FOCUSON,
+			     (unsigned char *)&pt, sizeof(POINT), &caller);
 
-		if(pem_vob->pCFDownSbdt != NULL)
-		{
+		if (pem_vob->p_cf_down_sbdt != NULL) {
 		}
 
 		break;
 	case WM_LBUTTONUP:
-		This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA);   
-		pem = (EM_WMENU*)This->pEM;
-		pem_vob = (EM_VOBJECT*)GetEMofBN(This, MSN_VOBJECT);
-		caller.mr = This->OID;
-		pt.x = GET_X_LPARAM(lParam);
-		pt.y = GET_Y_LPARAM(lParam);
-		VO_Interact2(pem->pWPanel, MSG_WGI_FOCUSUP, (BYTE*)&pt, sizeof(POINT), &caller);
+		self = (struct object *)GetWindowLongPtr(window_handle,
+							 GWLP_USERDATA);
+		members = (struct em_wmenu *)self->members;
+		pem_vob = (struct em_vobject *)get_base_members(self,
+								MSN_VOBJECT);
+		caller.mr = self->oid;
+		pt.x = GET_X_LPARAM(lparam);
+		pt.y = GET_Y_LPARAM(lparam);
+		vo_interact2(members->panel_node, MSG_WGI_FOCUSUP,
+			     (unsigned char *)&pt, sizeof(POINT), &caller);
 		break;
 	case WM_KEYDOWN:
-		//This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+		/* self = (struct object*)GetWindowLongPtr(window_handle, GWLP_USERDATA); */
 		break;
 	case WM_CHAR:
-		//This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+		/* self = (struct object*)GetWindowLongPtr(window_handle, GWLP_USERDATA); */
 		break;
 	case WM_TIMER:
-		This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA);   
-		pem = (EM_WMENU*)This->pEM;
-		pem_vob = (EM_VOBJECT*)GetEMofBN(This, MSN_VOBJECT);
-		caller.mr = This->OID;
+		self = (struct object *)GetWindowLongPtr(window_handle,
+							 GWLP_USERDATA);
+		members = (struct em_wmenu *)self->members;
+		pem_vob = (struct em_vobject *)get_base_members(self,
+								MSN_VOBJECT);
+		caller.mr = self->oid;
 
 		irrd.dx = 0;
-		irrd.dy = pem->rollstep;
-		n = pem_vob->rsc.rcinner.bottom - pem_vob->rsc.rcinner.top - pem_vob->sceneh;
-	
-		if(pem->rollstep > 0) /* 顶端滚动按钮的定时器？*/
-		{
-			if(pem_vob->oy_irr + irrd.dy >= 0)
-			{
-				DestroyTRButton(This, &caller);
-				KillTimer(hWnd, pem->timerid);
-				pem->timerid = 0;
+		irrd.dy = members->rollstep;
+		n = pem_vob->rsc.rcinner.bottom - pem_vob->rsc.rcinner.top -
+		    pem_vob->sceneh;
 
-				VO_Interact2(pem->pVObject, CMD_WGI_ROLLIR, (BYTE*)&irrd, sizeof(IRRDELTA), &caller);
-				/* 因为之前的一些当前焦点事件下级对象（如当前焦点OVER下级对象、当前焦点ON下级对象等等）
-				就是这个滚动按钮对象，所以销毁滚动按钮后，需要触发一次焦点移动事件，更新当前焦点事件下级对象。*/
+		if (members->rollstep > 0) /* 顶端滚动按钮的定时器？ */
+		{
+			if (pem_vob->oy_irr + irrd.dy >= 0) {
+				destroy_tr_button(self, &caller);
+				KillTimer(window_handle, members->timerid);
+				members->timerid = 0;
+
+				vo_interact2(
+					members->visual_node, CMD_WGI_ROLLIR,
+					(unsigned char *)&irrd,
+					sizeof(struct irrollingdelta), &caller);
+				/*
+				 *  因为之前的一些当前焦点事件下级对象（如当前焦点OVER下级对象、当前焦点ON下级对象等等）
+				 * 				就是这个滚动按钮对象，所以销毁滚动按钮后，需要触发一次焦点移动事件，更新当前焦点事件下级对象。
+				 */
 				GetCursorPos(&pt);
 				SetCursorPos(pt.x, pt.y);
 				break;
 			}
-		}else if(pem_vob->oy_irr + irrd.dy <= n)  /* 否则就是底端滚动按钮的定时器。*/
+		} else if (pem_vob->oy_irr + irrd.dy <=
+			   n) /* 否则就是底端滚动按钮的定时器。 */
 		{
-			DestroyBRButton(This, &caller);
-			KillTimer(hWnd, pem->timerid);
-			pem->timerid = 0;
+			destroy_br_button(self, &caller);
+			KillTimer(window_handle, members->timerid);
+			members->timerid = 0;
 
-			VO_Interact2(pem->pVObject, CMD_WGI_ROLLIR, (BYTE*)&irrd, sizeof(IRRDELTA), &caller);
-            /* 因为之前的一些当前焦点事件下级对象（如当前焦点OVER下级对象、当前焦点ON下级对象等等）
-			就是这个滚动按钮对象，所以销毁滚动按钮后，需要触发一次焦点移动事件，更新当前焦点事件下级对象。*/
+			vo_interact2(members->visual_node, CMD_WGI_ROLLIR,
+				     (unsigned char *)&irrd,
+				     sizeof(struct irrollingdelta), &caller);
+			/*
+			 *  因为之前的一些当前焦点事件下级对象（如当前焦点OVER下级对象、当前焦点ON下级对象等等）
+			 * 			就是这个滚动按钮对象，所以销毁滚动按钮后，需要触发一次焦点移动事件，更新当前焦点事件下级对象。
+			 */
 			GetCursorPos(&pt);
 			SetCursorPos(pt.x, pt.y);
 			break;
 		}
 
-		VO_Interact2(pem->pVObject, CMD_WGI_ROLLIR, (BYTE*)&irrd, sizeof(IRRDELTA), &caller);
+		vo_interact2(members->visual_node, CMD_WGI_ROLLIR,
+			     (unsigned char *)&irrd,
+			     sizeof(struct irrollingdelta), &caller);
 		break;
 	case WM_ERASEBKGND:
-		return TRUE; // 消除移动窗口闪烁。
+		return TRUE; /* 消除移动窗口闪烁。 */
 	case WM_CLOSE:
-		This = (OBJECT*)GetWindowLongPtr(hWnd, GWLP_USERDATA);   
-		pem = (EM_WMENU*)This->pEM;
-		caller.mr = This->OID;
-		if(pem->timerid != 0)
-			KillTimer(hWnd, pem->timerid);
-		VO_Interact0(pem->pWObject, DTR_WGI_WINDOW, &caller);
+		self = (struct object *)GetWindowLongPtr(window_handle,
+							 GWLP_USERDATA);
+		members = (struct em_wmenu *)self->members;
+		caller.mr = self->oid;
+		if (members->timerid != 0)
+			KillTimer(window_handle, members->timerid);
+		vo_interact0(members->window_node, DTR_WGI_WINDOW, &caller);
 		break;
 	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
+		return DefWindowProc(window_handle, message, wparam, lparam);
 	}
 
-	return TRUE; 
+	return TRUE;
 }
 
-/*=======================================================*/
-
-/**
-*
-* NAME: WMenu_I_Open
-*/
-RESULT  WMenu_I_Open(OBJECT* This, const VR* pCaller)
+int w_menu_i_open(struct object *self, const struct vr *caller_context)
 {
-	EM_WMENU*      pem = (EM_WMENU*)This->pEM;
-	
-	if(1 == This->RefCnt)
-	{
-		pem->pOIOIC = GetBN(This, MSN_OIOIC);
-		pem->pVObject = GetBN(This, MSN_VOBJECT);
-		pem->pWObject = GetBN(This, MSN_WOBJECT);
-		pem->pWPanel = GetBN(This, MSN_WPANEL);
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+
+	if (1 == self->ref_count) {
+		members->oioic_node = get_base_node(self, MSN_OIOIC);
+		members->visual_node = get_base_node(self, MSN_VOBJECT);
+		members->window_node = get_base_node(self, MSN_WOBJECT);
+		members->panel_node = get_base_node(self, MSN_WPANEL);
 
 		return RP_RCONE;
 	}
-	
+
 	return R_P;
 }
 
-
-/**
-*
-* NAME: WMenu_I_Close
-*/
-RESULT  WMenu_I_Close(OBJECT* This, const VR* pCaller)
+int w_menu_i_close(struct object *self, const struct vr *caller_context)
 {
-	EM_WMENU*      pem = (EM_WMENU*)This->pEM;
-	EM_WOBJECT*    pem_wob = (EM_WOBJECT*)pem->pWObject->pEM;
-	
-	if(0 == This->RefCnt)
-	{
-		if(pem->pSubMenu)
-		{
-			VO_Close(pem->pSubMenu, pCaller);
-			DestroyObject(pem->pSubMenu);
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct em_wobject *pem_wob =
+		(struct em_wobject *)members->window_node->members;
+
+	if (0 == self->ref_count) {
+		if (members->p_sub_menu) {
+			vo_close(members->p_sub_menu, caller_context);
+			destroy_object(members->p_sub_menu);
 		}
 
-		if(pem->pTRButton)
-			DestroyTRButton(This, pCaller);
-		
-		if(pem->pBRButton)
-			DestroyBRButton(This, pCaller);
+		if (members->p_tr_button)
+			destroy_tr_button(self, caller_context);
 
-		SendMessage(pem_wob->hWnd, WM_CLOSE, 0, 0);
-		pem->DestroyItems(This, pCaller);
+		if (members->p_br_button)
+			destroy_br_button(self, caller_context);
+
+		SendMessage(pem_wob->window_handle, WM_CLOSE, 0, 0);
+		members->destroy_items(self, caller_context);
 		return RP_RCZERO;
 	}
 
+	return R_P;
+}
+
+int w_menu__cmd_initialize(struct object *self, const struct init_wmenu *piwmu,
+			   const struct vr *caller_context)
+{
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct object *object;
+
+	object = get_base_node(self, MSN_VOBJECT);
+	vo_interact2(object, CMD_INITIALIZE, (unsigned char *)&piwmu->ivob,
+		     sizeof(struct init_vobject), caller_context);
+	object = get_base_node(self, MSN_WOBJECT);
+	vo_interact2(object, CMD_INITIALIZE, (unsigned char *)&piwmu->iwob,
+		     sizeof(struct init_wobject), caller_context);
+
+	members->p_parent = piwmu->p_parent;
+	members->n_rb_height = piwmu->n_rb_height;
+	members->uca = piwmu->uca;
+	members->type = piwmu->type;
+	members->width = piwmu->width;
+	members->h_bmp_brb_focus_on = piwmu->h_bmp_brb_focus_on;
+	members->h_bmp_brb_focus_over = piwmu->h_bmp_brb_focus_over;
+	members->h_bmp_brb_normal = piwmu->h_bmp_brb_normal;
+	members->h_bmp_trb_focus_on = piwmu->h_bmp_trb_focus_on;
+	members->h_bmp_trb_focus_over = piwmu->h_bmp_trb_focus_over;
+	members->h_bmp_trb_normal = piwmu->h_bmp_trb_normal;
+	members->timertov = piwmu->timertov != 0 ? piwmu->timertov : 100;
+	members->rollstep = piwmu->rollstep != 0 ? piwmu->rollstep : 10;
+	members->create_items = piwmu->create_items;
+	members->destroy_items = piwmu->destroy_items;
 
 	return R_P;
 }
 
-/**
-*
-* NAME: WMenu__CMD_INITIALIZE
-*/
-RESULT  WMenu__CMD_INITIALIZE(OBJECT* This, const INIT_WMENU* piwmu, const VR* pCaller)
+int w_menu__cmd_prepare(struct object *self, const struct vr *caller_context)
 {
-	EM_WMENU*        pem = (EM_WMENU*)This->pEM;
-	OBJECT*          pObj;
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+	struct em_wobject *pem_wob =
+		(struct em_wobject *)members->window_node->members;
+	struct em_wobject *pem_wob_par;
+	struct em_vobject *pem_vob_sbdt;
+	struct object *object;
+	int n, m, k, w, h;
 
-	pObj = GetBN(This, MSN_VOBJECT);
-	VO_Interact2(pObj, CMD_INITIALIZE, (BYTE*)&piwmu->ivob, sizeof(INIT_VOBJECT), pCaller);
-	pObj = GetBN(This, MSN_WOBJECT);
-	VO_Interact2(pObj, CMD_INITIALIZE, (BYTE*)&piwmu->iwob, sizeof(INIT_WOBJECT), pCaller);
+	my_register_class(self);
 
-	pem->pParent = piwmu->pParent;
-	pem->nRBHeight = piwmu->nRBHeight;
-	pem->uca = piwmu->uca;
-	pem->type = piwmu->type;
-	pem->width = piwmu->width;
-	pem->hBmpBRBFocusOn = piwmu->hBmpBRBFocusOn;
-	pem->hBmpBRBFocusOver = piwmu->hBmpBRBFocusOver;
-	pem->hBmpBRBNormal = piwmu->hBmpBRBNormal;
-	pem->hBmpTRBFocusOn = piwmu->hBmpTRBFocusOn;
-	pem->hBmpTRBFocusOver = piwmu->hBmpTRBFocusOver;
-	pem->hBmpTRBNormal = piwmu->hBmpTRBNormal;
-	pem->timertov = piwmu->timertov != 0 ? piwmu->timertov : 100;
-	pem->rollstep = piwmu->rollstep != 0 ? piwmu->rollstep : 10;
-	pem->CreateItems = piwmu->CreateItems;
-	pem->DestroyItems = piwmu->DestroyItems;
-	
-	return R_P;
-}
+	/* >>> 不调用基节点 WObject 的 CRT_WGI_WINDOW 行为创建窗口，单独实现。 */
 
-/**
-*
-* NAME: WMenu__CMD_PREPARE
-*/
-RESULT WMenu__CMD_PREPARE(OBJECT* This, const VR* pCaller)
-{
-	EM_WMENU*        pem = (EM_WMENU*)This->pEM;
-	EM_VOBJECT*      pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	EM_WOBJECT*      pem_wob = (EM_WOBJECT*)pem->pWObject->pEM;
-	EM_WOBJECT*      pem_wob_par;
-	EM_VOBJECT*      pem_vob_sbdt;
-	OBJECT*          pObj;
-	int              n, m, k, w, h;
+	pem_wob_par = (struct em_wobject *)get_base_members(members->p_parent,
+							    MSN_WOBJECT);
+	pem_wob->window_handle =
+		CreateWindowEx(0, pem_wob->p_class_name, pem_wob->p_window_name,
+			       WS_POPUP, 0, 0, 0, 0, pem_wob_par->window_handle,
+			       NULL, pem_wob->instance, NULL);
 
-
-	MyRegisterClass(This);
-
-
-/*>>> 不调用基节点 WObject 的 CRT_WGI_WINDOW 行为创建窗口，单独实现。*/
-
-	pem_wob_par = (EM_WOBJECT*)GetEMofBN(pem->pParent, MSN_WOBJECT);
-	pem_wob->hWnd = CreateWindowEx(0, pem_wob->pClassName, pem_wob->pWindowName, WS_POPUP, 0, 0, 0, 0, 
-		pem_wob_par->hWnd, NULL, pem_wob->hInstance, NULL);
-	
-	if(NULL == pem_wob->hWnd)
+	if (NULL == pem_wob->window_handle)
 		return R_N;
-	
-	pem_vob->pWndHandle = &pem_wob->hWnd;
-	SetWindowLongPtr(pem_wob->hWnd, GWLP_USERDATA, (LONG_PTR)This->po_AND);
 
-/* 不调用基节点 WObject 的 CRT_WGI_WINDOW 行为创建窗口，单独实现。<<<*/
+	pem_vob->p_wnd_handle = &pem_wob->window_handle;
+	SetWindowLongPtr(pem_wob->window_handle, GWLP_USERDATA,
+			 (LONG_PTR)self->nodes);
 
-	
-	pem->CreateItems(This, pCaller);
-	assert(pem_vob->pFirstSbdt);
+	/* 不调用基节点 WObject 的 CRT_WGI_WINDOW 行为创建窗口，单独实现。<<< */
 
+	members->create_items(self, caller_context);
+	assert(pem_vob->p_first_sbdt);
 
-	if(0 == pem_vob->rsc.rcouter.bottom
-		&& 0 == pem_vob->rsc.rcouter.left
-		&& 0 == pem_vob->rsc.rcouter.right
-		&& 0 == pem_vob->rsc.rcouter.top)
-	{
-		w = GetSystemMetrics(SM_CXSCREEN); 
+	if (0 == pem_vob->rsc.rcouter.bottom &&
+	    0 == pem_vob->rsc.rcouter.left && 0 == pem_vob->rsc.rcouter.right &&
+	    0 == pem_vob->rsc.rcouter.top) {
+		w = GetSystemMetrics(SM_CXSCREEN);
 		h = GetSystemMetrics(SM_CYSCREEN);
-		
-	
-		/* 计算菜单高度（用变量n保存）：*/
 
-		n = h - pem->uca.bottom;
-		m = n > pem->uca.top ? n : pem->uca.top;
+		n = h - members->uca.bottom;
+		m = n > members->uca.top ? n : members->uca.top;
 		n = 0;
-		pObj = pem_vob->pFirstSbdt;
-		do{
-			pem_vob_sbdt = (EM_VOBJECT*)GetEMofBN(pObj, MSN_VOBJECT);
-			n += pem_vob_sbdt->rsc.rcouter.bottom - pem_vob_sbdt->rsc.rcouter.top;
-			if(MNUT_TBLEFT == pem->type || MNUT_TBRIGHT == pem->type)
-			{
-				if(n > m)
-				{
+		object = pem_vob->p_first_sbdt;
+		do {
+			pem_vob_sbdt = (struct em_vobject *)get_base_members(
+				object, MSN_VOBJECT);
+			n += pem_vob_sbdt->rsc.rcouter.bottom -
+			     pem_vob_sbdt->rsc.rcouter.top;
+			if (MNUT_TBLEFT == members->type ||
+			    MNUT_TBRIGHT == members->type) {
+				if (n > m) {
 					n = m;
-					assert(NULL == pem->pBRButton);
-					CreateObject(MSN_CBUTTON, 0, 0, 1, &pem->pBRButton);
+					assert(NULL == members->p_br_button);
+					create_object(MSN_CBUTTON, 0, 0, 1,
+						      &members->p_br_button);
 					break;
 				}
-			}else
-			{
-				if(n > h)
-				{
+			} else {
+				if (n > h) {
 					n = h;
-					assert(NULL == pem->pBRButton);
-					CreateObject(MSN_CBUTTON, 0, 0, 1, &pem->pBRButton);
+					assert(NULL == members->p_br_button);
+					create_object(MSN_CBUTTON, 0, 0, 1,
+						      &members->p_br_button);
 					break;
 				}
 			}
-			pObj = pem_vob_sbdt->pNextCodt;
-		}while(pObj != pem_vob->pFirstSbdt);
-		
-	
-		/* 确定菜单的位置：*/
+			object = pem_vob_sbdt->p_next_codt;
+		} while (object != pem_vob->p_first_sbdt);
 
-		if(MNUT_TBLEFT == pem->type)
-		{
-			m = h - pem->uca.bottom;
-			if(n <= m)
-				pem_vob->rsc.rcouter.top = pem->uca.bottom;	
+		if (MNUT_TBLEFT == members->type) {
+			m = h - members->uca.bottom;
+			if (n <= m)
+				pem_vob->rsc.rcouter.top = members->uca.bottom;
 			else
-				pem_vob->rsc.rcouter.top = pem->uca.top - n;
+				pem_vob->rsc.rcouter.top = members->uca.top - n;
 
-			pem_vob->rsc.rcouter.left = pem->uca.left;
-			pem_vob->rsc.rcouter.right = pem_vob->rsc.rcouter.left + pem->width;
-			pem_vob->rsc.rcouter.bottom = pem_vob->rsc.rcouter.top + n;
-			
-			if(pem_vob->rsc.rcouter.left < 0) /* 菜单超出桌面的左边缘？*/
+			pem_vob->rsc.rcouter.left = members->uca.left;
+			pem_vob->rsc.rcouter.right =
+				pem_vob->rsc.rcouter.left + members->width;
+			pem_vob->rsc.rcouter.bottom =
+				pem_vob->rsc.rcouter.top + n;
+
+			if (pem_vob->rsc.rcouter.left <
+			    0) /* 菜单超出桌面的左边缘？ */
 			{
 				m = -pem_vob->rsc.rcouter.left;
 				pem_vob->rsc.rcouter.right += m;
 				pem_vob->rsc.rcouter.left = 0;
-			}else if(pem_vob->rsc.rcouter.right > w && pem_vob->rsc.rcouter.left > 0) /* 菜单超出桌面的右边缘，并且菜单左边距桌面左边缘还有一定距离？*/
+			} else if (
+				pem_vob->rsc.rcouter.right > w &&
+				pem_vob->rsc.rcouter.left >
+					0) /* 菜单超出桌面的右边缘，并且菜单左边距桌面左边缘还有一定距离？ */
 			{
 				k = pem_vob->rsc.rcouter.right - w;
-				m = k > pem_vob->rsc.rcouter.left ? pem_vob->rsc.rcouter.left : k;
+				m = k > pem_vob->rsc.rcouter.left
+					    ? pem_vob->rsc.rcouter.left
+					    : k;
 				pem_vob->rsc.rcouter.left -= m;
 				pem_vob->rsc.rcouter.right -= m;
 			}
 
-		}else if(MNUT_TBRIGHT == pem->type)
-		{
-			m = h - pem->uca.bottom;
-			if(n <= m)
-				pem_vob->rsc.rcouter.top = pem->uca.bottom;	
+		} else if (MNUT_TBRIGHT == members->type) {
+			m = h - members->uca.bottom;
+			if (n <= m)
+				pem_vob->rsc.rcouter.top = members->uca.bottom;
 			else
-				pem_vob->rsc.rcouter.top = pem->uca.top - n;
+				pem_vob->rsc.rcouter.top = members->uca.top - n;
 
-			pem_vob->rsc.rcouter.right = pem->uca.right;
-			pem_vob->rsc.rcouter.left = pem_vob->rsc.rcouter.right - pem->width;
-			pem_vob->rsc.rcouter.bottom = pem_vob->rsc.rcouter.top + n;
-			
-			if(pem_vob->rsc.rcouter.right > w) /* 菜单超出桌面的右边缘？*/
+			pem_vob->rsc.rcouter.right = members->uca.right;
+			pem_vob->rsc.rcouter.left =
+				pem_vob->rsc.rcouter.right - members->width;
+			pem_vob->rsc.rcouter.bottom =
+				pem_vob->rsc.rcouter.top + n;
+
+			if (pem_vob->rsc.rcouter.right >
+			    w) /* 菜单超出桌面的右边缘？ */
 			{
 				m = pem_vob->rsc.rcouter.right - w;
 				pem_vob->rsc.rcouter.right -= m;
 				pem_vob->rsc.rcouter.left -= m;
-			}else if(pem_vob->rsc.rcouter.left < 0 && pem_vob->rsc.rcouter.right < w) /* 菜单超出桌面的左边缘，并且菜单右边距桌面右边缘还有一定距离？*/
+			} else if (
+				pem_vob->rsc.rcouter.left < 0 &&
+				pem_vob->rsc.rcouter.right <
+					w) /* 菜单超出桌面的左边缘，并且菜单右边距桌面右边缘还有一定距离？ */
 			{
 				k = w - pem_vob->rsc.rcouter.right;
-				m = k > -pem_vob->rsc.rcouter.left ? -pem_vob->rsc.rcouter.left : k;
+				m = k > -pem_vob->rsc.rcouter.left
+					    ? -pem_vob->rsc.rcouter.left
+					    : k;
 				pem_vob->rsc.rcouter.left += m;
 				pem_vob->rsc.rcouter.right += m;
 			}
-		}else if(MNUT_LRTOP == pem->type)
-		{
-			if(n <= h)
-			{
-				pem_vob->rsc.rcouter.top = 	h - pem->uca.top > n ? pem->uca.top : h - n;
+		} else if (MNUT_LRTOP == members->type) {
+			if (n <= h) {
+				pem_vob->rsc.rcouter.top =
+					h - members->uca.top > n
+						? members->uca.top
+						: h - n;
 				pem_vob->rsc.rcouter.bottom = n;
-			}else
-			{
+			} else {
 				pem_vob->rsc.rcouter.top = 0;
 				pem_vob->rsc.rcouter.bottom = h;
 			}
 
-			m = w - pem->uca.right;
-			if(pem->width < m || pem->uca.left < m) /* 判断是否需要改为左贴近。*/
+			m = w - members->uca.right;
+			if (members->width < m ||
+			    members->uca.left <
+				    m) /* 判断是否需要改为左贴近。 */
 			{
-				pem_vob->rsc.rcouter.left = pem->uca.right;
-				pem_vob->rsc.rcouter.right = pem_vob->rsc.rcouter.left + pem->width;
-			}else /* 需要改为左贴近。*/
+				pem_vob->rsc.rcouter.left = members->uca.right;
+				pem_vob->rsc.rcouter.right =
+					pem_vob->rsc.rcouter.left +
+					members->width;
+			} else /* 需要改为左贴近。 */
 			{
-				pem_vob->rsc.rcouter.left = pem->uca.left - pem->width;
-				pem_vob->rsc.rcouter.right = pem->uca.right;
+				pem_vob->rsc.rcouter.left =
+					members->uca.left - members->width;
+				pem_vob->rsc.rcouter.right = members->uca.right;
 			}
-		}else if(MNUT_LRBOTTOM == pem->type)
-		{
-			if(n <= h)
-			{
-				pem_vob->rsc.rcouter.top = pem->uca.bottom > n ? pem->uca.bottom - n : 0;
-				pem_vob->rsc.rcouter.bottom = pem_vob->rsc.rcouter.top + n;
-			}else
-			{
+		} else if (MNUT_LRBOTTOM == members->type) {
+			if (n <= h) {
+				pem_vob->rsc.rcouter.top =
+					members->uca.bottom > n
+						? members->uca.bottom - n
+						: 0;
+				pem_vob->rsc.rcouter.bottom =
+					pem_vob->rsc.rcouter.top + n;
+			} else {
 				pem_vob->rsc.rcouter.top = 0;
 				pem_vob->rsc.rcouter.bottom = h;
 			}
 
-			m = w - pem->uca.right;
-			if(pem->width < m || pem->uca.left < m) /* 判断是否需要改为左贴近。*/
+			m = w - members->uca.right;
+			if (members->width < m ||
+			    members->uca.left <
+				    m) /* 判断是否需要改为左贴近。 */
 			{
-				pem_vob->rsc.rcouter.left = pem->uca.right;
-				pem_vob->rsc.rcouter.right = pem_vob->rsc.rcouter.left + pem->width;
-			}else /* 需要改为左贴近。*/
+				pem_vob->rsc.rcouter.left = members->uca.right;
+				pem_vob->rsc.rcouter.right =
+					pem_vob->rsc.rcouter.left +
+					members->width;
+			} else /* 需要改为左贴近。 */
 			{
-				pem_vob->rsc.rcouter.left = pem->uca.left - pem->width;
-				pem_vob->rsc.rcouter.right = pem->uca.left;
+				pem_vob->rsc.rcouter.left =
+					members->uca.left - members->width;
+				pem_vob->rsc.rcouter.right = members->uca.left;
 			}
 		}
 	}
-	
-	if(0 == pem_vob->rsc.rcinner.bottom
-		&& 0 == pem_vob->rsc.rcinner.left
-		&& 0 == pem_vob->rsc.rcinner.right
-		&& 0 == pem_vob->rsc.rcinner.top)
-	{
+
+	if (0 == pem_vob->rsc.rcinner.bottom &&
+	    0 == pem_vob->rsc.rcinner.left && 0 == pem_vob->rsc.rcinner.right &&
+	    0 == pem_vob->rsc.rcinner.top) {
 		pem_vob->rsc.rcinner.top = 0;
 		pem_vob->rsc.rcinner.left = 0;
-		pem_vob->rsc.rcinner.right = pem_vob->rsc.rcouter.right - pem_vob->rsc.rcouter.left;
-		pem_vob->rsc.rcinner.bottom = pem_vob->rsc.rcouter.bottom - pem_vob->rsc.rcouter.top;
+		pem_vob->rsc.rcinner.right =
+			pem_vob->rsc.rcouter.right - pem_vob->rsc.rcouter.left;
+		pem_vob->rsc.rcinner.bottom =
+			pem_vob->rsc.rcouter.bottom - pem_vob->rsc.rcouter.top;
 	}
-	
-	if(0 == pem_vob->scenew)
-		pem_vob->scenew = pem_vob->rsc.rcinner.right - pem_vob->rsc.rcinner.left;
-	if(0 == pem_vob->sceneh)
-		pem_vob->sceneh = pem_vob->rsc.rcinner.bottom - pem_vob->rsc.rcinner.top;
 
+	if (0 == pem_vob->scenew)
+		pem_vob->scenew =
+			pem_vob->rsc.rcinner.right - pem_vob->rsc.rcinner.left;
+	if (0 == pem_vob->sceneh)
+		pem_vob->sceneh =
+			pem_vob->rsc.rcinner.bottom - pem_vob->rsc.rcinner.top;
 
-	if(pem->pTRButton != NULL)
-		InitTRButton(This, pCaller);
-	if(pem->pBRButton != NULL)
-		InitBRButton(This, pCaller);
+	if (members->p_tr_button != NULL)
+		init_tr_button(self, caller_context);
+	if (members->p_br_button != NULL)
+		init_br_button(self, caller_context);
 
-	SetWindowPos(pem_wob->hWnd, HWND_TOPMOST, 
-		pem_vob->rsc.rcouter.left, pem_vob->rsc.rcouter.top, 
-		pem_vob->rsc.rcouter.right - pem_vob->rsc.rcouter.left, 
-		pem_vob->rsc.rcouter.bottom - pem_vob->rsc.rcouter.top,
-		SWP_HIDEWINDOW | SWP_NOACTIVATE);
+	SetWindowPos(pem_wob->window_handle, HWND_TOPMOST,
+		     pem_vob->rsc.rcouter.left, pem_vob->rsc.rcouter.top,
+		     pem_vob->rsc.rcouter.right - pem_vob->rsc.rcouter.left,
+		     pem_vob->rsc.rcouter.bottom - pem_vob->rsc.rcouter.top,
+		     SWP_HIDEWINDOW | SWP_NOACTIVATE);
 
-	VO_Interact0(pem->pVObject, CMD_PREPARE, pCaller);
-	
-	return R_P;
-}
-
-
-/**
-*
-* NAME: WMenu__CMD_RUN
-*/
-RESULT WMenu__CMD_RUN(OBJECT* This, const VR* pCaller)
-{
-	EM_WMENU*        pem = (EM_WMENU*)This->pEM;
-    EM_WOBJECT*      pem_wob = (EM_WOBJECT*)pem->pWObject->pEM;
-	
-	ShowWindow(pem_wob->hWnd, SW_SHOWNOACTIVATE);
+	vo_interact0(members->visual_node, CMD_PREPARE, caller_context);
 
 	return R_P;
 }
 
-/*=======================================================*/
-
-/**
-*
-* 需求编号：	
-* 需求功能：	创建菜单
-* 函    数：	OBJECT*  PopMenu(const INIT_WMENU* piwmu, const VR* pCaller)
-* 描    述：	创建菜单，SE函数。
-* 参    数：	piwmu - [IN] 菜单的初始化信息。
-* 返    回：	菜单对象指针
-* 定 义 者：	赵平智
-* 设 计 者：	赵平智
-* 实 现 者：	赵平智
-* 使 用 者：	
-* 版    本：	V1.0.0
-* 更新日期：	20111222
-* 备    注：	
-* 修改记录：	
-* 测试要点：	
-*/
-OBJECT*  PopMenu(const INIT_WMENU* piwmu, const VR* pCaller)
+int w_menu__cmd_run(struct object *self, const struct vr *caller_context)
 {
-	RESULT       r;
-    OBJECT*      pMenu;
+	struct em_wmenu *members = (struct em_wmenu *)self->members;
+	struct em_wobject *pem_wob =
+		(struct em_wobject *)members->window_node->members;
 
-	r = CreateObject(MSN_WMENU, 0, 0, 1, &pMenu);
-	if(RN(r))
-		return  NULL;
+	ShowWindow(pem_wob->window_handle, SW_SHOWNOACTIVATE);
 
-    r = VO_Open(pMenu, pCaller);
+	return R_P;
+}
+
+/*
+ * 创建菜单
+ * 创建菜单，SE函数。
+ * 参    数：	piwmu - [IN] 菜单的初始化信息。
+ * 返    回：	菜单对象指针
+ * 定 义 者：	赵平智
+ * 设 计 者：	赵平智
+ * 实 现 者：	赵平智
+ */
+struct object *pop_menu(const struct init_wmenu *piwmu,
+			const struct vr *caller_context)
+{
+	int r;
+	struct object *p_menu;
+
+	r = create_object(MSN_WMENU, 0, 0, 1, &p_menu);
+	if (RN(r))
+		return NULL;
+
+	r = vo_open(p_menu, caller_context);
 	assert(RP(r));
 
-	VO_Interact2(pMenu, CMD_INITIALIZE, (BYTE*)piwmu, sizeof(INIT_WMENU), pCaller);
-	VO_Interact0(pMenu, CMD_PREPARE, pCaller);
-	VO_Interact0(pMenu, CMD_RUN, pCaller);
+	vo_interact2(p_menu, CMD_INITIALIZE, (unsigned char *)piwmu,
+		     sizeof(struct init_wmenu), caller_context);
+	vo_interact0(p_menu, CMD_PREPARE, caller_context);
+	vo_interact0(p_menu, CMD_RUN, caller_context);
 
-	return pMenu;
+	return p_menu;
 }
-

@@ -1,60 +1,28 @@
-/**
- *
- * 文 件 名：WObject.h
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
 
-#ifndef __WOBJECT_H__
-#define __WOBJECT_H__
 
+#ifndef OIOIC_WOBJECT_H
+#define OIOIC_WOBJECT_H
 
 #include "../go.h"
 #include "../VObject/VObject.h"
 
+/* INIT */
 
-/*========================+ INIT +=======================*/
+struct init_wobject {
+	HINSTANCE instance;
+	const TCHAR *p_class_name;
+	const TCHAR *p_window_name;
+};
 
-/*
-*
-* 名称：INIT_WOBJECT
-*/
-typedef struct TAG_INIT_WOBJECT
-{
-	HINSTANCE        hInstance;
-	const TCHAR*     pClassName;
-	const TCHAR*     pWindowName;
-}INIT_WOBJECT;
+/* Extended Member */
 
+struct em_wobject {
+	struct object *oioic_node;
+	struct object *visual_node;
+	HINSTANCE instance;
+	HWND window_handle;
+	const TCHAR *p_class_name;
+	const TCHAR *p_window_name;
+};
 
-/*==================+ Extended Member +==================*/
-
-/*
-*
-* 名称：EM_WOBJECT
-*/
-typedef struct TAG_EM_WOBJECT
-{
-	OBJECT*          pOIOIC;
-	OBJECT*          pVObject;
-	HINSTANCE        hInstance;
-	HWND             hWnd;
-	const  TCHAR*    pClassName;
-	const  TCHAR*    pWindowName;
-}EM_WOBJECT;
-
-
-#endif		/* #ifndef __WOBJECT_H__ */
+#endif /* #ifndef OIOIC_WOBJECT_H */

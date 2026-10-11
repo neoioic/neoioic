@@ -1,389 +1,341 @@
-/**
- *
- * 文 件 名：car.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include <stdlib.h>
 #include "../vehicle/vehicle.h"
 #include "car.h"
 
+void tog_car(struct object *object);
 
-void  TOG_car(OBJECT* pObj);
+/* OICC label */
 
-
-/*=====================+ OICC label +====================*/
-
-/*<oicc>*/
-/*<ibn> vehicle </ibn>*/
-/*<crt>*/
-RESULT  CRT_car(OBJID* pOID, BYTKTY IQCty, BYTKTY OQCty, SI32 NumCR, OBJECT** ppObj, BYTE* pExotic)
+/* <oicc> */
+/* <ibn> vehicle </ibn> */
+/* <crt> */
+int crt_car(uint64_t *object_id, unsigned int input_capacity,
+	    unsigned int output_capacity, int caller_capacity,
+	    struct object **object_out, unsigned char *exotic_memory)
 {
-	extern  void  InitAIBofND(OBJECT* pND, MLDSN* pMsn, NUMIB nib);
-	extern  void  InitABNofND(OBJECT* pND, MLDSN* pMsn, NUMBN nbn);
-	extern  void  TOG_vehicle(OBJECT* pObj);
-	extern  void  TOG_OIOIC(OBJECT* pObj);
+	extern void init_direct_bases(struct object * node,
+				      unsigned short *base_msns,
+				      unsigned short nib);
+	extern void init_base_nodes(struct object * node,
+				    unsigned short *base_msns,
+				    unsigned short nbn);
+	extern void tog_vehicle(struct object * object);
+	extern void tog_oioic(struct object * object);
 
+	size_t ux_nd = 3;		    /* ND数量。 */
+	size_t ux_bn = 3;		    /* 各ND的BN数量之和。 */
+	size_t ux_ib = 2;		    /* 各ND的IBN数量之和。 */
+	size_t ux_cs = caller_capacity * 6; /* 各ND的最少CS数量之和。 */
+	size_t ux_em =
+		OIOIC_ALIGNED_SIZE(struct em_car) +
+		OIOIC_ALIGNED_SIZE(struct em_vehicle) +
+		OIOIC_ALIGNED_SIZE(struct em_oioic); /* 各ND的void尺寸之和。 */
 
-	size_t   ux_ND = 3; 	/* ND数量。*/
-	size_t   ux_BN = 3; 	/* 各ND的BN数量之和。*/
-	size_t   ux_IB = 2; 	/* 各ND的IBN数量之和。*/
-	size_t   ux_CS = NumCR * 6; 	/* 各ND的最少CS数量之和。*/
-	size_t   ux_EM = OIOIC_ALIGNED_SIZE(EM_CAR) + OIOIC_ALIGNED_SIZE(EM_VEHICLE) + OIOIC_ALIGNED_SIZE(EM_OIOIC); 	/* 各ND的EM尺寸之和。*/
+	size_t sum = ux_nd * sizeof(struct object)     /* for AND. */
+		     + ux_bn * sizeof(struct object *) /* for "bases". */
+		     + ux_ib * sizeof(struct object *) /* for "direct_bases". */
+		     + ux_cs * sizeof(struct vr) +
+		     ux_em; /* for "callers" and "members". */
 
-	size_t  sum = ux_ND * sizeof(OBJECT) 	/* for AND. */
-		 + ux_BN * sizeof(OBJECT*) 	/* for "ppo_ABN". */
-		 + ux_IB * sizeof(OBJECT*) 	/* for "ppo_AIB". */
-		 + ux_CS * sizeof(VR) + ux_EM; 	/* for "pvr_ACS" and "pEM". */
+	unsigned char *p_ic = NULL;
 
-
-	BYTE*  pIC = NULL;
-
-	if(NULL == pExotic)
-	{
-		*ppObj = NULL;
-		pIC = (BYTE*)calloc(sum, 1);
-	}else
-	{
-		pIC = pExotic;
+	if (NULL == exotic_memory) {
+		*object_out = NULL;
+		p_ic = (unsigned char *)calloc(sum, 1);
+	} else {
+		p_ic = exotic_memory;
 	}
 
+	if (p_ic != NULL) {
+		struct object *node;
+		unsigned short base_msns[2];
+		unsigned char *p = p_ic + sizeof(struct object) * ux_nd;
 
-	if( pIC != NULL )
-	{
-		OBJECT*  pND;
-		MLDSN    ArrMsn[2];
-		BYTE*    p = pIC + sizeof(OBJECT) * ux_ND;
+		/* 确定AND各元素  ** */
 
+		/* car * */
+		node = (struct object *)p_ic;
+		tog_car(node);
+		node->model_id = MSN_CAR;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/***  确定AND各元素  ***/
+		/* vehicle * */
+		tog_vehicle(++node);
+		node->model_id = MSN_VEHICLE;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** car **/
-		pND = (OBJECT*)pIC;
-		TOG_car(pND);
-		pND->MSN = MSN_CAR;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* OIOIC * */
+		tog_oioic(++node);
+		node->model_id = MSN_OIOIC;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** vehicle **/
-		TOG_vehicle(++pND);
-		pND->MSN = MSN_VEHICLE;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* 初始化各ND  ** */
 
-		/** OIOIC **/
-		TOG_OIOIC(++pND);
-		pND->MSN = MSN_OIOIC;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
-
-
-		/***  初始化各ND  ***/
-
-		/** car **/
-		pND = (OBJECT*)pIC;
+		/* car * */
+		node = (struct object *)p_ic;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_VEHICLE;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_VEHICLE;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_VEHICLE;
-		ArrMsn[1] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 2);
-		p += sizeof(OBJECT*) * 2;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_VEHICLE;
+		base_msns[1] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 2);
+		p += sizeof(struct object *) * 2;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 1;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 1;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_CAR);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_car);
 
-		/** vehicle **/
-		++pND;
+		/* vehicle * */
+		++node;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_OIOIC;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_OIOIC;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 2;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 2;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_VEHICLE);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_vehicle);
 
-		/** OIOIC **/
-		++pND;
+		/* OIOIC * */
+		++node;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 3;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 3;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		if( IQCty > 0 )
-		{
-			/* - IQ - */
-			((EM_OIOIC*)(pND->pEM))->IQ.Dtrm = (BYTE*)calloc(IQCty, 1);
-			if( NULL == ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm)
-			{
-				/* 分配IQ的容量失败！*/
-				if(NULL == pExotic)
-					free(pIC);
+		/* - void - */
+		node->members = (void *)p;
+		if (input_capacity > 0) {
+			/* - iq - */
+			((struct em_oioic *)(node->members))->iq.data =
+				(unsigned char *)calloc(input_capacity, 1);
+			if (NULL ==
+			    ((struct em_oioic *)(node->members))->iq.data) {
+				/* 分配iq的容量失败！ */
+				if (NULL == exotic_memory)
+					free(p_ic);
 				return R_N;
 			}
-			((EM_OIOIC*)(pND->pEM))->IQ.Front = ((EM_OIOIC*)(pND->pEM))->IQ.Rear = ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm - 1;
-			((EM_OIOIC*)(pND->pEM))->IQ.Cty = IQCty;
-			((EM_OIOIC*)(pND->pEM))->IQ.Qty = ((EM_OIOIC*)(pND->pEM))->IQ.Lost = 0;
+			((struct em_oioic *)(node->members))->iq.front =
+				((struct em_oioic *)(node->members))->iq.rear =
+					((struct em_oioic *)(node->members))
+						->iq.data -
+					1;
+			((struct em_oioic *)(node->members))->iq.capacity =
+				input_capacity;
+			((struct em_oioic *)(node->members))->iq.quantity =
+				((struct em_oioic *)(node->members))->iq.lost =
+					0;
 		}
 
-		if( OQCty > 0 )
- 		{
-			/* - OQ - */
-			((EM_OIOIC*)(pND->pEM))->OQ.Dtrm = (BYTE*)calloc(OQCty, 1);
-			if(NULL == ((EM_OIOIC*)(pND->pEM))->OQ.Dtrm)
-			{
-				/* 分配OQ的容量失败！*/
-				if( ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm != NULL )
-					free(((EM_OIOIC*)(pND->pEM))->IQ.Dtrm);
-				if(NULL == pExotic)
-					free(pIC);
+		if (output_capacity > 0) {
+			/* - oq - */
+			((struct em_oioic *)(node->members))->oq.data =
+				(unsigned char *)calloc(output_capacity, 1);
+			if (NULL ==
+			    ((struct em_oioic *)(node->members))->oq.data) {
+				/* 分配oq的容量失败！ */
+				if (((struct em_oioic *)(node->members))
+					    ->iq.data != NULL)
+					free(((struct em_oioic
+						       *)(node->members))
+						     ->iq.data);
+				if (NULL == exotic_memory)
+					free(p_ic);
 				return R_N;
 			}
-			((EM_OIOIC*)(pND->pEM))->OQ.Front = ((EM_OIOIC*)(pND->pEM))->OQ.Rear = ((EM_OIOIC*)(pND->pEM))->OQ.Dtrm - 1;
-			((EM_OIOIC*)(pND->pEM))->OQ.Cty = OQCty;
-			((EM_OIOIC*)(pND->pEM))->OQ.Qty = ((EM_OIOIC*)(pND->pEM))->OQ.Lost = 0;
+			((struct em_oioic *)(node->members))->oq.front =
+				((struct em_oioic *)(node->members))->oq.rear =
+					((struct em_oioic *)(node->members))
+						->oq.data -
+					1;
+			((struct em_oioic *)(node->members))->oq.capacity =
+				output_capacity;
+			((struct em_oioic *)(node->members))->oq.quantity =
+				((struct em_oioic *)(node->members))->oq.lost =
+					0;
 		}
-		p += OIOIC_ALIGNED_SIZE(EM_OIOIC);
-	}else
-	{
+		p += OIOIC_ALIGNED_SIZE(struct em_oioic);
+	} else {
 		return R_N;
 	}
 
-
-	if(NULL == pExotic)
-		*ppObj = (OBJECT*)pIC;
-
+	if (NULL == exotic_memory)
+		*object_out = (struct object *)p_ic;
 
 	return R_P;
 }
-/*</crt>*/
-/*</oicc>*/
+/* </crt> */
+/* </oicc> */
 
-/*=====================+ Interface +=====================*/
+/* Interface */
 
-/**
-*
-* 名称：car_Open
-*/
-static RESULT  car_Open(OBJECT* This, const VR* pCaller)
+static int car_open(struct object *self, const struct vr *caller_context)
 {
-	EM_VEHICLE*		pvem = GetEMofBN(This, MSN_VEHICLE); 
-	EM_CAR*         pem = (EM_CAR*)This->pEM;
+	struct em_vehicle *pvem = get_base_members(self, MSN_VEHICLE);
+	struct em_car *members = (struct em_car *)self->members;
 
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
 	pvem->weight = 1.01f;
-	pem->max_load = 1.53f;
-	pem->max_velocity = 186.5f;
+	members->max_load = 1.53f;
+	members->max_velocity = 186.5f;
 
 	return R_P;
 }
 
-/**
-*
-* 名称：car_Input
-*/
-static RESULT  car_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int car_input(struct object *self, unsigned char *input_stream,
+		     unsigned int quantity, const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：car_Output
-*/
-static RESULT  car_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int car_output(struct object *self, unsigned char *output_stream,
+		      unsigned int capacity, unsigned int *output_quantity,
+		      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：car_IOput
-*/
-static RESULT  car_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int car_io_put(struct object *self, unsigned char *input_stream,
+		      unsigned int quantity, unsigned char *output_stream,
+		      unsigned int capacity, unsigned int *output_quantity,
+		      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：car_Interact0
-*/
-static RESULT  car_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int car_interact0(struct object *self, unsigned int action,
+			 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：car_Interact1
-*/
-static RESULT  car_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int car_interact1(struct object *self, unsigned int action,
+			 unsigned char *output_stream, unsigned int capacity,
+			 unsigned int *output_quantity,
+			 const struct vr *caller_context)
 {
-	EM_CAR*   pem = (EM_CAR*)This->pEM;
+	struct em_car *members = (struct em_car *)self->members;
 
-	switch(Act)
-	{
+	switch (action) {
 	case GET_MAXLOAD:
-		assert(Cty >= sizeof(SR32)); /* 判断输出流容量够不够。*/
-		*(SR32*)OStrm = pem->max_load; /* 输出最大载重量值。*/
-		*pQty = sizeof(SR32); /* 输出的字节数。*/
+		assert(capacity >= sizeof(float)); /* 判断输出流容量够不够。 */
+		*(float *)output_stream =
+			members->max_load; /* 输出最大载重量值。 */
+		*output_quantity = sizeof(float); /* 输出的字节数。 */
 		return R_P;
 	case GET_MAXVELOCITY:
-		assert(Cty >= sizeof(SR32)); /* 判断输出流容量够不够。*/
-		*(SR32*)OStrm = pem->max_velocity; /* 输出最大速度值。*/
-		*pQty = sizeof(SR32); /* 输出的字节数。*/
+		assert(capacity >= sizeof(float)); /* 判断输出流容量够不够。 */
+		*(float *)output_stream =
+			members->max_velocity;	  /* 输出最大速度值。 */
+		*output_quantity = sizeof(float); /* 输出的字节数。 */
 		return R_P;
 	default:
 		break;
 	}
 
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：car_Interact2
-*/
-static RESULT  car_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int car_interact2(struct object *self, unsigned int action,
+			 unsigned char *input_stream, unsigned int quantity,
+			 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：car_Interact3
-*/
-static RESULT  car_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int car_interact3(struct object *self, unsigned int action,
+			 unsigned char *input_stream, unsigned int quantity,
+			 unsigned char *output_stream, unsigned int capacity,
+			 unsigned int *output_quantity,
+			 const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：car_Close
-*/
-static RESULT  car_Close(OBJECT* This, const VR* pCaller)
+static int car_close(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	if(0 == This->RefCnt)
+	if (0 == self->ref_count)
 		return RP_RCZERO;
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_car
-*/
-void  TOG_car(OBJECT* pObj)
+void tog_car(struct object *object)
 {
-	pObj->Open = car_Open;
-	pObj->Input = car_Input;
-	pObj->Output = car_Output;
-	pObj->IOput = car_IOput;
-	pObj->Interact0 = car_Interact0;
-	pObj->Interact1 = car_Interact1;
-	pObj->Interact2 = car_Interact2;
-	pObj->Interact3 = car_Interact3;
-	pObj->Close = car_Close;
+	object->open = car_open;
+	object->input = car_input;
+	object->output = car_output;
+	object->io_put = car_io_put;
+	object->interact0 = car_interact0;
+	object->interact1 = car_interact1;
+	object->interact2 = car_interact2;
+	object->interact3 = car_interact3;
+	object->close = car_close;
 }
 
-/*=======================+ IRF(s) +======================*/
-/* ... */
+/* IRF(s) */
 
-/*====================+ Function(s) +====================*/
-/* ... */
-
+/* Function(s) */

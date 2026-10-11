@@ -1,429 +1,375 @@
-/**
- *
- * 文 件 名：CButton.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "CButton.h"
 #include "../CObject/CObject.h"
 
+void tog_c_button(struct object *object);
 
-void  TOG_CButton(OBJECT* pObj);
+int c_button_i_open(struct object *self, const struct vr *caller_context);
 
-RESULT  CButton_I_Open(OBJECT* This, const VR* pCaller);
+/* OICC label */
 
-
-/*=====================+ OICC label +====================*/
-
-/*<oicc>*/
-/*<ibn> CObject </ibn>*/
-/*<crt>*/
-RESULT  CRT_CButton(OBJID* pOID, BYTKTY IQCty, BYTKTY OQCty, SI32 NumCR, OBJECT** ppObj, BYTE* pExotic)
+/* <oicc> */
+/* <ibn> CObject </ibn> */
+/* <crt> */
+int crt_c_button(uint64_t *object_id, unsigned int input_capacity,
+		 unsigned int output_capacity, int caller_capacity,
+		 struct object **object_out, unsigned char *exotic_memory)
 {
-	extern  void  InitAIBofND(OBJECT* pND, MLDSN* pMsn, NUMIB nib);
-	extern  void  InitABNofND(OBJECT* pND, MLDSN* pMsn, NUMBN nbn);
-	extern  void  TOG_CObject(OBJECT* pObj);
-	extern  void  TOG_VObject(OBJECT* pObj);
-	extern  void  TOG_OIOIC(OBJECT* pObj);
+	extern void init_direct_bases(struct object * node,
+				      unsigned short *base_msns,
+				      unsigned short nib);
+	extern void init_base_nodes(struct object * node,
+				    unsigned short *base_msns,
+				    unsigned short nbn);
+	extern void tog_c_object(struct object * object);
+	extern void tog_v_object(struct object * object);
+	extern void tog_oioic(struct object * object);
 
+	size_t ux_nd = 4;		     /* ND数量。 */
+	size_t ux_bn = 6;		     /* 各ND的BN数量之和。 */
+	size_t ux_ib = 3;		     /* 各ND的IBN数量之和。 */
+	size_t ux_cs = caller_capacity * 10; /* 各ND的最少CS数量之和。 */
+	size_t ux_em =
+		OIOIC_ALIGNED_SIZE(struct em_cbutton) +
+		OIOIC_ALIGNED_SIZE(struct em_cobject) +
+		OIOIC_ALIGNED_SIZE(struct em_vobject) +
+		OIOIC_ALIGNED_SIZE(struct em_oioic); /* 各ND的void尺寸之和。 */
 
-	size_t   ux_ND = 4; 	/* ND数量。*/
-	size_t   ux_BN = 6; 	/* 各ND的BN数量之和。*/
-	size_t   ux_IB = 3; 	/* 各ND的IBN数量之和。*/
-	size_t   ux_CS = NumCR * 10; 	/* 各ND的最少CS数量之和。*/
-	size_t   ux_EM = OIOIC_ALIGNED_SIZE(EM_CBUTTON) + OIOIC_ALIGNED_SIZE(EM_COBJECT) + OIOIC_ALIGNED_SIZE(EM_VOBJECT)
-		 + OIOIC_ALIGNED_SIZE(EM_OIOIC); 	/* 各ND的EM尺寸之和。*/
+	size_t sum = ux_nd * sizeof(struct object)     /* for AND. */
+		     + ux_bn * sizeof(struct object *) /* for "bases". */
+		     + ux_ib * sizeof(struct object *) /* for "direct_bases". */
+		     + ux_cs * sizeof(struct vr) +
+		     ux_em; /* for "callers" and "members". */
 
-	size_t  sum = ux_ND * sizeof(OBJECT) 	/* for AND. */
-		 + ux_BN * sizeof(OBJECT*) 	/* for "ppo_ABN". */
-		 + ux_IB * sizeof(OBJECT*) 	/* for "ppo_AIB". */
-		 + ux_CS * sizeof(VR) + ux_EM; 	/* for "pvr_ACS" and "pEM". */
+	unsigned char *p_ic = NULL;
 
-
-	BYTE*  pIC = NULL;
-
-	if(NULL == pExotic)
-	{
-		*ppObj = NULL;
-		pIC = (BYTE*)calloc(sum, 1);
-	}else
-	{
-		pIC = pExotic;
+	if (NULL == exotic_memory) {
+		*object_out = NULL;
+		p_ic = (unsigned char *)calloc(sum, 1);
+	} else {
+		p_ic = exotic_memory;
 	}
 
+	if (p_ic != NULL) {
+		struct object *node;
+		unsigned short base_msns[3];
+		unsigned char *p = p_ic + sizeof(struct object) * ux_nd;
 
-	if( pIC != NULL )
-	{
-		OBJECT*  pND;
-		MLDSN    ArrMsn[3];
-		BYTE*    p = pIC + sizeof(OBJECT) * ux_ND;
+		/* 确定AND各元素  ** */
 
+		/* CButton * */
+		node = (struct object *)p_ic;
+		tog_c_button(node);
+		node->model_id = MSN_CBUTTON;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/***  确定AND各元素  ***/
+		/* CObject * */
+		tog_c_object(++node);
+		node->model_id = MSN_COBJECT;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** CButton **/
-		pND = (OBJECT*)pIC;
-		TOG_CButton(pND);
-		pND->MSN = MSN_CBUTTON;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* VObject * */
+		tog_v_object(++node);
+		node->model_id = MSN_VOBJECT;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** CObject **/
-		TOG_CObject(++pND);
-		pND->MSN = MSN_COBJECT;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* OIOIC * */
+		tog_oioic(++node);
+		node->model_id = MSN_OIOIC;
+		node->oid = (*object_id)++;
+		node->nodes = (struct object *)p_ic;
+		node->node_count = ux_nd;
 
-		/** VObject **/
-		TOG_VObject(++pND);
-		pND->MSN = MSN_VOBJECT;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
+		/* 初始化各ND  ** */
 
-		/** OIOIC **/
-		TOG_OIOIC(++pND);
-		pND->MSN = MSN_OIOIC;
-		pND->OID = (*pOID)++;
-		pND->po_AND = (OBJECT*)pIC;
-		pND->NND = ux_ND;
-
-
-		/***  初始化各ND  ***/
-
-		/** CButton **/
-		pND = (OBJECT*)pIC;
+		/* CButton * */
+		node = (struct object *)p_ic;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_COBJECT;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_COBJECT;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_COBJECT;
-		ArrMsn[1] = MSN_VOBJECT;
-		ArrMsn[2] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 3);
-		p += sizeof(OBJECT*) * 3;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_COBJECT;
+		base_msns[1] = MSN_VOBJECT;
+		base_msns[2] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 3);
+		p += sizeof(struct object *) * 3;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 1;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 1;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_CBUTTON);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_cbutton);
 
-		/** CObject **/
-		++pND;
+		/* CObject * */
+		++node;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_VOBJECT;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_VOBJECT;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_VOBJECT;
-		ArrMsn[1] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 2);
-		p += sizeof(OBJECT*) * 2;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_VOBJECT;
+		base_msns[1] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 2);
+		p += sizeof(struct object *) * 2;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 2;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 2;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_COBJECT);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_cobject);
 
-		/** VObject **/
-		++pND;
+		/* VObject * */
+		++node;
 
 		/* - AIB - */
-		pND->ppo_AIB = (OBJECT**)p;
-		ArrMsn[0] = MSN_OIOIC;
-		InitAIBofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->direct_bases = (struct object **)p;
+		base_msns[0] = MSN_OIOIC;
+		init_direct_bases(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ABN - */
-		pND->ppo_ABN = (OBJECT**)p;
-		ArrMsn[0] = MSN_OIOIC;
-		InitABNofND(pND, ArrMsn, 1);
-		p += sizeof(OBJECT*) * 1;
+		node->bases = (struct object **)p;
+		base_msns[0] = MSN_OIOIC;
+		init_base_nodes(node, base_msns, 1);
+		p += sizeof(struct object *) * 1;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 3;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 3;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		p += OIOIC_ALIGNED_SIZE(EM_VOBJECT);
+		/* - void - */
+		node->members = (void *)p;
+		p += OIOIC_ALIGNED_SIZE(struct em_vobject);
 
-		/** OIOIC **/
-		++pND;
+		/* OIOIC * */
+		++node;
 
 		/* - ACS - */
-		pND->pvr_ACS = (VR*)p;
-		pND->NCS = NumCR * 4;
-		p += sizeof(VR) * pND->NCS;
+		node->callers = (struct vr *)p;
+		node->caller_count = caller_capacity * 4;
+		p += sizeof(struct vr) * node->caller_count;
 
-		/* - EM - */
-		pND->pEM = (EM*)p;
-		if( IQCty > 0 )
-		{
-			/* - IQ - */
-			((EM_OIOIC*)(pND->pEM))->IQ.Dtrm = (BYTE*)calloc(IQCty, 1);
-			if( NULL == ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm)
-			{
-				/* 分配IQ的容量失败！*/
-				if(NULL == pExotic)
-					free(pIC);
+		/* - void - */
+		node->members = (void *)p;
+		if (input_capacity > 0) {
+			/* - iq - */
+			((struct em_oioic *)(node->members))->iq.data =
+				(unsigned char *)calloc(input_capacity, 1);
+			if (NULL ==
+			    ((struct em_oioic *)(node->members))->iq.data) {
+				/* 分配iq的容量失败！ */
+				if (NULL == exotic_memory)
+					free(p_ic);
 				return R_N;
 			}
-			((EM_OIOIC*)(pND->pEM))->IQ.Front = ((EM_OIOIC*)(pND->pEM))->IQ.Rear = ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm - 1;
-			((EM_OIOIC*)(pND->pEM))->IQ.Cty = IQCty;
-			((EM_OIOIC*)(pND->pEM))->IQ.Qty = ((EM_OIOIC*)(pND->pEM))->IQ.Lost = 0;
+			((struct em_oioic *)(node->members))->iq.front =
+				((struct em_oioic *)(node->members))->iq.rear =
+					((struct em_oioic *)(node->members))
+						->iq.data -
+					1;
+			((struct em_oioic *)(node->members))->iq.capacity =
+				input_capacity;
+			((struct em_oioic *)(node->members))->iq.quantity =
+				((struct em_oioic *)(node->members))->iq.lost =
+					0;
 		}
 
-		if( OQCty > 0 )
- 		{
-			/* - OQ - */
-			((EM_OIOIC*)(pND->pEM))->OQ.Dtrm = (BYTE*)calloc(OQCty, 1);
-			if(NULL == ((EM_OIOIC*)(pND->pEM))->OQ.Dtrm)
-			{
-				/* 分配OQ的容量失败！*/
-				if( ((EM_OIOIC*)(pND->pEM))->IQ.Dtrm != NULL )
-					free(((EM_OIOIC*)(pND->pEM))->IQ.Dtrm);
-				if(NULL == pExotic)
-					free(pIC);
+		if (output_capacity > 0) {
+			/* - oq - */
+			((struct em_oioic *)(node->members))->oq.data =
+				(unsigned char *)calloc(output_capacity, 1);
+			if (NULL ==
+			    ((struct em_oioic *)(node->members))->oq.data) {
+				/* 分配oq的容量失败！ */
+				if (((struct em_oioic *)(node->members))
+					    ->iq.data != NULL)
+					free(((struct em_oioic
+						       *)(node->members))
+						     ->iq.data);
+				if (NULL == exotic_memory)
+					free(p_ic);
 				return R_N;
 			}
-			((EM_OIOIC*)(pND->pEM))->OQ.Front = ((EM_OIOIC*)(pND->pEM))->OQ.Rear = ((EM_OIOIC*)(pND->pEM))->OQ.Dtrm - 1;
-			((EM_OIOIC*)(pND->pEM))->OQ.Cty = OQCty;
-			((EM_OIOIC*)(pND->pEM))->OQ.Qty = ((EM_OIOIC*)(pND->pEM))->OQ.Lost = 0;
+			((struct em_oioic *)(node->members))->oq.front =
+				((struct em_oioic *)(node->members))->oq.rear =
+					((struct em_oioic *)(node->members))
+						->oq.data -
+					1;
+			((struct em_oioic *)(node->members))->oq.capacity =
+				output_capacity;
+			((struct em_oioic *)(node->members))->oq.quantity =
+				((struct em_oioic *)(node->members))->oq.lost =
+					0;
 		}
-		p += OIOIC_ALIGNED_SIZE(EM_OIOIC);
-	}else
-	{
+		p += OIOIC_ALIGNED_SIZE(struct em_oioic);
+	} else {
 		return R_N;
 	}
 
-
-	if(NULL == pExotic)
-		*ppObj = (OBJECT*)pIC;
-
+	if (NULL == exotic_memory)
+		*object_out = (struct object *)p_ic;
 
 	return R_P;
 }
-/*</crt>*/
-/*</oicc>*/
+/* </crt> */
+/* </oicc> */
 
-/*=====================+ Interface +=====================*/
+/* Interface */
 
-/**
-*
-* 名称：CButton_Open
-*/
-static  RESULT  CButton_Open(OBJECT* This, const VR* pCaller)
+static int c_button_open(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return CButton_I_Open(This, &caller);
+	return c_button_i_open(self, &caller);
 }
 
-/**
-*
-* 名称：CButton_Input
-*/
-static  RESULT  CButton_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int c_button_input(struct object *self, unsigned char *input_stream,
+			  unsigned int quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：CButton_Output
-*/
-static  RESULT  CButton_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_button_output(struct object *self, unsigned char *output_stream,
+			   unsigned int capacity, unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：CButton_IOput
-*/
-static  RESULT  CButton_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_button_io_put(struct object *self, unsigned char *input_stream,
+			   unsigned int quantity, unsigned char *output_stream,
+			   unsigned int capacity, unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：CButton_Interact0
-*/
-static  RESULT  CButton_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int c_button_interact0(struct object *self, unsigned int action,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：CButton_Interact1
-*/
-static  RESULT  CButton_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_button_interact1(struct object *self, unsigned int action,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：CButton_Interact2
-*/
-static  RESULT  CButton_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int c_button_interact2(struct object *self, unsigned int action,
+			      unsigned char *input_stream,
+			      unsigned int quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：CButton_Interact3
-*/
-static  RESULT  CButton_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_button_interact3(struct object *self, unsigned int action,
+			      unsigned char *input_stream,
+			      unsigned int quantity,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：CButton_Close
-*/
-static  RESULT  CButton_Close(OBJECT* This, const VR* pCaller)
+static int c_button_close(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-
-	if(0 == This->RefCnt)
+	if (0 == self->ref_count)
 		return RP_RCZERO;
-
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_CButton
-*/
-void  TOG_CButton(OBJECT* pObj)
+void tog_c_button(struct object *object)
 {
-	pObj->Open = CButton_Open;
-	pObj->Input = CButton_Input;
-	pObj->Output = CButton_Output;
-	pObj->IOput = CButton_IOput;
-	pObj->Interact0 = CButton_Interact0;
-	pObj->Interact1 = CButton_Interact1;
-	pObj->Interact2 = CButton_Interact2;
-	pObj->Interact3 = CButton_Interact3;
-	pObj->Close = CButton_Close;
+	object->open = c_button_open;
+	object->input = c_button_input;
+	object->output = c_button_output;
+	object->io_put = c_button_io_put;
+	object->interact0 = c_button_interact0;
+	object->interact1 = c_button_interact1;
+	object->interact2 = c_button_interact2;
+	object->interact3 = c_button_interact3;
+	object->close = c_button_close;
 }
 
-/*====================+ Function(s) +====================*/
-/* ... */
+/* Function(s) */
 
-/*=======================================================*/
-
-/**
-*
-* NAME: CButton_I_Open
-*/
-RESULT  CButton_I_Open(OBJECT* This, const VR* pCaller)
+int c_button_i_open(struct object *self, const struct vr *caller_context)
 {
-	EM_CBUTTON*      pem = (EM_CBUTTON*)This->pEM;
-	
-	if(1 == This->RefCnt)
-	{
-		pem->pOIOIC = GetBN(This, MSN_OIOIC);
-		pem->pVObject = GetBN(This, MSN_VOBJECT);
-		pem->pCObject = GetBN(This, MSN_COBJECT);
+	struct em_cbutton *members = (struct em_cbutton *)self->members;
+
+	if (1 == self->ref_count) {
+		members->oioic_node = get_base_node(self, MSN_OIOIC);
+		members->visual_node = get_base_node(self, MSN_VOBJECT);
+		members->control_node = get_base_node(self, MSN_COBJECT);
 
 		return RP_RCONE;
 	}
-	
+
 	return R_P;
 }

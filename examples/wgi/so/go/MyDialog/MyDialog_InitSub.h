@@ -1,31 +1,17 @@
-/**
- *
- * 文 件 名：Dialog_InitSub.h
- *
- * 描    述：初始化 Dialog 的各级下级对象的 .h 文件。
- *
+/*
+ * 初始化 Dialog 的各级下级对象的 .h 文件。
  * 创 建 者：赵平智   <bruce.zhao.zpz@gmail.com>
- *
- * 创建日期：
- *
  * 备    注：InitSub - initialize subordinate
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+ */
 
-#ifndef __MYDIALOG_INITSUB_H__
-#define __MYDIALOG_INITSUB_H__
+#ifndef OIOIC_MYDIALOG_INITSUB_H
+#define OIOIC_MYDIALOG_INITSUB_H
 
 #include "MyDialog.h"
 
+extern void my_dialog_init_sub_button(struct object *self, enum esmydialog es,
+				      const struct vr *caller_context);
+extern void my_dialog_init_sub_edit(struct object *self, enum esmydialog es,
+				    const struct vr *caller_context);
 
-extern  void  MyDialog_InitSub_Button(OBJECT* This, ESMYDIALOG  es, const VR* pCaller);
-extern  void  MyDialog_InitSub_Edit(OBJECT* This, ESMYDIALOG  es, const VR* pCaller);
-
-
-#endif		/* #ifndef __MYDIALOG_INITSUB_H__ */
+#endif /* #ifndef OIOIC_MYDIALOG_INITSUB_H */

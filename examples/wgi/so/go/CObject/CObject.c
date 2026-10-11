@@ -1,272 +1,204 @@
-/**
- *
- * 文 件 名：CObject.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "CObject.h"
 
+int c_object_i_open(struct object *self, const struct vr *caller_context);
+int c_object__cmd_initialize(struct object *self,
+			     const struct init_cobject *picob,
+			     const struct vr *caller_context);
+int c_object__cmd_wgi_move(struct object *self, const struct move *pmove,
+			   const struct vr *caller_context);
 
-RESULT  CObject_I_Open(OBJECT* This, const VR* pCaller);
-RESULT  CObject__CMD_INITIALIZE(OBJECT* This, const INIT_COBJECT* picob, const VR* pCaller);
-RESULT  CObject__CMD_WGI_MOVE(OBJECT* This, const MOVE* pmove, const VR* pCaller);
+/* OICC label */
 
+/* <oicc> */
+/* <ibn> VObject </ibn> */
+/* <crt> */
+/* </crt> */
+/* </oicc> */
 
-/*=====================+ OICC label +====================*/
+/* Interface */
 
-/*<oicc>*/
-/*<ibn> VObject </ibn>*/
-/*<crt>*/
-/*</crt>*/
-/*</oicc>*/
-
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：CObject_Open
-*/
-static  RESULT  CObject_Open(OBJECT* This, const VR* pCaller)
+static int c_object_open(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return CObject_I_Open(This, &caller);
+	return c_object_i_open(self, &caller);
 }
 
-/**
-*
-* 名称：CObject_Input
-*/
-static  RESULT  CObject_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int c_object_input(struct object *self, unsigned char *input_stream,
+			  unsigned int quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：CObject_Output
-*/
-static  RESULT  CObject_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_object_output(struct object *self, unsigned char *output_stream,
+			   unsigned int capacity, unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：CObject_IOput
-*/
-static  RESULT  CObject_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_object_io_put(struct object *self, unsigned char *input_stream,
+			   unsigned int quantity, unsigned char *output_stream,
+			   unsigned int capacity, unsigned int *output_quantity,
+			   const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：CObject_Interact0
-*/
-static  RESULT  CObject_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int c_object_interact0(struct object *self, unsigned int action,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：CObject_Interact1
-*/
-static  RESULT  CObject_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_object_interact1(struct object *self, unsigned int action,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：CObject_Interact2
-*/
-static  RESULT  CObject_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int c_object_interact2(struct object *self, unsigned int action,
+			      unsigned char *input_stream,
+			      unsigned int quantity,
+			      const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
-	switch(Act)
-	{
+	switch (action) {
 	case CMD_INITIALIZE:
-		assert(sizeof(INIT_COBJECT) == Qty);
-		return CObject__CMD_INITIALIZE(This, (INIT_COBJECT*)IStrm, &caller);
+		assert(sizeof(struct init_cobject) == quantity);
+		return c_object__cmd_initialize(
+			self, (struct init_cobject *)input_stream, &caller);
 	case CMD_WGI_MOVE:
-		assert(sizeof(MOVE) == Qty);
-		return CObject__CMD_WGI_MOVE(This, (MOVE*)IStrm, &caller);
+		assert(sizeof(struct move) == quantity);
+		return c_object__cmd_wgi_move(self, (struct move *)input_stream,
+					      &caller);
 	default:
 		break;
 	}
 
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：CObject_Interact3
-*/
-static  RESULT  CObject_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int c_object_interact3(struct object *self, unsigned int action,
+			      unsigned char *input_stream,
+			      unsigned int quantity,
+			      unsigned char *output_stream,
+			      unsigned int capacity,
+			      unsigned int *output_quantity,
+			      const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：CObject_Close
-*/
-static  RESULT  CObject_Close(OBJECT* This, const VR* pCaller)
+static int c_object_close(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-
-	if(0 == This->RefCnt)
+	if (0 == self->ref_count)
 		return RP_RCZERO;
-
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_CObject
-*/
-void  TOG_CObject(OBJECT* pObj)
+void tog_c_object(struct object *object)
 {
-	pObj->Open = CObject_Open;
-	pObj->Input = CObject_Input;
-	pObj->Output = CObject_Output;
-	pObj->IOput = CObject_IOput;
-	pObj->Interact0 = CObject_Interact0;
-	pObj->Interact1 = CObject_Interact1;
-	pObj->Interact2 = CObject_Interact2;
-	pObj->Interact3 = CObject_Interact3;
-	pObj->Close = CObject_Close;
+	object->open = c_object_open;
+	object->input = c_object_input;
+	object->output = c_object_output;
+	object->io_put = c_object_io_put;
+	object->interact0 = c_object_interact0;
+	object->interact1 = c_object_interact1;
+	object->interact2 = c_object_interact2;
+	object->interact3 = c_object_interact3;
+	object->close = c_object_close;
 }
 
-/*====================+ Function(s) +====================*/
-/* ... */
+/* Function(s) */
 
-/*=======================================================*/
-
-/**
-*
-* NAME: CObject_I_Open
-*/
-RESULT  CObject_I_Open(OBJECT* This, const VR* pCaller)
+int c_object_i_open(struct object *self, const struct vr *caller_context)
 {
-	EM_COBJECT*      pem = (EM_COBJECT*)This->pEM;
-	
-	if(1 == This->RefCnt)
-	{
-		pem->pOIOIC = GetBN(This, MSN_OIOIC);
-		pem->pVObject = GetBN(This, MSN_VOBJECT);
+	struct em_cobject *members = (struct em_cobject *)self->members;
+
+	if (1 == self->ref_count) {
+		members->oioic_node = get_base_node(self, MSN_OIOIC);
+		members->visual_node = get_base_node(self, MSN_VOBJECT);
 
 		return RP_RCONE;
 	}
-	
+
 	return R_P;
 }
 
-/**
-*
-* NAME: CObject__CMD_INITIALIZE
-*/
-RESULT  CObject__CMD_INITIALIZE(OBJECT* This, const INIT_COBJECT* picob, const VR* pCaller)
+int c_object__cmd_initialize(struct object *self,
+			     const struct init_cobject *picob,
+			     const struct vr *caller_context)
 {
-	EM_COBJECT*      pem = (EM_COBJECT*)This->pEM;
-	EM_VOBJECT*      pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	
-	pem_vob->pWndHandle = picob->pWndHandle;
-	
+	struct em_cobject *members = (struct em_cobject *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
+
+	pem_vob->p_wnd_handle = picob->p_wnd_handle;
+
 	return R_P;
 }
 
-/**
-*
-* NAME: CObject__CMD_WGI_MOVE
-*/
-RESULT  CObject__CMD_WGI_MOVE(OBJECT* This, const MOVE* pmove, const VR* pCaller)
+int c_object__cmd_wgi_move(struct object *self, const struct move *pmove,
+			   const struct vr *caller_context)
 {
-	EM_COBJECT*      pem = (EM_COBJECT*)This->pEM;
-	EM_VOBJECT*      pem_vob = (EM_VOBJECT*)pem->pVObject->pEM;
-	
+	struct em_cobject *members = (struct em_cobject *)self->members;
+	struct em_vobject *pem_vob =
+		(struct em_vobject *)members->visual_node->members;
 
-	pem_vob->rsc.rcouter.left += pmove->dxUL;
-	pem_vob->rsc.rcouter.top += pmove->dyUL;
-	pem_vob->rsc.rcouter.right += pmove->dxLR;
-	pem_vob->rsc.rcouter.bottom += pmove->dyLR;
+	pem_vob->rsc.rcouter.left += pmove->dx_ul;
+	pem_vob->rsc.rcouter.top += pmove->dy_ul;
+	pem_vob->rsc.rcouter.right += pmove->dx_lr;
+	pem_vob->rsc.rcouter.bottom += pmove->dy_lr;
 	pem_vob->rsc.z += pmove->dz;
 
-//[只是移动，应该不需要，去掉]	VO_Interact0(pem->pVObject, MAK_WGI_CURRENTBITMAP0, pCaller);
-	VO_Interact0(pem->pVObject, CMD_WGI_REPAINTSUPERIOR, pCaller);
-	
+	/* [只是移动，应该不需要，去掉]	vo_interact0(pem->visual_node, MAK_WGI_CURRENTBITMAP0, caller_context); */
+	vo_interact0(members->visual_node, CMD_WGI_REPAINTSUPERIOR,
+		     caller_context);
+
 	return R_P;
 }

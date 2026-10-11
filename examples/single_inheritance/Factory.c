@@ -1,197 +1,124 @@
-/**
- *
- * 文 件 名：Factory.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "Factory.h"
 
+/* OICC label */
 
-/*=====================+ OICC label +====================*/
+/* <oicc> */
+/* <ibn> OIOIC </ibn> */
+/* <crt> */
+/* </crt> */
+/* </oicc> */
 
-/*<oicc>*/
-/*<ibn> OIOIC </ibn>*/
-/*<crt>*/
-/*</crt>*/
-/*</oicc>*/
+/* Interface */
 
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：Factory_Open
-*/
-static RESULT  Factory_Open(OBJECT* This, const VR* pCaller)
+static int factory_open(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
-
-
-	/* ... */
-
+	/* 在下面完成接口自己的任务。 */
 
 	return R_P;
 }
 
-/**
-*
-* 名称：Factory_Input
-*/
-static RESULT  Factory_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int factory_input(struct object *self, unsigned char *input_stream,
+			 unsigned int quantity, const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：Factory_Output
-*/
-static RESULT  Factory_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int factory_output(struct object *self, unsigned char *output_stream,
+			  unsigned int capacity, unsigned int *output_quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：Factory_IOput
-*/
-static RESULT  Factory_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int factory_io_put(struct object *self, unsigned char *input_stream,
+			  unsigned int quantity, unsigned char *output_stream,
+			  unsigned int capacity, unsigned int *output_quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：Factory_Interact0
-*/
-static RESULT  Factory_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int factory_interact0(struct object *self, unsigned int action,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：Factory_Interact1
-*/
-static RESULT  Factory_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int factory_interact1(struct object *self, unsigned int action,
+			     unsigned char *output_stream,
+			     unsigned int capacity,
+			     unsigned int *output_quantity,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：Factory_Interact2
-*/
-static RESULT  Factory_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int factory_interact2(struct object *self, unsigned int action,
+			     unsigned char *input_stream, unsigned int quantity,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：Factory_Interact3
-*/
-static RESULT  Factory_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int factory_interact3(struct object *self, unsigned int action,
+			     unsigned char *input_stream, unsigned int quantity,
+			     unsigned char *output_stream,
+			     unsigned int capacity,
+			     unsigned int *output_quantity,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：Factory_Close
-*/
-static RESULT  Factory_Close(OBJECT* This, const VR* pCaller)
+static int factory_close(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
-
-
-	/* ... */
-
+	/* 在下面完成接口自己的任务。 */
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_Factory
-*/
-void  TOG_Factory(OBJECT* pObj)
+void tog_factory(struct object *object)
 {
-	pObj->Open = Factory_Open;
-	pObj->Input = Factory_Input;
-	pObj->Output = Factory_Output;
-	pObj->IOput = Factory_IOput;
-	pObj->Interact0 = Factory_Interact0;
-	pObj->Interact1 = Factory_Interact1;
-	pObj->Interact2 = Factory_Interact2;
-	pObj->Interact3 = Factory_Interact3;
-	pObj->Close = Factory_Close;
+	object->open = factory_open;
+	object->input = factory_input;
+	object->output = factory_output;
+	object->io_put = factory_io_put;
+	object->interact0 = factory_interact0;
+	object->interact1 = factory_interact1;
+	object->interact2 = factory_interact2;
+	object->interact3 = factory_interact3;
+	object->close = factory_close;
 }
 
-/*=======================+ IRF(s) +======================*/
-/* ... */
+/* IRF(s) */
 
-/*====================+ Function(s) +====================*/
-/* ... */
-
+/* Function(s) */

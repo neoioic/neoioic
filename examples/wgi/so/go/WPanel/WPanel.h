@@ -1,57 +1,22 @@
-/**
- *
- * 文 件 名：WPanel.h
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
 
-#ifndef __WPANEL_H__
-#define __WPANEL_H__
+
+#ifndef OIOIC_WPANEL_H
+#define OIOIC_WPANEL_H
 
 #include "../go.h"
 #include "../WObject/WObject.h"
 
+#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
+#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
 
-#define GET_X_LPARAM(lp)   ((int)(short)LOWORD(lp))
-#define GET_Y_LPARAM(lp)   ((int)(short)HIWORD(lp))
+/* INIT */
 
+/* Extended Member */
 
-/*========================+ INIT +=======================*/
+struct em_wpanel {
+	struct object *oioic_node;
+	struct object *visual_node;
+	struct object *window_node;
+};
 
-/*
-*
-* 名称：INIT_WPANEL
-*/
-/*typedef struct TAG_INIT_WPANEL
-{
-}INIT_WPANEL;*/
-
-
-/*==================+ Extended Member +==================*/
-
-/*
-*
-* 名称：EM_WPANEL
-*/
-typedef struct TAG_EM_WPANEL
-{
-	OBJECT*     pOIOIC;
-	OBJECT*     pVObject;
-	OBJECT*     pWObject;
-}EM_WPANEL;
-
-
-#endif		/* #ifndef __WPANEL_H__ */
+#endif /* #ifndef OIOIC_WPANEL_H */

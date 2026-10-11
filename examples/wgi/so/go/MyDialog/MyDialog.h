@@ -1,326 +1,265 @@
-/**
- *
- * 文 件 名：MyDialog.h
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
 
-#ifndef __MYDIALOG_H__
-#define __MYDIALOG_H__
+
+#ifndef OIOIC_MYDIALOG_H
+#define OIOIC_MYDIALOG_H
 
 #include "../go.h"
 #include "../WPanel/WPanel.h"
 
-
 /*
-*
-*  subordinates' coordinates.
-*  L - left, T - top. 
-*/
+ *  subordinates' coordinates.
+ *  L - left, T - top.
+ */
 
-#define   MYDIALOG_TRCCLOSE_L                965   
-#define   MYDIALOG_TRCCLOSE_T                10  
+#define MYDIALOG_TRCCLOSE_L 965
+#define MYDIALOG_TRCCLOSE_T 10
 
-#define   MYDIALOG_MRCONTROL_L               50   
-#define   MYDIALOG_MRCONTROL_T               40 
+#define MYDIALOG_MRCONTROL_L 50
+#define MYDIALOG_MRCONTROL_T 40
 
-#define   MYDIALOG_MRMENUDEMO_L              130   
-#define   MYDIALOG_MRMENUDEMO_T              40 
+#define MYDIALOG_MRMENUDEMO_L 130
+#define MYDIALOG_MRMENUDEMO_T 40
 
-#define   MYDIALOG_MRHELP_L                  260   
-#define   MYDIALOG_MRHELP_T                  40 
+#define MYDIALOG_MRHELP_L 260
+#define MYDIALOG_MRHELP_T 40
 
-#define   MYDIALOG_BUTTON1_L                 50   
-#define   MYDIALOG_BUTTON1_T                 120  
+#define MYDIALOG_BUTTON1_L 50
+#define MYDIALOG_BUTTON1_T 120
 
-#define   MYDIALOG_BUTTON2_L                 -200 
-#define   MYDIALOG_BUTTON2_T                 230 
+#define MYDIALOG_BUTTON2_L -200
+#define MYDIALOG_BUTTON2_T 230
 
-#define   MYDIALOG_BUTTON3_L                 780   
-#define   MYDIALOG_BUTTON3_T                 200 
+#define MYDIALOG_BUTTON3_L 780
+#define MYDIALOG_BUTTON3_T 200
 
-#define   MYDIALOG_EDIT_L                    450   
-#define   MYDIALOG_EDIT_T                    200 
+#define MYDIALOG_EDIT_L 450
+#define MYDIALOG_EDIT_T 200
 
+/* DESC: enumerate subordinates of MyDialog */
+enum esmydialog {
+	TRC_CLOSE_MY_DIALOG, /* close button at top right corner */
 
+	/* - menu roots - */
+	MR_CONTROL_MY_DIALOG,
+	MR_MENU_DEMO_MY_DIALOG,
+	MR_HELP_MY_DIALOG,
 
-/*
-*
-* NAME: ESMYDIALOG
-* DESC: enumerate subordinates of MyDialog
-*/
-typedef  enum  TAG_ESMYDIALOG
-{
-    eTRCClose_MyDialog,  // Close button at top right corner 
+	/* - other cobs - */
+	BUTTON1_MY_DIALOG,
+	BUTTON2_MY_DIALOG,
+	BUTTON3_MY_DIALOG,
+	EDIT_MY_DIALOG,
 
-	/*- menu roots -*/
-	eMRControl_MyDialog,
-	eMRMenuDemo_MyDialog,
-	eMRHelp_MyDialog,
+	/* - number of enum - */
+	NUM_SUB_MY_DIALOG
+};
 
-	/*- other cobs -*/
-    eButton1_MyDialog,
-	eButton2_MyDialog,
-	eButton3_MyDialog,
-	eEdit_MyDialog,
+/* DESC: enumerate menuitems of MyDialog */
+enum emimydialog {
+	/* - for MR Control - */
+	MI_ENABLE_BUTTON_MY_DIALOG,
+	MI_DISABLE_BUTTON_MY_DIALOG,
 
-	/*- number of enum - */
-    eNum_SUB_MyDialog
-}ESMYDIALOG;
+	/* - for MR MenuDemo - */
+	MI_ITEM0_MY_DIALOG,
+	MI_ITEM1_MY_DIALOG,
+	MI_ITEM2_MY_DIALOG,
+	MI_ITEM3_MY_DIALOG,
+	MI_ITEM4_MY_DIALOG,
+	MI_ITEM5_MY_DIALOG,
+	MI_ITEM6_MY_DIALOG,
+	MI_ITEM7_MY_DIALOG,
+	MI_ITEM8_MY_DIALOG,
+	MI_ITEM9_MY_DIALOG,
+	MI_ITEM10_MY_DIALOG,
+	MI_ITEM11_MY_DIALOG,
+	MI_ITEM12_MY_DIALOG,
+	MI_ITEM13_MY_DIALOG,
+	MI_ITEM14_MY_DIALOG,
+	MI_ITEM15_MY_DIALOG,
+	MI_ITEM16_MY_DIALOG,
+	MI_ITEM17_MY_DIALOG,
+	MI_ITEM18_MY_DIALOG,
+	MI_ITEM19_MY_DIALOG,
+	MI_ITEM20_MY_DIALOG,
+	MI_ITEM21_MY_DIALOG,
+	MI_ITEM22_MY_DIALOG,
+	MI_ITEM23_MY_DIALOG,
+	MI_ITEM24_MY_DIALOG,
+	MI_ITEM25_MY_DIALOG,
+	MI_ITEM26_MY_DIALOG,
+	MI_ITEM27_MY_DIALOG,
+	MI_ITEM28_MY_DIALOG,
+	MI_ITEM29_MY_DIALOG,
+	MI_ITEM30_MY_DIALOG,
+	MI_ITEM31_MY_DIALOG,
+	MI_ITEM32_MY_DIALOG,
+	MI_ITEM33_MY_DIALOG,
+	MI_ITEM34_MY_DIALOG,
+	MI_ITEM35_MY_DIALOG,
+	MI_ITEM36_MY_DIALOG,
+	MI_ITEM37_MY_DIALOG,
+	MI_ITEM38_MY_DIALOG,
+	MI_ITEM39_MY_DIALOG,
+	MI_ITEM40_MY_DIALOG,
+	MI_ITEM41_MY_DIALOG,
+	MI_ITEM42_MY_DIALOG,
+	MI_ITEM43_MY_DIALOG,
+	MI_ITEM44_MY_DIALOG,
+	MI_ITEM45_MY_DIALOG,
+	MI_ITEM46_MY_DIALOG,
+	MI_ITEM47_MY_DIALOG,
+	MI_ITEM48_MY_DIALOG,
+	MI_ITEM49_MY_DIALOG,
+	MI_ITEM50_MY_DIALOG,
 
-/*
-*
-* NAME: EMIMYDIALOG
-* DESC: enumerate menuitems of MyDialog
-*/
-typedef enum  TAG_EMIMYDIALOG
-{
-	/*- for MR Control - */
-	eMIEnableButton_MyDialog,
-	eMIDisableButton_MyDialog,
+	/* - for MR Help - */
+	MI_ABOUT_MY_DIALOG,
 
-	/*- for MR MenuDemo - */
-	eMIItem0_MyDialog,
-	eMIItem1_MyDialog,
-	eMIItem2_MyDialog,
-	eMIItem3_MyDialog,
-	eMIItem4_MyDialog,
-	eMIItem5_MyDialog,
-	eMIItem6_MyDialog,
-	eMIItem7_MyDialog,
-	eMIItem8_MyDialog,
-	eMIItem9_MyDialog,
-	eMIItem10_MyDialog,
-	eMIItem11_MyDialog,
-	eMIItem12_MyDialog,
-	eMIItem13_MyDialog,
-	eMIItem14_MyDialog,
-	eMIItem15_MyDialog,
-	eMIItem16_MyDialog,
-	eMIItem17_MyDialog,
-	eMIItem18_MyDialog,
-	eMIItem19_MyDialog,
-	eMIItem20_MyDialog,
-	eMIItem21_MyDialog,
-	eMIItem22_MyDialog,
-	eMIItem23_MyDialog,
-    eMIItem24_MyDialog,
-	eMIItem25_MyDialog,
-	eMIItem26_MyDialog,
-	eMIItem27_MyDialog,
-	eMIItem28_MyDialog,
-	eMIItem29_MyDialog,
-	eMIItem30_MyDialog,
-	eMIItem31_MyDialog,
-	eMIItem32_MyDialog,
-	eMIItem33_MyDialog,
-	eMIItem34_MyDialog,
-	eMIItem35_MyDialog,
-	eMIItem36_MyDialog,
-	eMIItem37_MyDialog,
-	eMIItem38_MyDialog,
-	eMIItem39_MyDialog,
-	eMIItem40_MyDialog,
-	eMIItem41_MyDialog,
-	eMIItem42_MyDialog,
-	eMIItem43_MyDialog,
-	eMIItem44_MyDialog,
-	eMIItem45_MyDialog,
-	eMIItem46_MyDialog,
-	eMIItem47_MyDialog,
-	eMIItem48_MyDialog,
-	eMIItem49_MyDialog,
-	eMIItem50_MyDialog,
+	/* - for MI Item1 - */
+	MI_ITEM3_0_MY_DIALOG,
+	MI_ITEM3_1_MY_DIALOG,
+	MI_ITEM3_2_MY_DIALOG,
+	MI_ITEM3_3_MY_DIALOG,
+	MI_ITEM3_4_MY_DIALOG,
+	MI_ITEM3_5_MY_DIALOG,
+	MI_ITEM3_6_MY_DIALOG,
+	MI_ITEM3_7_MY_DIALOG,
+	MI_ITEM3_8_MY_DIALOG,
+	MI_ITEM3_9_MY_DIALOG,
+	MI_ITEM3_10_MY_DIALOG,
+	MI_ITEM3_11_MY_DIALOG,
+	MI_ITEM3_12_MY_DIALOG,
+	MI_ITEM3_13_MY_DIALOG,
+	MI_ITEM3_14_MY_DIALOG,
+	MI_ITEM3_15_MY_DIALOG,
+	MI_ITEM3_16_MY_DIALOG,
+	MI_ITEM3_17_MY_DIALOG,
+	MI_ITEM3_18_MY_DIALOG,
+	MI_ITEM3_19_MY_DIALOG,
+	MI_ITEM3_20_MY_DIALOG,
+	MI_ITEM3_21_MY_DIALOG,
+	MI_ITEM3_22_MY_DIALOG,
+	MI_ITEM3_23_MY_DIALOG,
+	MI_ITEM3_24_MY_DIALOG,
+	MI_ITEM3_25_MY_DIALOG,
+	MI_ITEM3_26_MY_DIALOG,
+	MI_ITEM3_27_MY_DIALOG,
+	MI_ITEM3_28_MY_DIALOG,
+	MI_ITEM3_29_MY_DIALOG,
+	MI_ITEM3_30_MY_DIALOG,
+	MI_ITEM3_31_MY_DIALOG,
+	MI_ITEM3_32_MY_DIALOG,
+	MI_ITEM3_33_MY_DIALOG,
+	MI_ITEM3_34_MY_DIALOG,
+	MI_ITEM3_35_MY_DIALOG,
+	MI_ITEM3_36_MY_DIALOG,
+	MI_ITEM3_37_MY_DIALOG,
+	MI_ITEM3_38_MY_DIALOG,
+	MI_ITEM3_39_MY_DIALOG,
+	MI_ITEM3_40_MY_DIALOG,
+	MI_ITEM3_41_MY_DIALOG,
+	MI_ITEM3_42_MY_DIALOG,
+	MI_ITEM3_43_MY_DIALOG,
+	MI_ITEM3_44_MY_DIALOG,
+	MI_ITEM3_45_MY_DIALOG,
+	MI_ITEM3_46_MY_DIALOG,
+	MI_ITEM3_47_MY_DIALOG,
+	MI_ITEM3_48_MY_DIALOG,
+	MI_ITEM3_49_MY_DIALOG,
+	MI_ITEM3_50_MY_DIALOG,
+	MI_ITEM3_51_MY_DIALOG,
+	MI_ITEM3_52_MY_DIALOG,
+	MI_ITEM3_53_MY_DIALOG,
+	MI_ITEM3_54_MY_DIALOG,
+	MI_ITEM3_55_MY_DIALOG,
 
-	/*- for MR Help - */
-	eMIAbout_MyDialog,
+	/* - number of enum - */
+	NUM_MI_MY_DIALOG
+};
 
-	/*- for MI Item1 - */
-	eMIItem3_0_MyDialog,
-	eMIItem3_1_MyDialog,
-	eMIItem3_2_MyDialog,
-	eMIItem3_3_MyDialog,
-	eMIItem3_4_MyDialog,
-	eMIItem3_5_MyDialog,
-	eMIItem3_6_MyDialog,
-	eMIItem3_7_MyDialog,
-	eMIItem3_8_MyDialog,
-	eMIItem3_9_MyDialog,
-	eMIItem3_10_MyDialog,
-	eMIItem3_11_MyDialog,
-	eMIItem3_12_MyDialog,
-	eMIItem3_13_MyDialog,
-	eMIItem3_14_MyDialog,
-	eMIItem3_15_MyDialog,
-	eMIItem3_16_MyDialog,
-	eMIItem3_17_MyDialog,
-	eMIItem3_18_MyDialog,
-	eMIItem3_19_MyDialog,
-	eMIItem3_20_MyDialog,
-	eMIItem3_21_MyDialog,
-	eMIItem3_22_MyDialog,
-	eMIItem3_23_MyDialog,
-	eMIItem3_24_MyDialog,
-	eMIItem3_25_MyDialog,
-	eMIItem3_26_MyDialog,
-	eMIItem3_27_MyDialog,
-	eMIItem3_28_MyDialog,
-	eMIItem3_29_MyDialog,
-	eMIItem3_30_MyDialog,
-	eMIItem3_31_MyDialog,
-	eMIItem3_32_MyDialog,
-	eMIItem3_33_MyDialog,
-	eMIItem3_34_MyDialog,
-	eMIItem3_35_MyDialog,
-	eMIItem3_36_MyDialog,
-	eMIItem3_37_MyDialog,
-	eMIItem3_38_MyDialog,
-	eMIItem3_39_MyDialog,
-	eMIItem3_40_MyDialog,
-	eMIItem3_41_MyDialog,
-	eMIItem3_42_MyDialog,
-	eMIItem3_43_MyDialog,
-	eMIItem3_44_MyDialog,
-	eMIItem3_45_MyDialog,
-	eMIItem3_46_MyDialog,
-	eMIItem3_47_MyDialog,
-	eMIItem3_48_MyDialog,
-	eMIItem3_49_MyDialog,
-	eMIItem3_50_MyDialog,
-	eMIItem3_51_MyDialog,
-	eMIItem3_52_MyDialog,
-	eMIItem3_53_MyDialog,
-	eMIItem3_54_MyDialog,
-	eMIItem3_55_MyDialog,
+enum ebitmap_mydialog {
+	/* - Menu Roots - */
+	MR_CONTROL_NORMAL_BMP_MY_DIALOG,
+	MR_CONTROL_FOCUS_OVER_BMP_MY_DIALOG,
+	MR_CONTROL_FOCUS_ON_BMP_MY_DIALOG,
+	MR_MENU_DEMO_NORMAL_BMP_MY_DIALOG,
+	MR_MENU_DEMO_FOCUS_OVER_BMP_MY_DIALOG,
+	MR_MENU_DEMO_FOCUS_ON_BMP_MY_DIALOG,
+	MR_HELP_NORMAL_BMP_MY_DIALOG,
+	MR_HELP_FOCUS_OVER_BMP_MY_DIALOG,
+	MR_HELP_FOCUS_ON_BMP_MY_DIALOG,
 
-	/*- number of enum - */
-	eNum_MI_MyDialog
-}EMIMYDIALOG;
+	/* - Rolling Buttons for Menu - */
+	TOP_RB_NORMAL_BMP_MY_DIALOG,
+	TOP_RB_FOCUS_OVER_BMP_MY_DIALOG,
+	BOTTOM_RB_NORMAL_BMP_MY_DIALOG,
+	BOTTOM_RB_FOCUS_OVER_BMP_MY_DIALOG,
 
+	/* - Button1 - */
+	BUTTON1_NORMAL_BMP_MY_DIALOG,
+	BUTTON1_FOCUS_OVER_BMP_MY_DIALOG,
+	BUTTON1_FOCUS_ON_BMP_MY_DIALOG,
+	BUTTON1_ACTIVE_BMP_MY_DIALOG,
+	BUTTON1_ABS_INACTIVE_BMP_MY_DIALOG,
 
-/*
-*
-* NAME: EBITMAP_MYDIALOG
-*/
-typedef  enum  TAG_EBITMAP_MYDIALOG
-{
-	/*- Menu Roots -*/
-	eMRControl_Normal_BMP_MyDialog,
-	eMRControl_FocusOver_BMP_MyDialog,
-	eMRControl_FocusOn_BMP_MyDialog,
-	eMRMenuDemo_Normal_BMP_MyDialog,
-	eMRMenuDemo_FocusOver_BMP_MyDialog,
-	eMRMenuDemo_FocusOn_BMP_MyDialog,
-	eMRHelp_Normal_BMP_MyDialog,
-	eMRHelp_FocusOver_BMP_MyDialog,
-	eMRHelp_FocusOn_BMP_MyDialog,
+	/* - Button3 - */
+	BUTTON3_NORMAL_BMP_MY_DIALOG,
+	BUTTON3_FOCUS_OVER_BMP_MY_DIALOG,
+	BUTTON3_FOCUS_ON_BMP_MY_DIALOG,
+	BUTTON3_ACTIVE_BMP_MY_DIALOG,
+	BUTTON3_ABS_INACTIVE_BMP_MY_DIALOG,
 
-	/*- Rolling Buttons for Menu -*/
-	eTopRB_Normal_BMP_MyDialog,
-	eTopRB_FocusOver_BMP_MyDialog,	
-	eBottomRB_Normal_BMP_MyDialog,
-	eBottomRB_FocusOver_BMP_MyDialog,
+	/* - Edit - */
+	EDIT_NORMAL_BMP_MY_DIALOG,
+	EDIT_ACTIVE_BMP_MY_DIALOG,
 
-	/*- Button1 -*/
-	eButton1_Normal_BMP_MyDialog,
-	eButton1_FocusOver_BMP_MyDialog,
-	eButton1_FocusOn_BMP_MyDialog,
-	eButton1_Active_BMP_MyDialog,
-	eButton1_ABSInactive_BMP_MyDialog,
+	/* - number of enum - */
+	NUM_BMP_MY_DIALOG
+};
 
-	/*- Button3 -*/
-	eButton3_Normal_BMP_MyDialog,
-	eButton3_FocusOver_BMP_MyDialog,
-	eButton3_FocusOn_BMP_MyDialog,
-	eButton3_Active_BMP_MyDialog,
-	eButton3_ABSInactive_BMP_MyDialog,
+/* DESC: enumerate BITMAP for menu items. */
+enum emibitmap_mydialog {
+	MI_ENABLE_BUTTON_NORMAL_BMP_MY_DIALOG,
+	MI_ENABLE_BUTTON_FOCUS_OVER_BMP_MY_DIALOG,
 
-	/*- Edit -*/
-	eEdit_Normal_BMP_MyDialog,
-	eEdit_Active_BMP_MyDialog,
+	MI_DISABLE_BUTTON_NORMAL_BMP_MY_DIALOG,
+	MI_DISABLE_BUTTON_FOCUS_OVER_BMP_MY_DIALOG,
 
-	/*- number of enum -*/
-    eNum_BMP_MyDialog
-}EBITMAP_MYDIALOG;
+	MI_ITEM0_NORMAL_BMP_MY_DIALOG,
+	MI_ITEM0_FOCUS_OVER_BMP_MY_DIALOG,
 
+	MI_ITEM3_NORMAL_BMP_MY_DIALOG,
+	MI_ITEM3_FOCUS_OVER_BMP_MY_DIALOG,
 
+	MI_ITEM3_0_NORMAL_BMP_MY_DIALOG,
+	MI_ITEM3_0_FOCUS_OVER_BMP_MY_DIALOG,
 
-/*
-*
-* NAME: EMIBITMAP_MYDIALOG
-* DESC: enumerate BITMAP for menu items.
-*/
-typedef  enum  TAG_EMIBITMAP_MYDIALOG
-{
-	eMIEnableButton_Normal_BMP_MyDialog,
-	eMIEnableButton_FocusOver_BMP_MyDialog,
-	
-	eMIDisableButton_Normal_BMP_MyDialog,
-	eMIDisableButton_FocusOver_BMP_MyDialog,
+	MI_ABOUT_NORMAL_BMP_MY_DIALOG,
+	MI_ABOUT_FOCUS_OVER_BMP_MY_DIALOG,
 
-	eMIItem0_Normal_BMP_MyDialog,
-	eMIItem0_FocusOver_BMP_MyDialog,
+	/* - number of enum - */
+	NUM_MIBMP_MY_DIALOG
+};
 
-	eMIItem3_Normal_BMP_MyDialog,
-	eMIItem3_FocusOver_BMP_MyDialog,
+/* INIT */
 
-	eMIItem3_0_Normal_BMP_MyDialog,
-	eMIItem3_0_FocusOver_BMP_MyDialog,
+/* Extended Member */
 
-	eMIAbout_Normal_BMP_MyDialog,
-	eMIAbout_FocusOver_BMP_MyDialog,
+struct em_mydialog {
+	struct object *oioic_node;
+	struct object *visual_node;
+	struct object *window_node;
+	struct object *panel_node;
+	struct object *p_menu;
+	struct object *p_popping_mr; /* 记录当前弹出菜单的菜单根对象。 */
+	struct object *arr_sub[NUM_SUB_MY_DIALOG];
+	struct object *arr_mi[NUM_MI_MY_DIALOG];
+	HBITMAP arr_hbitmap[NUM_BMP_MY_DIALOG];
+	HBITMAP arr_mihbitmap[NUM_MIBMP_MY_DIALOG];
+	TCHAR *p_text_pool_mr_menu_demo;
+	TCHAR *p_text_pool_mi_item3;
+	TCHAR edttext[256];
+};
 
-	/*- number of enum -*/
-    eNum_MIBMP_MyDialog
-}EMIBITMAP_MYDIALOG;
-
-
-/*========================+ INIT +=======================*/
-
-/*
-*
-* 名称：INIT_MYDIALOG
-*/
-/*typedef struct TAG_INIT_MYDIALOG
-{
-}INIT_MYDIALOG;*/
-
-
-/*==================+ Extended Member +==================*/
-
-/*
-*
-* 名称：EM_MYDIALOG
-*/
-typedef struct TAG_EM_MYDIALOG
-{
-	OBJECT*     pOIOIC;
-	OBJECT*     pVObject;
-	OBJECT*     pWObject;
-	OBJECT*     pWPanel;
-	OBJECT*     pMenu;
-	OBJECT*     pPoppingMR;  /* 记录当前弹出菜单的菜单根对象。*/
-	OBJECT*     ArrSUB[eNum_SUB_MyDialog];
-	OBJECT*     ArrMI[eNum_MI_MyDialog];
-	HBITMAP     ArrHBITMAP[eNum_BMP_MyDialog];
-	HBITMAP     ArrMIHBITMAP[eNum_MIBMP_MyDialog];
-	TCHAR*      pTextPool_MRMenuDemo; 
-	TCHAR*      pTextPool_MIItem3; 
-	TCHAR       edttext[256];
-}EM_MYDIALOG;
-
-
-#endif		/* #ifndef __MYDIALOG_H__ */
+#endif /* #ifndef OIOIC_MYDIALOG_H */

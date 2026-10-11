@@ -1,221 +1,147 @@
-/**
- *
- * 文 件 名：WPanel.c
- *
- * 描    述：
- *
- * 创 建 者：
- *
- * 创建日期：
- *
- * 备    注：
- *
- *
- * * 维护历史 *
- *
- *   <日期>                <修改者>
- *   <修改内容...>
- *
- **/
+
 
 #include "WPanel.h"
 
+int w_panel_i_open(struct object *self, const struct vr *caller_context);
 
-RESULT  WPanel_I_Open(OBJECT* This, const VR* pCaller);
+/* OICC label */
 
+/* <oicc> */
+/* <ibn> WObject </ibn> */
+/* <crt> */
+/* </crt> */
+/* </oicc> */
 
-/*=====================+ OICC label +====================*/
+/* Interface */
 
-/*<oicc>*/
-/*<ibn> WObject </ibn>*/
-/*<crt>*/
-/*</crt>*/
-/*</oicc>*/
-
-/*=====================+ Interface +=====================*/
-
-/**
-*
-* 名称：WPanel_Open
-*/
-static  RESULT  WPanel_Open(OBJECT* This, const VR* pCaller)
+static int w_panel_open(struct object *self, const struct vr *caller_context)
 {
-	VR    caller;
+	struct vr caller;
 
-	caller.cr = pCaller->cr;
-	caller.mr = This->OID;
+	caller.cr = caller_context->cr;
+	caller.mr = self->oid;
 
 	OBS_OBJECT_OPEN_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-	return WPanel_I_Open(This, &caller);
+	return w_panel_i_open(self, &caller);
 }
 
-/**
-*
-* 名称：WPanel_Input
-*/
-static  RESULT  WPanel_Input(OBJECT* This, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int w_panel_input(struct object *self, unsigned char *input_stream,
+			 unsigned int quantity, const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INPUT;
 }
 
-/**
-*
-* 名称：WPanel_Output
-*/
-static  RESULT  WPanel_Output(OBJECT* This, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_panel_output(struct object *self, unsigned char *output_stream,
+			  unsigned int capacity, unsigned int *output_quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_OUTPUT;
 }
 
-/**
-*
-* 名称：WPanel_IOput
-*/
-static  RESULT  WPanel_IOput(OBJECT* This, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_panel_io_put(struct object *self, unsigned char *input_stream,
+			  unsigned int quantity, unsigned char *output_stream,
+			  unsigned int capacity, unsigned int *output_quantity,
+			  const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_IOPUT;
 }
 
-/**
-*
-* 名称：WPanel_Interact0
-*/
-static  RESULT  WPanel_Interact0(OBJECT* This, ACTION Act, const VR* pCaller)
+static int w_panel_interact0(struct object *self, unsigned int action,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT0;
 }
 
-/**
-*
-* 名称：WPanel_Interact1
-*/
-static  RESULT  WPanel_Interact1(OBJECT* This, ACTION Act, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_panel_interact1(struct object *self, unsigned int action,
+			     unsigned char *output_stream,
+			     unsigned int capacity,
+			     unsigned int *output_quantity,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT1;
 }
 
-/**
-*
-* 名称：WPanel_Interact2
-*/
-static  RESULT  WPanel_Interact2(OBJECT* This, ACTION  Act, BYTE* IStrm, BYTKTY Qty, const VR* pCaller)
+static int w_panel_interact2(struct object *self, unsigned int action,
+			     unsigned char *input_stream, unsigned int quantity,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT2;
 }
 
-/**
-*
-* 名称：WPanel_Interact3
-*/
-static  RESULT  WPanel_Interact3(OBJECT* This, ACTION Act, BYTE* IStrm, BYTKTY Qty, BYTE* OStrm, BYTKTY Cty, BYTKTY* pQty, const VR* pCaller)
+static int w_panel_interact3(struct object *self, unsigned int action,
+			     unsigned char *input_stream, unsigned int quantity,
+			     unsigned char *output_stream,
+			     unsigned int capacity,
+			     unsigned int *output_quantity,
+			     const struct vr *caller_context)
 {
 
-	/* ... */
-
-
-	/* 在上面完成接口自己的任务。*/
+	/* 在上面完成接口自己的任务。 */
 
 	SBO_OBJECT_INTERACT3;
 }
 
-/**
-*
-* 名称：WPanel_Close
-*/
-static  RESULT  WPanel_Close(OBJECT* This, const VR* pCaller)
+static int w_panel_close(struct object *self, const struct vr *caller_context)
 {
 	OBS_OBJECT_CLOSE_;
 
-	/* 在下面完成接口自己的任务。*/
+	/* 在下面完成接口自己的任务。 */
 
-
-	if(0 == This->RefCnt)
+	if (0 == self->ref_count)
 		return RP_RCZERO;
-
 
 	return R_P;
 }
 
-/*========================+ TOG +========================*/
+/* TOG */
 
-/**
-*
-* 名称：TOG_WPanel
-*/
-void  TOG_WPanel(OBJECT* pObj)
+void tog_w_panel(struct object *object)
 {
-	pObj->Open = WPanel_Open;
-	pObj->Input = WPanel_Input;
-	pObj->Output = WPanel_Output;
-	pObj->IOput = WPanel_IOput;
-	pObj->Interact0 = WPanel_Interact0;
-	pObj->Interact1 = WPanel_Interact1;
-	pObj->Interact2 = WPanel_Interact2;
-	pObj->Interact3 = WPanel_Interact3;
-	pObj->Close = WPanel_Close;
+	object->open = w_panel_open;
+	object->input = w_panel_input;
+	object->output = w_panel_output;
+	object->io_put = w_panel_io_put;
+	object->interact0 = w_panel_interact0;
+	object->interact1 = w_panel_interact1;
+	object->interact2 = w_panel_interact2;
+	object->interact3 = w_panel_interact3;
+	object->close = w_panel_close;
 }
 
-/*====================+ Function(s) +====================*/
-/* ... */
+/* Function(s) */
 
-/*=======================================================*/
-
-/**
-*
-* NAME: WPanel_I_Open
-*/
-RESULT  WPanel_I_Open(OBJECT* This, const VR* pCaller)
+int w_panel_i_open(struct object *self, const struct vr *caller_context)
 {
-	EM_WPANEL*      pem = (EM_WPANEL*)This->pEM;
-	
-	if(1 == This->RefCnt)
-	{
-		pem->pOIOIC = GetBN(This, MSN_OIOIC);
-		pem->pVObject = GetBN(This, MSN_VOBJECT);
-		pem->pWObject = GetBN(This, MSN_WOBJECT);
+	struct em_wpanel *members = (struct em_wpanel *)self->members;
+
+	if (1 == self->ref_count) {
+		members->oioic_node = get_base_node(self, MSN_OIOIC);
+		members->visual_node = get_base_node(self, MSN_VOBJECT);
+		members->window_node = get_base_node(self, MSN_WOBJECT);
 
 		return RP_RCONE;
 	}
-	
+
 	return R_P;
 }
-

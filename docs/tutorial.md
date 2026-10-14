@@ -2,7 +2,7 @@
 
 ## 从最小程序开始
 
-进入 `examples/hello_world`，按 [构建指南](build.md) 配置 GCC 并运行 `hello_world`，输出 `Hello world!`。项目中的 `so/ao/Main/Main.c` 放置程序入口，`ho.c` 放置宿主创建/销毁逻辑，`ho.h` 放置应用标识和行为定义。
+进入 `examples/hello_world`，按 [构建指南](build.md) 配置 GCC 并运行 `hello_world`，输出 `Hello world!`。项目中的 `so/ao/Main/Main.c` 放置程序入口，`ho.c` 保留宿主创建/销毁模板，`ho.h` 放置应用标识和行为定义。当前 `main` 只直接打印文本；`HelloWorld.c` 的构造区和宿主创建选择未填写，因此此示例验证构建与入口，不演示完整对象生命周期。完整创建、访问与销毁流程从单继承示例开始阅读。
 
 核心库位于仓库 `src/`，公共头文件位于 `include/`，示例不复制核心源码。构建定义只声明当前应用及核心依赖。
 

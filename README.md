@@ -4,7 +4,7 @@ OIOIC（道智编程）是赵平智设计的 C 语言对象模型及构造工具
 
 本仓库基于 OIOIC 1.0.18 整理为 C11 项目：核心源码集中维护，教学示例统一使用当前 API，每个项目具有独立的 xmake 构建入口。源码采用 UTF-8，版本由 Git 管理。
 
-[构建指南](docs/build.md) · [架构说明](docs/architecture.md) · [开发教程](docs/tutorial.md) · [代码风格](docs/coding-style.md)
+[交接指南](docs/handoff.md) · [构建指南](docs/build.md) · [架构说明](docs/architecture.md) · [开发教程](docs/tutorial.md) · [代码风格](docs/coding-style.md)
 
 活跃源码采用 Linux 风格的小写下划线命名、8 列 Tab 缩进和直接可见的结构体类型，例如 `struct object`、`vo_open`、`get_base_members`。当前名称以公共头文件为准，旧 API 名称不提供兼容别名。核心边界及失败处理已修正，关闭失败的清理约定见[架构说明](docs/architecture.md)。
 
@@ -65,6 +65,6 @@ Linux/macOS 的核心库和控制台示例可以配置 `xmake f -P . --toolchain
 
 ## 验证与许可
 
-本地使用 MinGW-w64 GCC 15.1 与 xmake 构建核心库及四个独立示例，Linux 风格重写后的 Debug/Release 均通过重构建。三个控制台示例的输出与重写前一致；WGI 窗口启动、正常关闭检查通过。详细验证范围见 [构建指南](docs/build.md)。
+2026-10-11 核心修复后，使用 MinGW-w64 GCC 15.1 与 xmake 完成核心库及四个示例的 Debug/Release 构建，三个控制台示例在两种配置下运行通过。本轮 WGI 仅验证编译链接；窗口启动、正常关闭属于此前迁移阶段的验证，不能替代修复后的界面回归。详细验证范围见 [构建指南](docs/build.md)。
 
-仓库许可证见 [LICENSE](LICENSE)（AGPL-3.0），源码保留作者版权声明。README 原有声明要求基于 OIOIC 的创新代码或论文说明其原创基础。
+仓库许可证见 [LICENSE](LICENSE)（MIT），源码保留作者版权声明。许可证已由提交 `aaa14ff` 更新；历史资料中的旧许可或署名倡议不替代当前 LICENSE。

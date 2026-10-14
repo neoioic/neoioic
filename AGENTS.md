@@ -4,7 +4,7 @@
 
 OIOIC（道智编程）由赵平智设计，是以 C 实现的对象模型与构造工具；名称来自 Open、Input、Output、Interact、Close。本仓库以 1.0.18 为核心，教学示例已迁移到统一 API；历史教程 1.0.6 不代表当前可编译 API。
 
-先读 `README.md`、`docs/architecture.md`、`docs/build.md`、`docs/tutorial.md`，再读 `include/o.h`、`include/oioic.h`、`src/o.c`、`src/oioic.c`。
+先读 `README.md`、`docs/handoff.md`、`docs/architecture.md`、`docs/build.md`、`docs/tutorial.md`，再读 `include/o.h`、`include/oioic.h`、`src/o.c`、`src/oioic.c`。交接文档记录当前状态与验证边界；源码和构建定义是行为依据。
 
 ## 模块与构建
 
@@ -14,7 +14,7 @@ OIOIC（道智编程）由赵平智设计，是以 C 实现的对象模型与构
 - 使用 C11、UTF-8，GCC/Clang 方向；WGI 特定依赖 Win32/GDI/OLE，不能宣称其跨平台。
 - Windows 实测工具链为 MinGW-w64 GCC 15.1、xmake 2.9.6。在每个项目目录使用 `xmake f -P . -p mingw --mingw="工具链路径" -m debug`、`xmake -P .`；`-P .` 防止命中之前记住的根项目。
 - `tools/oicc/` 仅保留上游预编译二进制，没有源码，不在构建时自动调用。详细限制见其 README。
-- `docs/primer/zh` 是中文历史教材，旧 API/VC6 截图只能作为资料。文档仅保留中文版本。压缩包、核心副本、旧 WGI 版本和 VC 产物已由本次迁移清理，版本应交给 Git 管理。
+- `docs/primer/zh` 是中文历史教材，旧 API/VC6 截图只能作为资料。文档仅保留中文版本。压缩包、核心副本、旧 WGI 版本和 VC 产物已在迁移阶段清理，版本应交给 Git 管理。
 
 ## 架构约束
 
@@ -26,6 +26,9 @@ OIOIC（道智编程）由赵平智设计，是以 C 实现的对象模型与构
 - 使用统一 `int` 和 `RN/RO/RP`，不能重新引入 `IRESULT`/`FRESULT` 兼容别名。
 - `struct vr` 的 `cr` 是调用者，`mr` 是委托者。访问记录、队列、引用计数和 OID 分配不自动保证线程安全，应用负责同步。
 - 创建/打开/关闭/销毁是不同阶段；检查错误及资源释放，不要依赖 release 中被禁用的断言来执行必要业务。
+- `RN_CLOSEPARTIAL` 表示已经部分关闭，保留引用仅供重试清理；不得继续业务访问、再次打开或直接销毁。打开失败后的清理也可能返回此结果。当前没有自动锁定部分关闭状态，调用者必须遵守协议。
+- 空队列的 `front/rear` 为 NULL；非空时是数组内的首、尾字节地址。不要恢复 `data - 1` 哨兵。容量命令按字节流用 `memcpy` 读写整数，长度检查必须在 Release 中有效，扩容失败保留原队列。
+- 构造时检查最大节点席位倍数，避免 `caller_count` 窄化；外部存储构造会清零构造区，但空间大小和对齐仍由调用者保证。外部存储对象用 `host_destroy_object` 清理，不用会释放对象本体的 `destroy_object` 宏。
 - WGI 必须用 `GetWindowLongPtr`/`SetWindowLongPtr` 存放对象指针，宽字符串使用标准带容量的调用，图像及 OLE 资源明确拥有者和释放时机。
 - `<ibn>` 是生成器识别的继承声明，`<crt>` 是构造代码。旧 oicc 输出需要审查 API 与对齐，不能无条件覆盖已迁移代码。
 
@@ -41,4 +44,6 @@ OIOIC（道智编程）由赵平智设计，是以 C 实现的对象模型与构
 
 构建相关变更分别编译核心与受影响示例；生命周期、继承、队列或布局变更应检查对应行为及失败路径。报告实际执行的验证，不把成功编译说成全面运行测试。
 
-根 `LICENSE` 是 AGPL-3.0，历史作者声明保留。不要自行推断其他授权或将 README 的评价性描述作为已验证技术事实。
+`build/` 与 `.xmake/` 被 Git 忽略；本地临时回归程序不是仓库维护的测试套件，换工作区后不能假定存在。任务以局部修复为主，未经需求支持不要改公共接口签名或扩展到无关业务。当前没有待续的 `report.md`，此前报告已修复并按要求移除。
+
+根 `LICENSE` 当前为 MIT（提交 `aaa14ff` 更新），源码历史作者声明保留。许可说明以实际 LICENSE 为准，不要继续引用旧 AGPL-3.0 说明，也不要将历史评价或署名倡议推断为额外许可条款。

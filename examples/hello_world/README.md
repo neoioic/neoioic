@@ -14,6 +14,6 @@ xmake run -P . hello_world
 
 Linux/macOS 可以配置 `xmake f -P . --toolchain=gcc -m debug`，Clang 使用 `--toolchain=clang`。
 
-构建产物位于本项目的 build/；程序入口在 so/ao/Main/Main.c，应用宿主在 ho.c，业务对象在 so/go/。
+构建产物位于本项目的 build/；程序入口在 `so/ao/Main/Main.c`，当前 `main` 直接打印 `Hello world!`。根目录的 `HelloWorld.c` 和 `ho.c` 保留对象接口与宿主模板，`<crt>` 区域和宿主创建选择尚未填写，当前程序没有创建或访问对象。学习完整生命周期请继续阅读单继承示例。
 
 [构建指南](../../docs/build.md) · [架构](../../docs/architecture.md) · [教程](../../docs/tutorial.md)

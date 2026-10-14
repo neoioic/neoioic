@@ -1,0 +1,77 @@
+# Agent 交接指南
+
+核对日期：2026-10-14。本文件供新对话快速定位源码与当前维护状态，不代替公共头文件的接口契约。
+
+## 阅读与定位
+
+先读根目录 [AGENTS.md](../AGENTS.md) 和 [README](../README.md)，再读本文件、[架构](architecture.md)、[构建](build.md)、[教程](tutorial.md)及[代码风格](coding-style.md)。接着按下表追踪实现。
+
+| 入口 | 阅读目的 |
+| --- | --- |
+| `include/o.h` | 对象/队列/访问记录、行为与结果码、VO 声明、继承宏及备用内联 VO |
+| `include/oioic.h`、`src/oioic.c` | 根节点状态、模式及队列容量命令、根节点接口绑定 |
+| `src/o.c` | 节点图初始化、访问登记/清理、环形队列、基节点查询和实际 VO 实现 |
+| `src/xmake.lua`、根 `xmake.lua` | 核心静态库与根构建入口 |
+| `examples/single_inheritance/ho.c`、`so/go/car/car.c` | 宿主创建/销毁、构造区布局及完整单继承生命周期 |
+| `examples/multiple_inheritance/so/go/amphicar/amphicar.c`、`so/ao/Main/Main.c` | 菱形节点共享、分派顺序及业务调用 |
+| `examples/wgi/so/ao/Main/Main.c`、`so/go`、`se` | WinMain、窗口/控件状态、Win32/GDI/OLE 辅助功能 |
+
+表中 `so/` 路径相对于对应示例目录。`hello_world` 只直接打印文本，`HelloWorld.c` 与宿主创建选择是未填写构造逻辑的模板，不能用它的成功运行证明对象生命周期正确。每个示例有独立 xmake 项目，根目录没有示例合集目标。
+
+## 已完成的工作
+
+仓库核心版本仍为 1.0.18，活跃源码已集中到 `include/` 和 `src/`，示例已迁移 C11、统一结果类型及 Linux 风格命名。历史 HTML/PDF 仅供模型背景参考，旧 API 和 VC6 构建步骤不适用于当前源码。预编译 oicc 没有源码，默认构建不会执行生成器。
+
+2026-10-11 的审查修复记录在提交 `52842f6`。修复覆盖队列非法指针及环绕计算、容量分配失败状态、容量命令长度与对齐、七类 SBO 接力返回值、关闭部分失败与打开失败后的清理、构造席位计算和外部存储初始化、根节点计数边界、宿主外部存储的 OID 耗尽清理。原 `report.md` 已按要求删除，无待续报告；需要历史问题详情时查 Git 历史，不要依赖旧对话内容。
+
+后续提交 `aaa14ff` 已将根 LICENSE 更新为 MIT。源码作者声明保留，文档许可说明以当前 LICENSE 为准。
+
+接手时先执行 `git status --short` 和 `git log -5 --oneline`，识别交接文档之外的新改动。上述提交用于定位历史，不表示后续工作区必然停在同一版本。
+
+## 不应丢失的实现约束
+
+- AND 首项是最终派生节点，多个派生分支共用基节点；不要逐分支重复分配 vehicle/OIOIC。
+- `get_base_node`/`get_base_members` 只查基节点，不查自身。节点自身状态通过 `self->members` 访问。
+- 业务通过 VO 登记访问，`cr/mr` 必须非零。ACS 去重、引用计数、队列和宿主 OID 都不自动同步。
+- 分派宏的中性结果用于继续遍历，不能用普通成功/失败判断随意替换。SBO 接力多继承返回 `RO__SBOOIX`，单继承传递基节点结果。
+- 空队列首尾指针为 NULL，非空时指向数组内首尾字节；不要引入数组前一地址的哨兵。
+- `RN_CLOSEPARTIAL` 表示资源可能已释放，保留引用仅供重试关闭。协议依赖调用者，无独立状态位自动拦截业务访问；不能把它解释为事务回滚。
+- CRT 使用 `size_t` 和 `OIOIC_ALIGNED_SIZE`；最大席位倍数检查针对每个节点的 `unsigned short caller_count`，不是按所有节点席位总和任意限制容量。
+- 外部存储构造会清零整个构造区，调用者仍须保证容量和对齐。只用 `host_destroy_object` 清理外部对象，随后由存储拥有者处理本体。
+- 模式位为零代表共享/阻断。Release 的业务动作与必要校验不能依赖 assert。
+- 用户最近的实现偏好是局部、最小修复，避免频繁改变公共接口签名；调整布局、接口或行为时同步构造代码、调用点和文档。
+
+## 验证现状与复现
+
+最近源码修复后的已执行结果：Windows x86_64 / MinGW-w64 GCC 15.1 / xmake 2.9.6，核心和四个示例的 Debug/Release 编译链接通过，三个控制台示例在两种配置下运行通过。WGI 本轮仅验证构建；窗口启动/关闭记录来自此前迁移阶段，控件全面交互和失败资源路径未完成回归。Linux/macOS 原生运行、Clang 全量链接未验证。
+
+没有受版本管理的统一测试套件或测试目标。本工作区曾在被忽略的根 `build/` 中生成 `regression.c`、`sbo-regression.c` 和可执行文件，新克隆不包含它们。一般构建与运行命令见[构建指南](build.md)。同工作区若保留这些临时源码，可从仓库根目录重新编译：
+
+```powershell
+# Release；Debug 改为 -O0 -g，并去掉 -DNDEBUG。
+gcc -std=c11 -O2 -DNDEBUG -Iinclude build/regression.c src/o.c `
+    examples/multiple_inheritance/so/go/car/car.c `
+    examples/multiple_inheritance/so/go/ship/ship.c `
+    examples/multiple_inheritance/so/go/vehicle/vehicle.c `
+    examples/multiple_inheritance/so/go/amphicar/amphicar.c `
+    '-Wl,--wrap=calloc' -o build/regression-release.exe
+if ($LASTEXITCODE -ne 0) { throw 'regression 编译失败' }
+& ./build/regression-release.exe
+if ($LASTEXITCODE -ne 0) { throw 'regression 运行失败' }
+
+gcc -std=c11 -O2 -DNDEBUG -Iinclude build/sbo-regression.c `
+    src/o.c src/oioic.c -o build/sbo-regression-release.exe
+if ($LASTEXITCODE -ne 0) { throw 'SBO regression 编译失败' }
+& ./build/sbo-regression-release.exe
+if ($LASTEXITCODE -ne 0) { throw 'SBO regression 运行失败' }
+```
+
+`regression.c` 直接包含根接口与多继承宿主实现，因此编译命令不重复链接 `src/oioic.c` 或 `ho.c`。`--wrap=calloc` 在测试程序中注入分配失败。此前两份程序已在开启断言和 NDEBUG 下运行，测试内容见构建指南；这是定向检查，不是全项目内存安全证明。
+
+变更后的验证按影响范围选择：核心与受影响示例独立构建；继承/生命周期验证共享基节点和失败后的清理重试；队列验证容量零、满空、跨尾环绕、批量与单字节混用、丢失标记；构造验证席位边界、外部非零内存、分配失败与 OID 清理。修改 WGI 时额外核对资源部署、窗口启动关闭及受影响交互。检查 `git diff --check`，报告实际运行范围，不能用缓存编译、旧程序或 assert 被禁用的成功运行夸大验证。
+
+## 当前边界
+
+此前审查主要针对共享核心及构造/宿主路径，不是 WGI 全业务审计。部分 GUI 路径仍沿用原示例的断言或简化错误处理；新任务触及这些路径时应依据当前源码核对，而不是假定此前已全面修复。外部存储 API 不接收容量参数，也不验证调用者空间大小；字节流使用本机数据布局，不是跨平台序列化协议。
+
+本次交接整理仅更新文档，核对源码、构建定义、许可与文档链接，不重新执行源码构建或运行测试。继续工作前以实际 Git 差异和当前需求确定范围。

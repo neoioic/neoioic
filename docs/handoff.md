@@ -1,6 +1,6 @@
 # Agent 交接指南
 
-核对日期：2026-10-14。本文件供新对话快速定位源码与当前维护状态，不代替公共头文件的接口契约。
+核对日期：2026-10-15。本文件供新对话快速定位源码与当前维护状态，不代替公共头文件的接口契约。
 
 ## 阅读与定位
 
@@ -45,28 +45,9 @@
 
 最近源码修复后的已执行结果：Windows x86_64 / MinGW-w64 GCC 15.1 / xmake 2.9.6，核心和四个示例的 Debug/Release 编译链接通过，三个控制台示例在两种配置下运行通过。WGI 本轮仅验证构建；窗口启动/关闭记录来自此前迁移阶段，控件全面交互和失败资源路径未完成回归。Linux/macOS 原生运行、Clang 全量链接未验证。
 
-没有受版本管理的统一测试套件或测试目标。本工作区曾在被忽略的根 `build/` 中生成 `regression.c`、`sbo-regression.c` 和可执行文件，新克隆不包含它们。一般构建与运行命令见[构建指南](build.md)。同工作区若保留这些临时源码，可从仓库根目录重新编译：
+现有受版本管理的健壮性测试位于 `tests/`，是独立 xmake 项目；构建与运行命令、覆盖范围和链接器限制见 [测试说明](../tests/README.md)。此前 `build/regression.c` 和 `build/sbo-regression.c` 的定向回归已整理纳入该套件，不再依赖被忽略目录中的临时源文件。测试使用不会被 `NDEBUG` 禁用的检查，并通过链接器包装注入分配失败。
 
-```powershell
-# Release；Debug 改为 -O0 -g，并去掉 -DNDEBUG。
-gcc -std=c11 -O2 -DNDEBUG -Iinclude build/regression.c src/o.c `
-    examples/multiple_inheritance/so/go/car/car.c `
-    examples/multiple_inheritance/so/go/ship/ship.c `
-    examples/multiple_inheritance/so/go/vehicle/vehicle.c `
-    examples/multiple_inheritance/so/go/amphicar/amphicar.c `
-    '-Wl,--wrap=calloc' -o build/regression-release.exe
-if ($LASTEXITCODE -ne 0) { throw 'regression 编译失败' }
-& ./build/regression-release.exe
-if ($LASTEXITCODE -ne 0) { throw 'regression 运行失败' }
-
-gcc -std=c11 -O2 -DNDEBUG -Iinclude build/sbo-regression.c `
-    src/o.c src/oioic.c -o build/sbo-regression-release.exe
-if ($LASTEXITCODE -ne 0) { throw 'SBO regression 编译失败' }
-& ./build/sbo-regression-release.exe
-if ($LASTEXITCODE -ne 0) { throw 'SBO regression 运行失败' }
-```
-
-`regression.c` 直接包含根接口与多继承宿主实现，因此编译命令不重复链接 `src/oioic.c` 或 `ho.c`。`--wrap=calloc` 在测试程序中注入分配失败。此前两份程序已在开启断言和 NDEBUG 下运行，测试内容见构建指南；这是定向检查，不是全项目内存安全证明。
+2026-10-15 使用 Windows x86_64 / MinGW-w64 GCC 15.1 / xmake 2.9.6，两个测试目标均通过 Debug 和 Release 构建及运行。新增覆盖逐次构造分配失败、回收表分配/扩容失败后的销毁重试、OID 复用、菱形继承引用与访问上下文清理；完整范围见测试说明。该结果不代表 WGI 交互或其他平台已验证。
 
 变更后的验证按影响范围选择：核心与受影响示例独立构建；继承/生命周期验证共享基节点和失败后的清理重试；队列验证容量零、满空、跨尾环绕、批量与单字节混用、丢失标记；构造验证席位边界、外部非零内存、分配失败与 OID 清理。修改 WGI 时额外核对资源部署、窗口启动关闭及受影响交互。检查 `git diff --check`，报告实际运行范围，不能用缓存编译、旧程序或 assert 被禁用的成功运行夸大验证。
 
@@ -74,4 +55,4 @@ if ($LASTEXITCODE -ne 0) { throw 'SBO regression 运行失败' }
 
 此前审查主要针对共享核心及构造/宿主路径，不是 WGI 全业务审计。部分 GUI 路径仍沿用原示例的断言或简化错误处理；新任务触及这些路径时应依据当前源码核对，而不是假定此前已全面修复。外部存储 API 不接收容量参数，也不验证调用者空间大小；字节流使用本机数据布局，不是跨平台序列化协议。
 
-本次交接整理仅更新文档，核对源码、构建定义、许可与文档链接，不重新执行源码构建或运行测试。继续工作前以实际 Git 差异和当前需求确定范围。
+本次新增独立健壮性测试并执行上述验证；生产接口及运行时实现未修改。继续工作前以实际 Git 差异和当前需求确定范围。

@@ -4,6 +4,7 @@
 
 | 项目路径 | 目标 | 平台 |
 | --- | --- | --- |
+| `tests` | `robustness`、`dispatch` | GCC / GNU ld（含 MinGW） |
 | 仓库根目录 | `oioic` 静态库 | GCC/Clang 的 C11 工具链 |
 | `examples/hello_world` | `hello_world` | 控制台 |
 | `examples/single_inheritance` | `single_inheritance` | 控制台 |
@@ -50,7 +51,17 @@ Linux 风格重写后再次分别重构建上述五个项目的 Debug/Release，
 
 2026-10-11 核心问题修复后，使用上述 MinGW 工具链分别编译核心与四个示例的 Debug/Release，三个控制台示例在两种配置下运行通过。本次 WGI 仅验证编译链接，没有执行窗口交互回归。临时定向验证程序保存在本地 `build/`，分别以开启断言的 Debug 和 `-O2 -DNDEBUG` 编译运行，覆盖容量 0～17 的 18 万次队列混合操作、扩容分配失败与参数位于旧队列的情况、短输出/输入和未对齐字节流、七类 SBO 接力返回值、部分关闭及嵌套传播/重试、打开失败后的清理失败、根节点引用边界、构造席位上限、非零填充外部存储和动态/外部存储的 OID 耗尽清理。分配失败通过链接器 `--wrap=calloc` 注入，不修改生产源码。
 
-`build/` 被 Git 忽略，以上临时程序不是受版本管理的测试套件，新克隆不包含它们。没有配置统一测试目标或自动回归流程。需要复现定向检查时，应在当前工作区核对测试源文件是否存在，并从当前源码重新编译，不能以旧可执行文件运行成功代替验证。交接入口及本地复现命令见[交接指南](handoff.md)。
+## 健壮性测试
+
+受版本管理的独立测试项目位于 `tests/`，不依赖旧的 `build/` 临时程序。先配置测试项目，再构建并运行：
+
+```powershell
+xmake f -P tests -p mingw --mingw="D:/path/to/mingw64" -m debug
+xmake -P tests
+xmake test -P tests -v
+```
+
+将配置改为 `-m release` 后重新构建并运行，测试检查在 `NDEBUG` 下仍有效。完整命令、用例范围及 GNU 链接器要求见 [测试说明](../tests/README.md)。2026-10-15 两个测试目标已在上述 Windows/MinGW 工具链下分别通过 Debug/Release 构建与运行；未执行 WGI 交互或 Linux/macOS 运行验证。
 
 ## 迁移说明
 

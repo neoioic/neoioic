@@ -63,6 +63,8 @@ Linux/macOS 的核心库和控制台示例可以配置 `xmake f -P . --toolchain
 
 项目 2007 年公开对象模型，2008 年托管于 Google Code，2009 年发布第二版教程，2011 年发布 1.0.18，2026 年在 Gitee/GitHub 重新发布。中文历史教材保留在 `docs/primer/zh/`，其中旧 API 与 VC6 操作步骤仅供历史参考；当前开发以本 README 和 Markdown 文档为准。
 
+独立健壮性测试位于 [`tests/`](tests/README.md)，涵盖队列、继承分派、生命周期及分配失败清理；使用 `xmake test -P tests -v` 运行，需先按测试说明配置和构建。
+
 ## 验证与许可
 
 2026-10-11 核心修复后，使用 MinGW-w64 GCC 15.1 与 xmake 完成核心库及四个示例的 Debug/Release 构建，三个控制台示例在两种配置下运行通过。本轮 WGI 仅验证编译链接；窗口启动、正常关闭属于此前迁移阶段的验证，不能替代修复后的界面回归。详细验证范围见 [构建指南](docs/build.md)。

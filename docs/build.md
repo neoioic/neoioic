@@ -63,6 +63,21 @@ xmake test -P tests -v
 
 将配置改为 `-m release` 后重新构建并运行，测试检查在 `NDEBUG` 下仍有效。完整命令、用例范围及 GNU 链接器要求见 [测试说明](../tests/README.md)。2026-10-15 两个测试目标已在上述 Windows/MinGW 工具链下分别通过 Debug/Release 构建与运行；未执行 WGI 交互或 Linux/macOS 运行验证。
 
+## GitHub Actions 与 Nightly
+
+[Nightly 工作流](../.github/workflows/nightly.yml) 在分支 push、Pull Request 和手动触发时运行 Windows/Ubuntu x86_64 × GCC/Clang × Debug/Release 八项构建。各项目保持独立的 xmake 构建入口，CI 使用 `-static` 链接；Linux 检查 ELF 无动态解释器和共享库依赖，Windows 检查不依赖编译器运行时 DLL（系统 DLL 仍由 Windows 提供）。Windows 使用 MSYS2 UCRT64 的 GCC、Clang 和资源编译器。
+
+每种 Debug 配置均运行 `tests` 的两个目标及三个控制台示例；WGI 仅在 Windows 编译，不在 CI 自动打开窗口。所有八项任务成功后，默认分支的 push 才会更新固定 `nightly` 标签及名为 `Nightly` 的预发行版。第一次创建发行版，以后更新标签指向、提交说明，并覆盖两个同名附件，不新建发行版，也不将其标为 Latest：
+
+- `oioic-x86_64-windows.zip`
+- `oioic-x86_64-linux.zip`
+
+压缩包只使用对应系统的 GCC Release 结果，包含示例可执行文件、测试可执行文件、核心静态库、公共头文件、许可证和说明。Windows 包额外包含 WGI 与 `skins/`；解压后在 WGI 所在目录运行以读取皮肤。`BUILD.txt` 记录提交及 GCC 版本。Clang Release 用于构建检查，不发布。其他分支、Pull Request 和手动运行只验证，不覆盖 Nightly。
+
+发行任务使用仓库自带的 `GITHUB_TOKEN` 和任务级 `contents: write`，不需要额外令牌。构建任务仅有只读权限。若仓库的标签规则限制移动 `nightly`，须允许该自动发行操作。同一分支的新运行会取消旧运行。
+
+构建与打包逻辑位于 [CI 脚本](../.github/scripts/build.py)，本地也可设置 `CI_COMPILER=gcc` 或 `clang`、`CI_MODE=debug` 或 `release` 后执行。2026-10-15 本地 Windows GCC Debug/Release 均完成全量构建与运行时依赖检查，Debug 测试和控制台示例通过，Release zip 完成生成及完整性检查；其他矩阵组合与 GitHub 发行操作须以实际 Actions 运行结果为准。
+
 ## 迁移说明
 
 - 将核心和示例中重复的核心副本合并为一份。

@@ -15,14 +15,18 @@ concurrency:
 
 jobs:
   build:
-    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.mode }}
+    name: ${{ matrix.target.platform }} / ${{ matrix.compiler }} / ${{ matrix.mode }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2022, ubuntu-24.04]
+        target:
+          - runner: windows-2022
+            platform: mingw
+          - runner: ubuntu-24.04
+            platform: linux
         compiler: [gcc, clang]
         mode: [debug, release]
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.target.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +62,7 @@ jobs:
         if: matrix.compiler == 'gcc' && matrix.mode == 'release'
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ runner.os }}
+          name: release-${{ matrix.target.platform }}
           path: build/packages/neoioic-x86_64-*.zip
           if-no-files-found: error
 

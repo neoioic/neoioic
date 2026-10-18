@@ -7,6 +7,7 @@
 #include "../examples/multiple_inheritance/host.c"
 
 static int fail_alloc;
+static int track_allocations;
 static void *allocations[128];
 static unsigned int live_allocations;
 void *__real_calloc(size_t count, size_t size);
@@ -16,6 +17,9 @@ void *__wrap_calloc(size_t count, size_t size)
 {
 	void *pointer;
 
+	/* Static libc startup may call calloc before the test suite begins. */
+	if (!track_allocations)
+		return __real_calloc(count, size);
 	if (fail_alloc && --fail_alloc == 0)
 		return NULL;
 	pointer = __real_calloc(count, size);
@@ -499,6 +503,7 @@ static void test_diamond(void)
 
 int main(void)
 {
+	track_allocations = 1;
 	test_queue();
 	test_root();
 	test_close();
@@ -509,6 +514,7 @@ int main(void)
 	test_diamond();
 	test_access_context();
 	CHECK(live_allocations == 0);
+	track_allocations = 0;
 	puts("regression checks passed");
 	return 0;
 }

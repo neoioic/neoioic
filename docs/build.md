@@ -67,7 +67,7 @@ xmake test -P tests -v
 
 [Nightly 工作流](../.github/workflows/nightly.yml) 在分支 push、Pull Request 和手动触发时运行 Windows/Ubuntu x86_64 × GCC/Clang × Debug/Release 八项构建。各项目保持独立的 xmake 构建入口，CI 使用 `-static` 链接；Linux 检查 ELF 无动态解释器和共享库依赖，Windows 检查不依赖编译器运行时 DLL（系统 DLL 仍由 Windows 提供）。Windows 使用 MSYS2 UCRT64 的 GCC、Clang 和资源编译器。
 
-每种 Debug 配置均运行 `tests` 的两个目标及三个控制台示例；WGI 仅在 Windows 编译，不在 CI 自动打开窗口。所有八项任务成功后，默认分支的 push 才会更新固定 `nightly` 标签及名为 `Nightly` 的预发行版。第一次创建发行版，以后更新标签指向、提交说明，并覆盖两个同名附件，不新建发行版，也不将其标为 Latest：
+构建任务按 `mingw / gcc / debug`、`linux / clang / debug` 等格式显示平台、编译器和模式；实际 runner 仍为 Windows/Ubuntu。每种 Debug 配置均运行 `tests` 的两个目标及三个控制台示例；WGI 仅在 Windows 编译，不在 CI 自动打开窗口。所有八项任务成功后，默认分支的 push 才会更新固定 `nightly` 标签及名为 `Nightly` 的预发行版。第一次创建发行版，以后更新标签指向、提交说明，并覆盖两个同名附件，不新建发行版，也不将其标为 Latest：
 
 - `neoioic-x86_64-windows.zip`
 - `neoioic-x86_64-linux.zip`

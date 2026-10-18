@@ -1,6 +1,0 @@
-
-
-#ifndef OIOIC_HELLOWORLD_SE_H
-#define OIOIC_HELLOWORLD_SE_H
-
-#endif /* #ifndef OIOIC_HELLOWORLD_SE_H */

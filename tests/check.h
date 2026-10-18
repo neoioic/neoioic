@@ -1,5 +1,5 @@
-#ifndef OIOIC_TEST_CHECK_H
-#define OIOIC_TEST_CHECK_H
+#ifndef NEOIOIC_TEST_CHECK_H
+#define NEOIOIC_TEST_CHECK_H
 
 #include <stdio.h>
 #include <stdlib.h>

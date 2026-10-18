@@ -1,24 +1,26 @@
 # Agent 交接指南
 
-核对日期：2026-10-15。本文件供新对话快速定位源码与当前维护状态，不代替公共头文件的接口契约。
+核对日期：2026-10-16。本文件供新对话快速定位源码与当前维护状态，不代替公共头文件的接口契约。
 
 ## 阅读与定位
 
-先读根目录 [AGENTS.md](../AGENTS.md) 和 [README](../README.md)，再读本文件、[架构](architecture.md)、[构建](build.md)、[教程](tutorial.md)及[代码风格](coding-style.md)。接着按下表追踪实现。
+先读根目录 [AGENTS.md](../AGENTS.md) 和 [README](../README.md)，再读本文件、[架构](architecture.md)、[构建](build.md)、[教程](tutorial.md)及[代码风格](coding_style.md)。接着按下表追踪实现。
 
 | 入口 | 阅读目的 |
 | --- | --- |
-| `include/o.h` | 对象/队列/访问记录、行为与结果码、VO 声明、继承宏及备用内联 VO |
-| `include/oioic.h`、`src/oioic.c` | 根节点状态、模式及队列容量命令、根节点接口绑定 |
-| `src/o.c` | 节点图初始化、访问登记/清理、环形队列、基节点查询和实际 VO 实现 |
+| `include/object.h` | 对象/队列/访问记录、行为与结果码、VO 声明、继承宏及备用内联 VO |
+| `include/neoioic.h`、`src/neoioic.c` | 根节点状态、模式及队列容量命令、根节点接口绑定 |
+| `src/object.c` | 节点图初始化、访问登记/清理、环形队列、基节点查询和实际 VO 实现 |
 | `src/xmake.lua`、根 `xmake.lua` | 核心静态库与根构建入口 |
-| `examples/single_inheritance/ho.c`、`so/go/car/car.c` | 宿主创建/销毁、构造区布局及完整单继承生命周期 |
-| `examples/multiple_inheritance/so/go/amphicar/amphicar.c`、`so/ao/Main/Main.c` | 菱形节点共享、分派顺序及业务调用 |
-| `examples/wgi/so/ao/Main/Main.c`、`so/go`、`se` | WinMain、窗口/控件状态、Win32/GDI/OLE 辅助功能 |
+| `examples/single_inheritance/host.c`、`objects/general/car/car.c` | 宿主创建/销毁、构造区布局及完整单继承生命周期 |
+| `examples/multiple_inheritance/objects/general/amphicar/amphicar.c`、`objects/application/main/main.c` | 菱形节点共享、分派顺序及业务调用 |
+| `examples/wgi/objects/application/main/main.c`、`objects/general`、`support` | WinMain、窗口/控件状态、Win32/GDI/OLE 辅助功能 |
 
-表中 `so/` 路径相对于对应示例目录。`hello_world` 只直接打印文本，`HelloWorld.c` 与宿主创建选择是未填写构造逻辑的模板，不能用它的成功运行证明对象生命周期正确。每个示例有独立 xmake 项目，根目录没有示例合集目标。
+表中 `objects/` 路径相对于对应示例目录。`hello_world` 只直接打印文本，`hello_world.c` 与宿主创建选择是未填写构造逻辑的模板，不能用它的成功运行证明对象生命周期正确。每个示例有独立 xmake 项目，根目录没有示例合集目标。
 
 ## 已完成的工作
+
+项目已改名为 NEOioic，代码及构建名称使用 `neoioic`，宏前缀使用 `NEOIOIC_`。核心公共对象定义与实现为 `include/object.h`、`src/object.c`，根节点为 `include/neoioic.h`、`src/neoioic.c`。文件和目录统一采用小写下划线，示例目录及宿主入口见上表；历史教材的本地路径同步更新，原文、截图及预编译工具保留历史名称。
 
 仓库核心版本仍为 1.0.18，活跃源码已集中到 `include/` 和 `src/`，示例已迁移 C11、统一结果类型及 Linux 风格命名。历史 HTML/PDF 仅供模型背景参考，旧 API 和 VC6 构建步骤不适用于当前源码。预编译 oicc 没有源码，默认构建不会执行生成器。
 
@@ -30,18 +32,20 @@
 
 ## 不应丢失的实现约束
 
-- AND 首项是最终派生节点，多个派生分支共用基节点；不要逐分支重复分配 vehicle/OIOIC。
+- AND 首项是最终派生节点，多个派生分支共用基节点；不要逐分支重复分配 vehicle/NEOioic。
 - `get_base_node`/`get_base_members` 只查基节点，不查自身。节点自身状态通过 `self->members` 访问。
 - 业务通过 VO 登记访问，`cr/mr` 必须非零。ACS 去重、引用计数、队列和宿主 OID 都不自动同步。
 - 分派宏的中性结果用于继续遍历，不能用普通成功/失败判断随意替换。SBO 接力多继承返回 `RO__SBOOIX`，单继承传递基节点结果。
 - 空队列首尾指针为 NULL，非空时指向数组内首尾字节；不要引入数组前一地址的哨兵。
 - `RN_CLOSEPARTIAL` 表示资源可能已释放，保留引用仅供重试关闭。协议依赖调用者，无独立状态位自动拦截业务访问；不能把它解释为事务回滚。
-- CRT 使用 `size_t` 和 `OIOIC_ALIGNED_SIZE`；最大席位倍数检查针对每个节点的 `unsigned short caller_count`，不是按所有节点席位总和任意限制容量。
+- CRT 使用 `size_t` 和 `NEOIOIC_ALIGNED_SIZE`；最大席位倍数检查针对每个节点的 `unsigned short caller_count`，不是按所有节点席位总和任意限制容量。
 - 外部存储构造会清零整个构造区，调用者仍须保证容量和对齐。只用 `host_destroy_object` 清理外部对象，随后由存储拥有者处理本体。
 - 模式位为零代表共享/阻断。Release 的业务动作与必要校验不能依赖 assert。
 - 用户最近的实现偏好是局部、最小修复，避免频繁改变公共接口签名；调整布局、接口或行为时同步构造代码、调用点和文档。
 
 ## 验证现状与复现
+
+2026-10-16 重命名后，使用 Windows x86_64 / MinGW-w64 GCC 15.1 完成核心、四个示例和两个测试目标的 Debug/Release 构建，两个测试目标在两种配置下均通过，三个控制台示例的 Debug/Release 输出一致。新名称的 Windows Release zip 完整性检查通过；本地文档链接、源码包含路径及 WGI 资源引用检查通过。WGI 仅验证编译链接和资源路径，未执行界面交互回归；未执行 Linux/macOS 或 Clang 构建。
 
 最近源码修复后的已执行结果：Windows x86_64 / MinGW-w64 GCC 15.1 / xmake 2.9.6，核心和四个示例的 Debug/Release 编译链接通过，三个控制台示例在两种配置下运行通过。WGI 本轮仅验证构建；窗口启动/关闭记录来自此前迁移阶段，控件全面交互和失败资源路径未完成回归。Linux/macOS 原生运行、Clang 全量链接未验证。
 

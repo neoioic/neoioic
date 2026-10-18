@@ -5,7 +5,7 @@
 | 项目路径 | 目标 | 平台 |
 | --- | --- | --- |
 | `tests` | `robustness`、`dispatch` | GCC / GNU ld（含 MinGW） |
-| 仓库根目录 | `oioic` 静态库 | GCC/Clang 的 C11 工具链 |
+| 仓库根目录 | `neoioic` 静态库 | GCC/Clang 的 C11 工具链 |
 | `examples/hello_world` | `hello_world` | 控制台 |
 | `examples/single_inheritance` | `single_inheritance` | 控制台 |
 | `examples/multiple_inheritance` | `multiple_inheritance` | 控制台 |
@@ -24,7 +24,7 @@ xmake f -P . -p mingw --mingw="D:/path/to/mingw64" -a x86_64 -m debug
 xmake -P .
 ```
 
-运行控制台示例：`xmake run -P . <目标名>`。构建 WGI 还需要工具链自带的 `windres`；xmake 会编译 `wgidemo.rc`，链接 `user32`、`gdi32`、`ole32`、`oleaut32`、`uuid`，并将 `skins/` 复制到可执行文件旁。移动 WGI 时必须一起移动该资源目录。
+运行控制台示例：`xmake run -P . <目标名>`。构建 WGI 还需要工具链自带的 `windres`；xmake 会编译 `wgi_demo.rc`，链接 `user32`、`gdi32`、`ole32`、`oleaut32`、`uuid`，并将 `skins/` 复制到可执行文件旁。移动 WGI 时必须一起移动该资源目录。
 
 切换优化构建时再次明确平台与工具链，例如 `xmake f -P . -p mingw --mingw="D:/path/to/mingw64" -m release`，然后重新构建。xmake 重新配置时可能重新选择默认平台，不能假定仅传 `-m release` 会保留 MinGW 配置。清理当前项目：`xmake clean -P .`。完整重建使用 `xmake -P . -r`。
 
@@ -69,8 +69,8 @@ xmake test -P tests -v
 
 每种 Debug 配置均运行 `tests` 的两个目标及三个控制台示例；WGI 仅在 Windows 编译，不在 CI 自动打开窗口。所有八项任务成功后，默认分支的 push 才会更新固定 `nightly` 标签及名为 `Nightly` 的预发行版。第一次创建发行版，以后更新标签指向、提交说明，并覆盖两个同名附件，不新建发行版，也不将其标为 Latest：
 
-- `oioic-x86_64-windows.zip`
-- `oioic-x86_64-linux.zip`
+- `neoioic-x86_64-windows.zip`
+- `neoioic-x86_64-linux.zip`
 
 压缩包只使用对应系统的 GCC Release 结果，包含示例可执行文件、测试可执行文件、核心静态库、公共头文件、许可证和说明。Windows 包额外包含 WGI 与 `skins/`；解压后在 WGI 所在目录运行以读取皮肤。`BUILD.txt` 记录提交及 GCC 版本。Clang Release 用于构建检查，不发布。其他分支、Pull Request 和手动运行只验证，不覆盖 Nightly。
 
@@ -84,5 +84,5 @@ xmake test -P tests -v
 - 教学示例直接替换旧 `IRESULT`/`FRESULT` API，统一使用 `int` 及当前结果域。
 - 清除 VC6 工程、中间产物、缓存、旧版本目录和已展开压缩包。
 - 活跃源码采用 UTF-8、C11；修正构造布局对齐和 Windows 64 位指针接口。
-- 源码按[Linux 风格](coding-style.md)整理：小写下划线命名、显式结构体类型、8 列 Tab 缩进。API 的具体名称同步公共头文件、示例和当前文档，历史教材保留原始名称。
+- 源码按[Linux 风格](coding_style.md)整理：小写下划线命名、显式结构体类型、8 列 Tab 缩进。API 的具体名称同步公共头文件、示例和当前文档，历史教材保留原始名称。
 - `oicc` 只保留作者的工具二进制，不作为可重建项目或编译步骤。

@@ -14,6 +14,6 @@ xmake run -P . wgi
 
 WGI 需要 Windows API、GDI、OLE 和 windres。构建会把 skins/ 复制到程序旁，发布时必须保留该目录。
 
-构建产物位于本项目的 build/；程序入口在 so/ao/Main/Main.c，应用宿主在 ho.c，业务对象在 so/go/。
+构建产物位于本项目的 build/；程序入口在 objects/application/main/main.c，应用宿主在 host.c，业务对象在 objects/general/。
 
 [构建指南](../../docs/build.md) · [架构](../../docs/architecture.md) · [教程](../../docs/tutorial.md)

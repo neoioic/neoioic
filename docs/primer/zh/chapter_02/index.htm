@@ -1,0 +1,105 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>OIOIC&nbsp;入门教程</title>
+<link rel=stylesheet href="../styles/styles.css" type="text/css">
+</head>
+
+<body bgcolor=white text=black link="#5555ff" alink="#5555ff" vlink="#5555ff"><p><strong>历史教材（1.0.6）：旧 API 和 VC6 步骤仅供参考，当前开发请阅读新版教程与构建指南。</strong> <a href="../../../tutorial.md">Current guide</a></p>
+<table border=0 width=100%>
+<tr>
+<td><p class=tiny>&nbsp;《&nbsp;OIOIC&nbsp;入门教程&nbsp;》第2版&nbsp;&nbsp;&nbsp;&nbsp;赵平智&nbsp;&nbsp;著&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="mailto:pervise.zhao@gmail.com">pervise.zhao@gmail.com</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="http://code.google.com/p/oioic/">http://code.google.com/p/oioic</a></p></td>
+<td align=right><p class=tiny>OIOIC&nbsp;1.0.6&nbsp;</p></td>
+</tr>
+</table>
+<hr size=1>
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../index.htm" style="font-size:15px;">首页&nbsp;<<</a>
+	</td>
+</tr>
+</table>
+<p>
+<h1 align=center>第二章&nbsp;&nbsp;Hello,World</h1><br>
+<p>
+&nbsp;&nbsp;&nbsp;&nbsp;编写一个 “Hello world” 程序，熟悉&nbsp;OIOIC&nbsp;程序的代码树结构。&nbsp;&nbsp;<a href="../../../../examples/hello_world/README.md" style="font-size:15px;">（下载源代码）</a><br><br>
+<font style="font-size:22px;">Step 1: 在命令行上用&nbsp;<a href="../../../tutorial.md">oicc</a>&nbsp;创建名为 HelloWorld 的 MO 类型节点。</font><br>
+<img src="images/step1.gif" align=center alt="Step1.GIF" border="1" vspace=20 hspace=35><br>
+&nbsp;&nbsp;&nbsp;&nbsp;在创建 HO 类型节点时，HO 节点的父目录名必须是对应名称的小写（注意，Windows 对文件夹名的大小写不敏感），即：MO 节点的是 “mo” 、CO 节点的是 “co”、RO 节点的是 “ro”。如果没有，oicc 就会自动创建一个。所以在这个例子中，如果指定的目录（E:\OIC_Workroom）下没有 “mo” 文件夹，oicc 就自动生成了一个。<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;现在看看 E:\OIC_Workroom\mo 目录下是不是多了个 HelloWorld 节点。<br><br><br>
+
+<font style="font-size:22px;">Step 2: 在 E:\OIC_Workroom\mo\HelloWorld 目录下建一个 oioic 目录，并把&nbsp;<a href="../../../tutorial.md">oioic.c&nbsp;和&nbsp;oioic.h</a>&nbsp;文件复制到 oioic 目录下。</font><br><br><br>
+
+<font style="font-size:22px;">Step 3: 为 HelloWorld 创建 VC 工程。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;用 VC（本书用的是 VC6.0）打开 E:\OIC_Workroom\mo\HelloWorld\HelloWorld.c 文件，然后 Build，在弹出的对话框点击“是”，VC 自动在 E:\OIC_Workroom\mo\HelloWorld 目录下生成 HelloWorld 的 VC 工程文件。<br>
+<img src="images/step3.gif" align=center alt="Step3.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 4: 把 HelloWorld 目录里的 .c 和 .h 文件和 oioic 目录及其内的 .c 和 .h 文件加入到工程中。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;在 Workspace 窗口的 FileView 视图中把 HelloWorld 目录里的 .c 和 .h 文件和 oioic 目录及其内的 .c 和 .h 文件加入到工程中。<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1. 加入 E:\OIC_Workroom\mo\HelloWorld 目录下的 .h 和 .c 文件。<br>
+<img src="images/step4_1.gif" align=center alt="Step4-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;在“查找范围”下拉框中定位 E:\OIC_Workroom\mo\HelloWorld 目录，然后选中 HelloWorld.h、ho.h、ho.c 文件（HelloWorld.c 文件已在工程中），点击 “OK” 后，三个文件就加入了工程。<br>
+<img src="images/step4_2.gif" align=center alt="Step4-2.GIF" border="1" vspace=20 hspace=35><br>
+<img src="images/step4_3.gif" align=center alt="Step4-3.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. 把 E:\OIC_Workroom\mo\HelloWorld\oioic 目录下的 oioic.h 和 oioic.c 文件加入工程。<br>
+<img src="images/step4_4.gif" alt="Step4-4.GIF" width="425" height="576" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;如下输入 “oioic” 后，点击 “OK”，建一个 oioic 文件夹。<br>
+<img src="images/step4_5.gif" align=center alt="Step4-5.GIF" border="1" vspace=20 hspace=35><br>
+<img src="images/step4_6.gif" alt="Step4-6.GIF" width="443" height="578" hspace=35 vspace=20 border="1" align=center><br>
+<img src="images/step4_7.gif" align=center alt="Step4-7.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;在“查找范围”下拉框中定位 E:\OIC_Workroom\mo\HelloWorld\oioic 目录，然后选中 oioic.h 和 oioic.c 文件，点击 “OK” 后，文件加入工程。<br>
+<img src="images/step4_8.gif" align=center alt="Step4-8.GIF" border="1" vspace=20 hspace=35><br>
+<img src="images/step4_9.gif" align=center alt="Step4-9.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 5: 用同样的方法，把 se、so 目录及它们的子目录（包括各目录下的 .h 和 .c 文件）都加入到工程中。</font><br>
+<img src="images/step5.gif" align=center alt="Step5.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 6: 参照 ho.h 文件里的 OID 定义模板格式定义需要的 OID。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;找到 OID 定义模板。<br>
+<img src="images/step6_1.gif" alt="Step6-1.GIF" width="774" height="357" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;打开 OID_HO 和 OID_ 的注释，并定义它们。<br>
+<img src="images/step6_2.gif" align=center alt="Step6-2.GIF" border="1" vspace=20 hspace=35><br><br>
+
+<font style="font-size:22px;">Step 7: 按等级次序为各层目录的 .h 文件包含需要的 .h 文件。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;1. 在 ho.h 文件中：#include "oioic/oioic.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;2. 在 HelloWorld.h 文件中：#include "ho.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;3. 在 so.h 文件中：#include "../ho.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;4. 在 ao.h 和 go.h 文件中：#include "../so.h"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;5. 在 Main.h 文件中：#include "../ao.h"<br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;编译一下，哦，ho.c 文件还有 3 个编译警告：<br>
+<img src="images/step7_1.gif" align=center alt="Step7-1.GIF" border="1" vspace=20 hspace=35><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;在 ho.c 文件中把 &lt;stdlib.h&gt; 和 &lt;memory.h&gt; 包含进去。<br>
+<img src="images/step7_2.gif" alt="Step7-2.GIF" width="506" height="196" hspace=35 vspace=20 border="1" align=center><br>
+&nbsp;&nbsp;&nbsp;&nbsp;再编译，通过。<br><br><br>
+
+<font style="font-size:22px;">Step 8: 在 Main.c 文件中写上输出 “Hello world!” 的代码。</font><br><br>
+&nbsp;&nbsp;&nbsp;&nbsp;先包含 &lt;stdio.h&gt; 头文件，然后在 Main 函数中加一条输出 “Hello world!” 的语句。<br>
+<img src="images/step8_1.gif" alt="Step8-1.GIF" width="508" height="187" hspace=35 vspace=20 border="1" align=center><br>
+<img src="images/step8_2.gif" alt="Step8-2.GIF" width="505" height="272" hspace=35 vspace=20 border="1" align=center><br>
+<br>
+
+<font style="font-size:22px;">Step 9: 执行程序。</font><br>
+<img src="images/step9.gif" align=center alt="Step9.GIF" border="1" vspace=20 hspace=35><br>
+
+<p>
+<table style="width:100%;">
+<tr>
+	<td align="left">
+		<a href="../chapter_01/index.htm" style="font-size:15px;">上一章&nbsp;&nbsp;认识&nbsp;OIOIC</a>
+	</td>
+	<td align="right">
+		<a href="../chapter_03/index.htm" style="font-size:15px;">下一章&nbsp;&nbsp;单重继承</a>
+	</td>
+</tr>
+</table>
+<p>
+<hr noshade>
+<center><p class=tiny>版权<font face="Helvetica">&copy;</font>2005-2009&nbsp;赵平智。保留所有权利。</p></center>
+
+</body>
+</html>

@@ -80,16 +80,16 @@ def main():
     packages = ROOT / 'build' / 'packages'
     packages.mkdir(parents=True, exist_ok=True)
     system = 'windows' if windows else 'linux'
-    archive = packages / f'oioic-x86_64-{system}.zip'
+    archive = packages / f'neoioic-x86_64-{system}.zip'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as package:
         for project, binary in binaries:
             package.write(binary, f'{project}/{binary.name}')
-        core = ROOT / 'build' / platform / 'x86_64' / mode / 'liboioic.a'
-        package.write(core, 'lib/liboioic.a')
+        core = ROOT / 'build' / platform / 'x86_64' / mode / 'libneoioic.a'
+        package.write(core, 'lib/libneoioic.a')
         for header in sorted((ROOT / 'include').glob('*.h')):
             package.write(header, f'include/{header.name}')
         for document in ('LICENSE', 'README.md', 'docs/build.md',
-                         'tests/README.md', 'docs/coding-style.md',
+                         'tests/README.md', 'docs/coding_style.md',
                          'docs/architecture.md', 'docs/tutorial.md', 'docs/handoff.md'):
             package.write(ROOT / document, document)
         if windows:

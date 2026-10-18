@@ -1,16 +1,16 @@
-# OIOIC Agent 指南
+# NEOioic Agent 指南
 
 ## 背景与入口
 
-OIOIC（道智编程）由赵平智设计，是以 C 实现的对象模型与构造工具；名称来自 Open、Input、Output、Interact、Close。本仓库以 1.0.18 为核心，教学示例已迁移到统一 API；历史教程 1.0.6 不代表当前可编译 API。
+NEOioic（原名 OIOIC，道智编程）由赵平智设计，是以 C 实现的对象模型与构造工具；原名来自 Open、Input、Output、Interact、Close。本仓库以 1.0.18 为核心，教学示例已迁移到统一 API；历史教程 1.0.6 不代表当前可编译 API。
 
-先读 `README.md`、`docs/handoff.md`、`docs/architecture.md`、`docs/build.md`、`docs/tutorial.md`，再读 `include/o.h`、`include/oioic.h`、`src/o.c`、`src/oioic.c`。交接文档记录当前状态与验证边界；源码和构建定义是行为依据。
+先读 `README.md`、`docs/handoff.md`、`docs/architecture.md`、`docs/build.md`、`docs/tutorial.md`，再读 `include/object.h`、`include/neoioic.h`、`src/object.c`、`src/neoioic.c`。交接文档记录当前状态与验证边界；源码和构建定义是行为依据。
 
 ## 模块与构建
 
-- `include/` 是公共头文件，`src/` 是共享运行时。根 `xmake.lua` 只构建 `oioic` 静态库。
+- `include/` 是公共头文件，`src/` 是共享运行时。根 `xmake.lua` 只构建 `neoioic` 静态库。
 - `examples/hello_world`、`single_inheritance`、`multiple_inheritance`、`wgi` 各有独立 `xmake.lua`、配置及输出目录。每个示例引用 `../../src`，不能把示例目标集中塞进根构建。
-- 应用宿主 `ho.c` 提供 `host_create_object`、`host_destroy_object`、oid 管理与业务对象创建选择。应用入口在 `so/ao/Main/Main.c`，一般对象在 `so/go`，辅助功能在 `se`。
+- 应用宿主 `host.c` 提供 `host_create_object`、`host_destroy_object`、oid 管理与业务对象创建选择。应用入口在 `objects/application/main/main.c`，一般对象在 `objects/general`，辅助功能在 `support`。
 - 使用 C11、UTF-8，GCC/Clang 方向；WGI 特定依赖 Win32/GDI/OLE，不能宣称其跨平台。
 - Windows 实测工具链为 MinGW-w64 GCC 15.1、xmake 2.9.6。在每个项目目录使用 `xmake f -P . -p mingw --mingw="工具链路径" -m debug`、`xmake -P .`；`-P .` 防止命中之前记住的根项目。
 - `tools/oicc/` 仅保留上游预编译二进制，没有源码，不在构建时自动调用。详细限制见其 README。
@@ -19,8 +19,8 @@ OIOIC（道智编程）由赵平智设计，是以 C 实现的对象模型与构
 ## 架构约束
 
 - `struct object` 表示节点，`model_id` 标识对象模，`oid` 标识对象，`struct em_xxx` 是节点自有状态。
-- AND 首项是最终派生节点；AIB 是直接基节点，ABN 是全部基节点，ACS 保存 `struct vr` 访问记录。根节点 OIOIC 包含队列与模式。
-- `crt_xxx` 构造节点图并布置内存，`tog_xxx` 绑定接口。用 `size_t` 计算内存，扩展成员块使用 `OIOIC_ALIGNED_SIZE`；新增更严格对齐类型必须重新核对布局。
+- AND 首项是最终派生节点；AIB 是直接基节点，ABN 是全部基节点，ACS 保存 `struct vr` 访问记录。根节点 NEOioic 包含队列与模式。
+- `crt_xxx` 构造节点图并布置内存，`tog_xxx` 绑定接口。用 `size_t` 计算内存，扩展成员块使用 `NEOIOIC_ALIGNED_SIZE`；新增更严格对齐类型必须重新核对布局。
 - 五类接口展开为九个函数指针。`interact0`～`interact3` 分别无流、仅输出、仅输入、输入输出。使用对应 `AC0_`～`AC3_` 扩展命令，明确数据尺寸与输出数量。
 - 业务使用 `vo_*` 访问；直接调用接口会绕过访问登记。OBS 先基节点后自身，SBO 先自身后基节点；分派专用中性结果必须保留其语义。
 - 使用统一 `int` 和 `RN/RO/RP`，不能重新引入 `IRESULT`/`FRESULT` 兼容别名。
@@ -34,7 +34,7 @@ OIOIC（道智编程）由赵平智设计，是以 C 实现的对象模型与构
 
 ## 实现原则
 
-活跃 C 源码遵循 [Linux 风格约定](docs/coding-style.md)：8 列 Tab、小写下划线命名、直接使用 `struct` 类型，常量与枚举项使用大写下划线。使用根 `.clang-format` 和 `.editorconfig`；保留 Win32/OLE 外部符号的规定名称。命名变更要同步调用点、构造代码及当前文档，历史教材明确标注旧 API。`caller_context` 表示访问上下文指针，局部 `caller` 记录可用于切换委托者，不能合并两者。
+活跃 C 源码遵循 [Linux 风格约定](docs/coding_style.md)：8 列 Tab、小写下划线命名、直接使用 `struct` 类型，常量与枚举项使用大写下划线。使用根 `.clang-format` 和 `.editorconfig`；保留 Win32/OLE 外部符号的规定名称。命名变更要同步调用点、构造代码及当前文档，历史教材明确标注旧 API。`caller_context` 表示访问上下文指针，局部 `caller` 记录可用于切换委托者，不能合并两者。
 
 你应该思考让你的代码精简优化，改动小，简洁优雅，符合最佳实践。不要创建无意义的自由函数，思考尽量不要或减少新增无意义的成员变量。不要兼容旧的遗留的实现，而是删除替换旧的实现。你的实现应当有通用性与扩展性，避免硬编码与限制。消除嵌套，消除强耦合，消除一大堆扁平的函数，改用较为 oop 的设计，禁止考虑向后兼容。适当拆出变量，从而更加清晰且减少嵌套。
 

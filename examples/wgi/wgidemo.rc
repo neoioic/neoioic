@@ -1,3 +1,0 @@
-#include <windows.h>
-#include "resource.h"
-IDI_WGIDEMO ICON "wgidemo.ico"

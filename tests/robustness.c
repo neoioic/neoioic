@@ -3,8 +3,8 @@
 #include <string.h>
 #include "check.h"
 /* Internal seams for malformed command arguments and OID exhaustion. */
-#include "../src/oioic.c"
-#include "../examples/multiple_inheritance/ho.c"
+#include "../src/neoioic.c"
+#include "../examples/multiple_inheritance/host.c"
 
 static int fail_alloc;
 static void *allocations[128];
@@ -105,14 +105,14 @@ static void test_queue(void)
 
 static void test_root(void)
 {
-	struct em_oioic members = { 0 };
+	struct em_neoioic members = { 0 };
 	struct vr slot = { 0 };
 	struct object root = { .members = &members,
 		       .callers = &slot, .caller_count = 1
 	};
 	unsigned char bytes[sizeof(unsigned int) + 2];
 	unsigned int value = 8, got;
-	tog_oioic(&root);
+	tog_neoioic(&root);
 	CHECK(vo_close(&root, &context) == RO_NOPEN);
 	root.ref_count = UINT_MAX;
 	CHECK(vo_open(&root, &context) == RN_FULL && root.ref_count == UINT_MAX);
@@ -255,8 +255,8 @@ static int parent_open(struct object *self, const struct vr *caller_context)
 static void test_open_cleanup(void)
 {
 	struct vr slots[6] = { 0 };
-	struct em_oioic members = { 0 };
-	struct object root = { .model_id = MSN_OIOIC, .members = &members };
+	struct em_neoioic members = { 0 };
+	struct object root = { .model_id = MSN_NEOIOIC, .members = &members };
 	struct object a = { .model_id = 1, .open = leaf_open, .close = leaf_close,
 		       .callers = slots + 2, .caller_count = 2
 	};
@@ -337,7 +337,7 @@ static void test_construction(void)
 	CHECK(create_object(MSN_AMPHICAR, 0, 0, USHRT_MAX / 4 + 1,
 			    &object) == RN_INVALIDARG);
 	CHECK(create_object(MSN_AMPHICAR, 0, 0, USHRT_MAX / 4, &object) == R_P);
-	CHECK(get_base_node(object, MSN_OIOIC)->caller_count == (USHRT_MAX / 4) * 4);
+	CHECK(get_base_node(object, MSN_NEOIOIC)->caller_count == (USHRT_MAX / 4) * 4);
 	destroy_object(object);
 	CHECK(object == NULL);
 	/* Sufficient, naturally aligned caller-owned storage, filled with garbage. */
@@ -462,19 +462,19 @@ static void test_diamond(void)
 {
 	struct object *object = NULL;
 	struct object *car, *ship, *vehicle, *root;
-	struct em_oioic *members;
+	struct em_neoioic *members;
 
 	CHECK(create_object(MSN_AMPHICAR, 8, 8, 1, &object) == R_P);
 	car = get_base_node(object, MSN_CAR);
 	ship = get_base_node(object, MSN_SHIP);
 	vehicle = get_base_node(object, MSN_VEHICLE);
-	root = get_base_node(object, MSN_OIOIC);
+	root = get_base_node(object, MSN_NEOIOIC);
 	members = root->members;
 	CHECK(object->nodes == object && object->node_count == 5);
 	CHECK(get_base_node(car, MSN_VEHICLE) == vehicle);
 	CHECK(get_base_node(ship, MSN_VEHICLE) == vehicle);
-	CHECK(get_base_node(car, MSN_OIOIC) == root);
-	CHECK(get_base_node(ship, MSN_OIOIC) == root);
+	CHECK(get_base_node(car, MSN_NEOIOIC) == root);
+	CHECK(get_base_node(ship, MSN_NEOIOIC) == root);
 	CHECK(get_base_node(object, MSN_AMPHICAR) == NULL);
 	CHECK(get_base_members(object, USHRT_MAX) == NULL);
 	CHECK(get_iq(object) == &members->iq && get_oq(object) == &members->oq);

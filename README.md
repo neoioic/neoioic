@@ -1,17 +1,17 @@
-# OIOIC
+# NEOioic
 
-OIOIC（道智编程）是赵平智设计的 C 语言对象模型及构造工具。名称来自 Open、Input、Output、Interact、Close 五类统一接口。对象通过结构体保存状态、函数指针实现接口，并使用继承节点图支持单继承和多继承。
+NEOioic（原名 OIOIC，道智编程）是赵平智设计的 C 语言对象模型及构造工具。原名来自 Open、Input、Output、Interact、Close 五类统一接口。对象通过结构体保存状态、函数指针实现接口，并使用继承节点图支持单继承和多继承。
 
 本仓库基于 OIOIC 1.0.18 整理为 C11 项目：核心源码集中维护，教学示例统一使用当前 API，每个项目具有独立的 xmake 构建入口。源码采用 UTF-8，版本由 Git 管理。
 
-[交接指南](docs/handoff.md) · [构建指南](docs/build.md) · [架构说明](docs/architecture.md) · [开发教程](docs/tutorial.md) · [代码风格](docs/coding-style.md)
+[交接指南](docs/handoff.md) · [构建指南](docs/build.md) · [架构说明](docs/architecture.md) · [开发教程](docs/tutorial.md) · [代码风格](docs/coding_style.md)
 
 活跃源码采用 Linux 风格的小写下划线命名、8 列 Tab 缩进和直接可见的结构体类型，例如 `struct object`、`vo_open`、`get_base_members`。当前名称以公共头文件为准，旧 API 名称不提供兼容别名。核心边界及失败处理已修正，关闭失败的清理约定见[架构说明](docs/architecture.md)。
 
 ## 目录
 
 ```text
-include/                      公共头文件 o.h、oioic.h
+include/                      公共头文件 object.h、neoioic.h
 src/                          核心运行时与可复用库构建定义
 examples/hello_world/         最小控制台程序，独立构建
 examples/single_inheritance/  vehicle -> car，独立构建
@@ -22,7 +22,7 @@ tools/oicc/                  作者提供的预编译构造工具
 xmake.lua                    仅构建核心静态库
 ```
 
-示例引用 `src/xmake.lua` 和公共头文件，分别在自己的 `build/`、`.xmake/` 中管理构建产物与配置。核心库不依赖示例，构建某个示例也不会构建其他示例。运行时核心中的 `create_object`/`destroy_object` 约定由应用宿主的 `ho.c` 实现。
+示例引用 `src/xmake.lua` 和公共头文件，分别在自己的 `build/`、`.xmake/` 中管理构建产物与配置。核心库不依赖示例，构建某个示例也不会构建其他示例。运行时核心中的 `create_object`/`destroy_object` 约定由应用宿主的 `host.c` 实现。
 
 ## 快速构建
 

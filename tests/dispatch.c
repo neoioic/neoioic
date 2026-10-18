@@ -1,4 +1,4 @@
-#include "o.h"
+#include "object.h"
 #include "check.h"
 
 static int leaf_result;

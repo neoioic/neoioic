@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ runner.os }}
-          path: build/packages/oioic-x86_64-*.zip
+          path: build/packages/neoioic-x86_64-*.zip
           if-no-files-found: error
 
   nightly:
@@ -86,8 +86,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f packages/oioic-x86_64-windows.zip
-          test -f packages/oioic-x86_64-linux.zip
+          test -f packages/neoioic-x86_64-windows.zip
+          test -f packages/neoioic-x86_64-linux.zip
           if gh api repos/$GH_REPO/git/ref/tags/nightly > /dev/null 2>&1; then
             gh api --method PATCH repos/$GH_REPO/git/refs/tags/nightly \
               -f sha="$COMMIT" -F force=true
@@ -102,5 +102,5 @@ jobs:
           else
             gh release create nightly --verify-tag --title Nightly --notes-file notes.md --prerelease --latest=false
           fi
-          gh release upload nightly packages/oioic-x86_64-windows.zip \
-            packages/oioic-x86_64-linux.zip --clobber
+          gh release upload nightly packages/neoioic-x86_64-windows.zip \
+            packages/neoioic-x86_64-linux.zip --clobber

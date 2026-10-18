@@ -1,4 +1,4 @@
-set_project("oioic")
+set_project("neoioic")
 set_version("1.0.18")
 set_languages("c11")
 set_targetdir(path.join(os.scriptdir(), "build/$(plat)/$(arch)/$(mode)"))

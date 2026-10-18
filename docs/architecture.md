@@ -2,12 +2,12 @@
 
 ## 模块边界
 
-核心库负责对象结构、接口分派、继承节点查询、访问登记和字节队列。应用宿主负责对象构造选择、OID 分配回收、应用状态和程序入口。示例的 `ho.c` 属于应用，不应放入核心库。
+核心库负责对象结构、接口分派、继承节点查询、访问登记和字节队列。应用宿主负责对象构造选择、OID 分配回收、应用状态和程序入口。示例的 `host.c` 属于应用，不应放入核心库。
 
 ```mermaid
 graph TD
-    APP[应用入口与宿主 ho.c] --> OBJECT[应用对象与 CRT / TOG]
-    OBJECT --> CORE[核心静态库 oioic]
+    APP[应用入口与宿主 host.c] --> OBJECT[应用对象与 CRT / TOG]
+    OBJECT --> CORE[核心静态库 neoioic]
     CORE --> HEADER[公共头文件]
     WGI[WGI 控件与皮肤] --> OBJECT
     WGI --> WIN[Win32 / GDI / OLE]
@@ -17,7 +17,7 @@ graph TD
 
 ## 对象布局
 
-`struct object` 保存对象模序号 MSN（`model_id`）、对象标识 OID（`oid`）、引用计数、九个接口指针、继承数组和扩展成员指针。OIOIC 是唯一根节点；最终派生节点 LND 位于 AND 数组首项。代码名称与原始资料的对应关系见[代码风格](coding-style.md)。
+`struct object` 保存对象模序号 MSN（`model_id`）、对象标识 OID（`oid`）、引用计数、九个接口指针、继承数组和扩展成员指针。NEOioic 是唯一根节点；最终派生节点 LND 位于 AND 数组首项。代码名称与原始资料的对应关系见[代码风格](coding_style.md)。
 
 | 字段/概念 | 含义 |
 | --- | --- |
@@ -28,13 +28,13 @@ graph TD
 | `members` / `struct em_xxx` | 当前节点自己的业务状态 |
 | `struct vr` 的 `cr` / `mr` | 调用者与当前委托者标识 |
 
-`crt_xxx` 分配并布置节点图；`tog_xxx` 绑定函数指针。构造代码使用 `size_t` 计算内存大小，并通过 `OIOIC_ALIGNED_SIZE` 对扩展成员块补齐，保证后续节点数据对齐。自定义成员若引入比 `struct object` 更严格的对齐需求，应同步升级构造布局，不能只修改结构体。
+`crt_xxx` 分配并布置节点图；`tog_xxx` 绑定函数指针。构造代码使用 `size_t` 计算内存大小，并通过 `NEOIOIC_ALIGNED_SIZE` 对扩展成员块补齐，保证后续节点数据对齐。自定义成员若引入比 `struct object` 更严格的对齐需求，应同步升级构造布局，不能只修改结构体。
 
 构造前按最大节点席位倍数检查 `caller_capacity`，保证每个节点的 `caller_count` 可由 `unsigned short` 表示。外部存储模式会清零整个构造区；调用者负责提供足够且正确对齐的空间，并在对象销毁前保持有效，现有接口不接收空间容量参数。
 
-两栖车同时继承汽车和船，汽车与船都继承 vehicle。构造时 vehicle 及 OIOIC 各只有一份共享节点；调用者记录避免同一次继承访问重复处理共享节点。
+两栖车同时继承汽车和船，汽车与船都继承 vehicle。构造时 vehicle 及 NEOioic 各只有一份共享节点；调用者记录避免同一次继承访问重复处理共享节点。
 
-`get_base_node`、`get_base_members` 只查当前节点的 ABN，不查当前节点自身；找不到返回 NULL。访问节点自身的状态应使用 `self->members`。`get_iq`/`get_oq` 同样从基节点中寻找 OIOIC；直接持有根节点时使用其 `struct em_oioic` 成员。
+`get_base_node`、`get_base_members` 只查当前节点的 ABN，不查当前节点自身；找不到返回 NULL。访问节点自身的状态应使用 `self->members`。`get_iq`/`get_oq` 同样从基节点中寻找 NEOioic；直接持有根节点时使用其 `struct em_neoioic` 成员。
 
 ## 存储与标识的所有权
 
@@ -42,7 +42,7 @@ graph TD
 
 外部存储通过 `host_create_object(..., NULL, exotic_memory)` 构造，与非 NULL 的 `object_out` 互斥。销毁时仅调用 `host_destroy_object`，由调用者随后管理构造区；不能使用会执行 `free(object)` 的 `destroy_object` 宏。关闭释放业务资源，销毁释放对象存储；宿主销毁函数不替代 `vo_close`，也不自动检查对象是否仍打开。
 
-OID 使用 `uint64_t`：高 16 位为 OS，中 32 位为宿主，低 16 位为节点序号。各示例 `ho.c` 独立维护 `gs_tad`，为构造图分配节点 OID，记录可回收的对象标识；这是应用宿主逻辑，不是全局线程安全的分配器。创建发生低 16 位回绕时返回 `RN_LACKOID`，释放本次队列，动态对象输出置空；外部构造区仍归调用者所有，不能把失败后的内容当作可用对象。
+OID 使用 `uint64_t`：高 16 位为 OS，中 32 位为宿主，低 16 位为节点序号。各示例 `host.c` 独立维护 `gs_tad`，为构造图分配节点 OID，记录可回收的对象标识；这是应用宿主逻辑，不是全局线程安全的分配器。创建发生低 16 位回绕时返回 `RN_LACKOID`，释放本次队列，动态对象输出置空；外部构造区仍归调用者所有，不能把失败后的内容当作可用对象。
 
 ## 调用与生命周期
 
@@ -50,7 +50,7 @@ OID 使用 `uint64_t`：高 16 位为 OS，中 32 位为宿主，低 16 位为�
 
 `vo_*` 登记访问并清除记录。直接调用接口指针会绕开登记机制。`OBS_*` 先访问基节点，`SBO_*` 先处理当前节点；专用中性结果码控制继续分派。带下划线的宏有不同的中继约定，修改前阅读公共头文件。
 
-ACS 以 `(cr, mr)` 去重，空席位用 `cr == 0` 标记，因此调用者和委托者标识必须非零。VO 结束后清除本节点及 ABN 中该上下文的记录。节点转委托时保留调用者 `cr`，按职责将 `mr` 切换为自身 OID；局部 `caller` 与传入的 `caller_context` 不是同一概念。当前 `INLINE_VOFUNCTION` 为 0，实际使用 `src/o.c` 的 VO 实现；如修改 VO，需要同时核对头文件中备用的内联实现。
+ACS 以 `(cr, mr)` 去重，空席位用 `cr == 0` 标记，因此调用者和委托者标识必须非零。VO 结束后清除本节点及 ABN 中该上下文的记录。节点转委托时保留调用者 `cr`，按职责将 `mr` 切换为自身 OID；局部 `caller` 与传入的 `caller_context` 不是同一概念。当前 `INLINE_VOFUNCTION` 为 0，实际使用 `src/object.c` 的 VO 实现；如修改 VO，需要同时核对头文件中备用的内联实现。
 
 `_SBO_OBJECT_*` 在单继承时传递基节点结果，多继承时遍历各分支并返回 `RO__SBOOIX`。`OBS_OBJECT_CLOSE_` 允许部分关闭：若已有基节点关闭后发生失败，返回 `RN_CLOSEPARTIAL`，并保留当前节点引用用于再次清理。此结果不表示回滚；业务资源可能已释放，调用者不得继续业务访问、再次打开或直接销毁，应排除失败原因后重试 `vo_close`。重试跳过已关闭的基节点，直到关闭完成。自定义关闭接口应在自身释放资源前完成可能失败的检查，并向上传递部分关闭结果。打开失败后的关闭清理若失败，也返回 `RN_CLOSEPARTIAL`，由调用者继续关闭清理。
 

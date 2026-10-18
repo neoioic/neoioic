@@ -1,0 +1,35 @@
+name: Publish Wiki versions
+
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Wiki publication must not be cancelled by a newer build or push.
+concurrency:
+  group: wiki-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Check Wiki versioning
+        run: python .github/scripts/test_publish_wiki.py
+      - name: Publish changed tutorial or initialize its first version
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
+        run: python .github/scripts/publish_wiki.py

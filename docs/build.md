@@ -78,6 +78,14 @@ xmake test -P tests -v
 
 构建与打包逻辑位于 [CI 脚本](../.github/scripts/build.py)，本地也可设置 `CI_COMPILER=gcc` 或 `clang`、`CI_MODE=debug` 或 `release` 后执行。2026-10-15 本地 Windows GCC Debug/Release 均完成全量构建与运行时依赖检查，Debug 测试和控制台示例通过，Release zip 完成生成及完整性检查；其他矩阵组合与 GitHub 发行操作须以实际 Actions 运行结果为准。
 
+## Wiki 自动发布
+
+独立工作流 `.github/workflows/wiki.yml` 在默认分支 push 时发布 `docs/wiki.md`，也支持在默认分支手动运行。它读取 push 前的文档，并与 Wiki 最新已发布快照核对；内容相同不会新增页面。尚无快照时，即使本次没有修改文档，也会发布当前文档，因此启用功能不需要人为修改教程。之前发布失败时，后续运行也会补发尚未同步的内容。
+
+页面名为 `NEOioic Wiki (YYYYMMDD)`，当天第二次及以后为 `NEOioic Wiki (YYYYMMDD_2)`、`NEOioic Wiki (YYYYMMDD_3)`，历史页面保持原样。日期使用 push 时间并按 Asia/Shanghai 时区计算，手动运行使用当前时间。序号从 Wiki 已有页面中计算，不依赖 Actions 缓存；重复运行相同内容不会重复发布。此任务与 Nightly 构建独立串行发布，不受构建失败影响。
+
+首次配置需要在仓库 Settings 中启用 Wiki，并在 GitHub Wiki 页面创建一次初始页面（例如 Home）；GitHub 不支持通过 Git push 创建尚未初始化的 Wiki 仓库。初始页不需要放教程内容。随后添加仓库 Actions secret `WIKI_TOKEN`，使用有该仓库 Wiki 写入权限的令牌（classic PAT 对公开仓库使用 `public_repo`，私有仓库使用 `repo`，组织仓库还需满足其授权策略）；默认 `GITHUB_TOKEN` 不支持推送 Wiki。完成后推送或手动运行工作流即可生成首篇教程版本。若尚未配置，任务会给出初始化提示，完成配置后重跑即可。令牌仅用于 Git 认证，不写入远程地址或 Git 配置文件。
+
 ## 迁移说明
 
 - 将核心和示例中重复的核心副本合并为一份。

@@ -1,9 +1,13 @@
 """Local Git integration checks; never contact or publish to GitHub."""
 
 import importlib.util
+import io
+import os
+from contextlib import redirect_stderr
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 spec = importlib.util.spec_from_file_location(
@@ -13,6 +17,27 @@ spec.loader.exec_module(publisher)
 
 
 class WikiPublicationTests(unittest.TestCase):
+    def test_missing_token(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            summary = Path(temporary) / 'summary.md'
+            environment = {
+                'WIKI_TOKEN': ' ',
+                'GITHUB_REPOSITORY': 'neoioic/neoioic',
+                'GITHUB_STEP_SUMMARY': str(summary),
+            }
+            with patch.dict(os.environ, environment, clear=True), \
+                    redirect_stderr(io.StringIO()) as errors, \
+                    patch.object(publisher, 'git') as git:
+                self.assertEqual(publisher.main(), 1)
+                git.assert_not_called()
+            self.assertIn('::error title=Wiki configuration required::', errors.getvalue())
+            self.assertIn('neoioic/neoioic/settings/secrets/actions', summary.read_text())
+            self.assertIn('Wiki was not published', summary.read_text())
+
+    def test_configured_token(self):
+        with patch.dict(os.environ, {'WIKI_TOKEN': 'test-only-credential'}):
+            self.assertEqual(publisher.wiki_token(), 'test-only-credential')
+
     def test_publication_history(self):
         with tempfile.TemporaryDirectory() as temporary:
             wiki = Path(temporary)

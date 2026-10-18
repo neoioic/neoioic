@@ -86,6 +86,8 @@ xmake test -P tests -v
 
 首次配置需要在仓库 Settings 中启用 Wiki，并在 GitHub Wiki 页面创建一次初始页面（例如 Home）；GitHub 不支持通过 Git push 创建尚未初始化的 Wiki 仓库。初始页不需要放教程内容。随后添加仓库 Actions secret `WIKI_TOKEN`，使用有该仓库 Wiki 写入权限的令牌（classic PAT 对公开仓库使用 `public_repo`，私有仓库使用 `repo`，组织仓库还需满足其授权策略）；默认 `GITHUB_TOKEN` 不支持推送 Wiki。完成后推送或手动运行工作流即可生成首篇教程版本。若尚未配置，任务会给出初始化提示，完成配置后重跑即可。令牌仅用于 Git 认证，不写入远程地址或 Git 配置文件。
 
+若 Wiki 任务提示 `WIKI_TOKEN` 缺失或为空，表示尚未获得发布凭据，并非文档或 Git 差异有错。到仓库 **Settings → Secrets and variables → Actions → New repository secret** 添加 `WIKI_TOKEN`（不是 Actions variable）。使用专用 classic PAT：公开仓库选 `public_repo`，私有仓库选 `repo`，令牌所属账户必须有仓库写权限。组织 secret 还需允许本仓库访问。保存后在 Actions 重跑 Wiki 工作流，无需再次修改教程。脚本会在执行 Git 操作前检查凭据，并将缺失配置的修复步骤写入任务摘要；缺少凭据仍标记失败，不会把未发布误报为成功。
+
 ## 迁移说明
 
 - 将核心和示例中重复的核心副本合并为一份。

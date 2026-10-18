@@ -7,11 +7,34 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 from zoneinfo import ZoneInfo
 
 
 PAGE = re.compile(r'NEOioic-Wiki-\((\d{8})(?:_(\d+))?\)\.md')
+
+
+def wiki_token():
+    token = os.environ.get('WIKI_TOKEN', '').strip()
+    if token:
+        return token
+    server = os.environ.get('GITHUB_SERVER_URL', 'https://github.com')
+    repository = os.environ.get('GITHUB_REPOSITORY', '')
+    settings = f'{server}/{repository}/settings/secrets/actions'
+    message = (
+        'Wiki was not published: the WIKI_TOKEN Actions secret is missing or empty. '
+        f'Add a repository secret named WIKI_TOKEN at {settings}, using a dedicated '
+        'classic PAT with public_repo scope for a public repository (repo for a '
+        'private repository). Enable Wiki and create its first page once, then '
+        'rerun this workflow. GITHUB_TOKEN cannot replace this Wiki credential.'
+    )
+    print(f'::error title=Wiki configuration required::{message}', file=sys.stderr)
+    summary = os.environ.get('GITHUB_STEP_SUMMARY')
+    if summary:
+        with open(summary, 'a', encoding='utf-8') as output:
+            output.write(f'## Wiki was not published\n\n{message}\n')
+    return None
 
 
 def git(*args, cwd, env=None, check=True):
@@ -42,6 +65,9 @@ def publish(source, wiki, date, before=None):
 
 
 def main():
+    token = wiki_token()
+    if token is None:
+        return 1
     root = Path(__file__).resolve().parents[2]
     source = (root / 'docs/wiki.md').read_bytes()
     event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
@@ -63,10 +89,6 @@ def main():
         if previous.returncode == 0:
             before = previous.stdout
 
-    token = os.environ.get('WIKI_TOKEN')
-    if not token:
-        raise RuntimeError('Configure the WIKI_TOKEN repository secret with a token '
-                           'that can push to this repository Wiki; see docs/build.md.')
     # Keep the token out of command arguments, URLs, logs and Git configuration.
     authorization = base64.b64encode(f'x-access-token:{token}'.encode()).decode()
     env = dict(os.environ, GIT_TERMINAL_PROMPT='0', GIT_CONFIG_COUNT='1',
@@ -88,7 +110,8 @@ def main():
         if title:
             git('push', 'origin', 'HEAD', cwd=wiki, env=env)
             print(f'Published {title}')
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

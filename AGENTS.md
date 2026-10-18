@@ -2,7 +2,7 @@
 
 ## 背景与入口
 
-NEOioic（原名 OIOIC，道智编程）由赵平智设计，是以 C 实现的对象模型与构造工具；原名来自 Open、Input、Output、Interact、Close。本仓库以 1.0.18 为核心，教学示例已迁移到统一 API；历史教程 1.0.6 不代表当前可编译 API。
+NEOioic 来源自 OIOIC，是以 C 实现的对象模型与构造工具。教学示例使用统一 API；旧版教程 1.0.6 不代表当前可编译 API。项目来源介绍仅需注明来源自 OIOIC，不添加个人介绍、旧称或发布历史；版权声明和法律文件保留。
 
 先读 `README.md`、`docs/handoff.md`、`docs/architecture.md`、`docs/build.md`、`docs/tutorial.md`，再读 `include/object.h`、`include/neoioic.h`、`src/object.c`、`src/neoioic.c`。交接文档记录当前状态与验证边界；源码和构建定义是行为依据。
 

@@ -1,6 +1,6 @@
 # oicc
 
-这是上游发布的 OIOIC 1.0.18 构造工具：`windows/oicc.exe` 用于 Windows，`linux/oicc` 用于 Linux。上游未提供工具源码，因此它们不能用本仓库的 GCC 构建重建。
+这是预编译构造工具：`windows/oicc.exe` 用于 Windows，`linux/oicc` 用于 Linux。仓库没有工具源码，因此它们不能用本仓库的 GCC 构建重建。
 
 这些二进制不参与核心库或示例构建。Linux 文件来自原始发行包，具体架构及运行依赖需要在目标系统确认；必要时先赋予执行权限。
 

@@ -1,8 +1,8 @@
 # NEOioic
 
-NEOioic（原名 OIOIC，道智编程）是赵平智设计的 C 语言对象模型及构造工具。原名来自 Open、Input、Output、Interact、Close 五类统一接口。对象通过结构体保存状态、函数指针实现接口，并使用继承节点图支持单继承和多继承。
+NEOioic 来源自 OIOIC，是以 C 实现的对象模型及构造工具。对象通过结构体保存状态、函数指针实现接口，并使用继承节点图支持单继承和多继承。
 
-本仓库基于 OIOIC 1.0.18 整理为 C11 项目：核心源码集中维护，教学示例统一使用当前 API，每个项目具有独立的 xmake 构建入口。源码采用 UTF-8，版本由 Git 管理。
+本仓库采用 C11：核心源码集中维护，教学示例统一使用当前 API，每个项目具有独立的 xmake 构建入口。源码采用 UTF-8，版本由 Git 管理。
 
 [交接指南](docs/handoff.md) · [构建指南](docs/build.md) · [架构说明](docs/architecture.md) · [开发教程](docs/tutorial.md) · [代码风格](docs/coding_style.md)
 
@@ -18,7 +18,7 @@ examples/single_inheritance/  vehicle -> car，独立构建
 examples/multiple_inheritance/ vehicle -> car/ship -> amphicar，独立构建
 examples/wgi/                 Windows GUI、控件与皮肤，独立构建
 docs/                        架构、构建、教程与历史教材
-tools/oicc/                  作者提供的预编译构造工具
+tools/oicc/                  预编译构造工具
 xmake.lua                    仅构建核心静态库
 ```
 
@@ -57,11 +57,11 @@ Linux/macOS 的核心库和控制台示例可以配置 `xmake f -P . --toolchain
 
 可基于这些对象设计设备模拟器、数据流管线、继承关系可视化工具或 Windows 桌面应用。这里没有额外的语言编译器；`oicc` 生成 C 节点与构造代码，最终由 C 编译器编译。
 
-## 工具与历史
+## 构造工具与参考资料
 
 `tools/oicc/windows/oicc.exe` 和 `tools/oicc/linux/oicc` 是上游提供的 1.0.18 二进制，仓库未提供其源码，因此不能从本仓库用 GCC 重建。它们不参与任何构建，也不在构建时自动执行。旧工具生成的构造代码需要按当前内存对齐与 API 约定审查，见 [工具说明](tools/oicc/README.md)。
 
-项目 2007 年公开对象模型，2008 年托管于 Google Code，2009 年发布第二版教程，2011 年发布 1.0.18，2026 年在 Gitee/GitHub 重新发布。中文历史教材保留在 `docs/primer/zh/`，其中旧 API 与 VC6 操作步骤仅供历史参考；当前开发以本 README 和 Markdown 文档为准。
+中文历史教材保留在 `docs/primer/zh/`，其中旧 API 与 VC6 操作步骤仅供历史参考；当前开发以本 README 和 Markdown 文档为准。
 
 独立健壮性测试位于 [`tests/`](tests/README.md)，涵盖队列、继承分派、生命周期及分配失败清理；使用 `xmake test -P tests -v` 运行，需先按测试说明配置和构建。
 
